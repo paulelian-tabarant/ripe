@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "steps": {
+    "install": {
+      "commands": [
+        {
+          "src": "package.json",
+          "dest": "package.json"
+        },
+        {
+          "src": "pnpm-lock.yaml",
+          "dest": "pnpm-lock.yaml"
+        },
+        {
+          "src": "pnpm-workspace.yaml",
+          "dest": "pnpm-workspace.yaml"
+        },
+        {
+          "src": "api/package.json",
+          "dest": "api/package.json"
+        },
+        {
+          "src": "cli/package.json",
+          "dest": "cli/package.json"
+        },
+        "pnpm install --frozen-lockfile --filter api"
+      ]
+    },
+    "build": {
+      "inputs": [
+        {
+          "step": "install"
+        }
+      ],
+      "commands": ["pnpm --filter api build"]
+    }
+  },
+  "deploy": {
+    "startCommand": "pnpm --filter api start"
+  }
+}

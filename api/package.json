@@ -1,0 +1,29 @@
+{
+  "name": "@ripe/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "start:local": "node --env-file=.env.local --import=tsx/esm src/index.ts",
+    "flush:local": "node --env-file=.env.local -e 'import(\"node:fs\").then(fs => fs.rmSync(process.env.DATABASE_PATH, { force: true }))'",
+    "lint": "biome lint ./src ./tests",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check:all": "pnpm run lint && pnpm run typecheck && pnpm run test"
+  },
+  "dependencies": {
+    "@blackglory/better-sqlite3-migrations": "^0.2.2",
+    "better-sqlite3": "^11.0.0",
+    "fastify": "^5.0.0",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
+    "@types/better-sqlite3": "^7.6.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^3.0.0"
+  }
+}

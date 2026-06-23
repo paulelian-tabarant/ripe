@@ -1,10 +1,21 @@
 {
-  "name": "observabilite-usages-coding-agents",
-  "version": "1.0.0",
-  "description": "",
+  "name": "ripe",
+  "version": "0.1.0",
+  "description": "An eye on how your coding agent uses your context (or not)",
+  "engines": {
+    "node": "24.18.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.18.0"
+    }
+  },
   "scripts": {
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\"",
-    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\""
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\"",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
   },
   "packageManager": "pnpm@11.8.0",
   "license": "ISC",

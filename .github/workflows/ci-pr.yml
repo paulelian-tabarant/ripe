@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+
+jobs:
+  lint-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Makes the pnpm version used inside package.json the single source of truth
+      - run: corepack enable
+      - run: corepack prepare --activate
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: 'package.json'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint markdown
+        run: pnpm lint:md
+
+      - name: Lint api
+        run: pnpm --filter api lint
+
+      - name: Typecheck api
+        run: pnpm --filter api typecheck
+
+      - name: Lint cli
+        run: pnpm --filter ./cli lint
+
+      - name: Typecheck cli
+        run: pnpm --filter ./cli typecheck
+
+  test-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Makes the pnpm version used inside package.json the single source of truth
+      - run: corepack enable
+      - run: corepack prepare --activate
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: 'package.json'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Test api
+        run: pnpm --filter api test
+        env:
+          DATABASE_PATH: /tmp/test.db
+
+  test-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Makes the pnpm version used inside package.json the single source of truth
+      - run: corepack enable
+      - run: corepack prepare --activate
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: 'package.json'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Test cli
+        run: pnpm --filter ./cli test
+
+  deploy-staging:
+    needs: [lint-typecheck, test-api, test-cli]
+    if: contains(github.event.pull_request.labels.*.name, 'deploy-staging')
+    uses: ./.github/workflows/deploy-staging.yml
+    secrets: inherit

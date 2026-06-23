@@ -4,51 +4,58 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-A telemetry system for tracking custom skill invocations in Claude Code projects. A CLI client (`ripe`) runs via the `SessionEnd` hook, parses the session transcript, and POSTs events to a Fastify server. A React dashboard displays skill usage rankings.
+A telemetry system for tracking custom skill invocations in Claude Code projects. A CLI client
+(`ripe`) runs via the `SessionEnd` hook, parses the session transcript, and POSTs events to a
+Fastify server. A React dashboard displays skill usage rankings.
 
-## Repository Status
+## Package Structure (pnpm workspace)
 
-Currently in **spec/planning phase** — no application code exists yet. User stories live in `docs/spec/user-stories/`, ADRs in `docs/architecture/decisions/`. Implementation plans go in `docs/plans/`.
+- `api/` — Fastify + SQLite backend. See [`api/CLAUDE.md`](api/CLAUDE.md) for architecture and conventions.
+- `cli/` — CLI script (`ripe init` and `ripe sync`). See [`cli/CLAUDE.md`](cli/CLAUDE.md) for details.
+- `web/` — React + Vite SPA, served as static files by the server in production.
 
-## Planned Package Structure (pnpm workspace)
-
-When code lands, it will be organized as three packages:
-
-- `client/` — CLI script (`ripe init` and `ripe sync`)
-- `server/` — Fastify + SQLite backend
-- `web/` — React + Vite SPA, served as static files by the server in production
-
-## Commands (once packages exist)
+## Root Commands
 
 ```bash
-# From package root
-pnpm --filter client test
-pnpm --filter server test
+pnpm --filter api test
+pnpm --filter ./cli test
 pnpm --filter web test
 pnpm test:e2e          # Playwright, from repo root
 
-# Linting (root)
 pnpm lint:md           # Markdown lint
 ```
 
-Each package will have its own `npm run test` (Vitest) and `npm run typecheck`.
+Each package has its own `npm run test` (Vitest) and `npm run typecheck`.
 
-## Architecture Decisions Worth Knowing
+After every coding task, run lint, typecheck, and the scoped tests for the package(s) you
+touched before considering the task done.
 
-**Client**: runs at `SessionEnd` in two phases — Phase 1 syncs skills (`POST /api/skills`), Phase 2 parses the `.jsonl` transcript and submits events (`POST /api/events`). It exits 0 on most failures (non-blocking by design). It exits 1 only on `init` with an unreachable server.
+At the end of every feature branch, run the full pipeline before considering it ready:
 
-**Server**: three-layer — routes handle HTTP, services orchestrate, repositories handle SQL. Tests go `fastify.inject()` → routes → services → repositories → in-memory SQLite. No mocking of internal layers.
+```bash
+pnpm lint:md
+pnpm --filter api lint && pnpm --filter api typecheck
+pnpm --filter ./cli lint && pnpm --filter ./cli typecheck
+DATABASE_PATH=/tmp/test.db pnpm --filter api test
+pnpm --filter ./cli test
+```
 
-**Frontend**: atomic design (atoms → molecules → organisms → pages). HTTP logic lives in services, not components. Fetch on filter change, no client-side cache.
+All checks must pass with zero errors before marking the feature complete.
 
-**Skill IDs**: server-assigned, not client-generated (ADR-015). The client caches `(skill_name → skill_id)` locally. If the cache is lost, re-registering recreates it.
+## Cross-Cutting Architecture Decisions
+
+**Skill IDs**: server-assigned, not client-generated (ADR-015). The client caches
+`(skill_name → skill_id)` locally. If the cache is lost, re-registering recreates it.
 
 **Deduplication key**: `(session_id, tool_use_id)` — re-submitting the same transcript is safe.
 
-**Namespaced skills** (containing `:`): skipped by the client with a stderr warning. Only `.claude/skills/` are tracked — not third-party plugins.
+**Namespaced skills** (containing `:`): skipped by the client with a stderr warning. Only
+`.claude/skills/` are tracked — not third-party plugins.
 
 **No authentication** in MVP. The server URL is the only access control.
 
 ## Deployment
 
-Railway Hobby plan. Two services: staging (auto-deploys on merge to `main`, database resets each deploy) and production (manual trigger from Railway dashboard). Main branch is protected. CI on every push runs lint, type checks, and tests.
+Railway Hobby plan. Two services: staging (auto-deploys on merge to `main`, database resets each
+deploy) and production (manual trigger from Railway dashboard). Main branch is protected. CI on
+every push runs lint, type checks, and tests.

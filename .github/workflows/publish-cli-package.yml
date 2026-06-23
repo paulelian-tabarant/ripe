@@ -1,0 +1,36 @@
+name: Publish CLI to GitHub Packages
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.8.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: 'api/package.json'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@paulelian-tabarant'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm --filter ./cli build
+
+      - name: Publish @paulelian-tabarant/ripe
+        run: pnpm --filter ./cli publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

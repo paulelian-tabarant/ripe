@@ -1,0 +1,11 @@
+name: On Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-staging:
+    uses: ./.github/workflows/deploy-staging.yml
+    secrets: inherit

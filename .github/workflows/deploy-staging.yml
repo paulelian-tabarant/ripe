@@ -1,0 +1,19 @@
+name: Deploy to Staging
+
+on:
+  workflow_call:
+
+jobs:
+  deploy:
+    environment: staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to staging
+        run: railway up --environment staging --service ${{ vars.RAILWAY_SERVICE_ID }} --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
