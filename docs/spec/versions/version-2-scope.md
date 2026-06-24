@@ -31,6 +31,25 @@ data spanning several weeks is required in the test environment.
 
 ---
 
+## Feature: Skill Rename Detection
+
+Detect when a skill file is renamed (not deleted+added) and preserve historical telemetry data
+under the new name.
+
+**Changes**:
+
+- Compare `.ripe/skills.json` cache (old name) against current `.claude/skills/` (new filename)
+- Heuristics to distinguish rename from delete+add (Git uses similar logic)
+- `PUT /api/skills/:skill_id` endpoint to update skill name server-side
+- Migration preserves historical event data under new name
+
+**Why**: In V1, renaming a skill orphans all historical data (treated as delete + add with new ID).
+This makes refactoring skill names costly for teams with long telemetry history.
+
+**Testing note**: verify renamed skill retains historical counts in dashboard, and new events use updated name.
+
+---
+
 ## Feature: Standalone Deployable Distribution
 
 Make the server and dashboard self-hostable — users can deploy Context Ripe to their own infrastructure
