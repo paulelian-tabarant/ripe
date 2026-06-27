@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\"",
-    "fix:md": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\""
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\""
   },
   "packageManager": "pnpm@11.8.0",
   "license": "ISC",
