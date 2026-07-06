@@ -32,7 +32,13 @@
           "step": "install"
         }
       ],
-      "commands": ["pnpm --filter api build"]
+      "commands": [
+        { "src": "tsconfig.base.json", "dest": "tsconfig.base.json" },
+        { "src": "api/tsconfig.json", "dest": "api/tsconfig.json" },
+        { "src": "api/tsconfig.build.json", "dest": "api/tsconfig.build.json" },
+        { "src": "api/src", "dest": "api/src" },
+        "pnpm --filter api build"
+      ]
     }
   },
   "deploy": {
