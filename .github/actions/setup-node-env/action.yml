@@ -1,5 +1,14 @@
 name: Setup node env
 description: Enable corepack, setup Node, install dependencies
+inputs:
+  registry-url:
+    description: 'Registry URL to configure for publishing (optional)'
+    required: false
+    default: ''
+  scope:
+    description: 'Scope to associate with the registry (optional)'
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -13,6 +22,8 @@ runs:
       with:
         node-version-file: 'package.json'
         cache: 'pnpm'
+        registry-url: ${{ inputs.registry-url }}
+        scope: ${{ inputs.scope }}
 
     - run: pnpm install --frozen-lockfile
       shell: bash
