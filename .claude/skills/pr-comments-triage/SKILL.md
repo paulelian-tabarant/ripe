@@ -22,10 +22,12 @@ pass — not to guess at answers to comments that are actually asking the author
    .claude/skills/pr-comments-triage/scripts/gather_pr_comments.sh [ref]
    ```
 
-   This pulls **inline** review comments only — the ones attached to a specific file/line, where
-   a Conventional Comments label actually makes sense. Top-level PR conversation comments and
-   review approval/changes-requested summaries aren't included; those read more like a recap of
-   the review than line-level feedback to act on.
+   This pulls **inline, unresolved** review comments only — the ones attached to a specific
+   file/line, where a Conventional Comments label actually makes sense. Top-level PR conversation
+   comments and review approval/changes-requested summaries aren't included; those read more like
+   a recap of the review than line-level feedback to act on. Comments on a thread already marked
+   resolved on GitHub are filtered out before you see them (the script checks `isResolved` via
+   GraphQL) — don't re-triage those.
 
 3. **Classify each comment.** Conventional Comments labels, in the author's own words:
 
@@ -115,10 +117,6 @@ pass — not to guess at answers to comments that are actually asking the author
 - **Threaded replies** (`in_reply_to_id` present): classify the root comment, and read any replies
   as context for what's already been discussed — don't re-litigate a question the author already
   answered in a reply.
-- **This skill doesn't know whether a thread is already marked "resolved" on GitHub** — the REST
-  comments endpoint doesn't expose that. If you're re-running this on a PR you've already gone
-  through, some "Needs your input" items may already be settled; a quick glance at the PR page
-  catches that faster than trying to infer it here.
 - **Never auto-reply on GitHub, and never resolve a thread before the user has confirmed it's
   settled.** The report in step 6 is a proposal, not a done deal — the user might want a change
   reverted, a different answer to a question, or to leave something open for the reviewer to see.

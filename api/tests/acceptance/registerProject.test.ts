@@ -1,15 +1,17 @@
 import Database from 'better-sqlite3';
-import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../src/app.js';
-import type { ProjectRequestBody } from '../../src/routes/projectRoutes.js';
+import { prepareAndBindPostProjectsRequestTo } from '../helpers/postProjects.js';
 
 describe('POST /api/projects', () => {
   let app: FastifyInstance;
+  let postProjects: ReturnType<typeof prepareAndBindPostProjectsRequestTo>;
 
   beforeEach(() => {
     const db = new Database(':memory:');
     app = buildApp(db, { logger: false });
+    postProjects = prepareAndBindPostProjectsRequestTo(app);
   });
 
   afterEach(async () => {
@@ -42,12 +44,4 @@ describe('POST /api/projects', () => {
 
     expect(response.statusCode).toBe(400);
   });
-
-  async function postProjects(body: Partial<ProjectRequestBody>): Promise<LightMyRequestResponse> {
-    return await app.inject({
-      method: 'POST',
-      url: '/api/projects',
-      payload: body,
-    });
-  }
 });
