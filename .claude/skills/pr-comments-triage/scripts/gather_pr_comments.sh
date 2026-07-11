@@ -2,6 +2,9 @@
 # Fetches inline PR review comments (comments attached to a specific file/line,
 # not top-level PR conversation) via gh api, and prints them as plain text
 # blocks for a model to classify and act on. Does no classification itself.
+# Comments belonging to an already-resolved review thread are filtered out
+# (resolution state is looked up via GraphQL, since the REST comments endpoint
+# doesn't expose it) — only unresolved threads are returned.
 #
 # Usage: gather_pr_comments.sh [ref]
 #   ref - PR number, PR URL, or branch name. Defaults to the current branch's
@@ -44,14 +47,52 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+OWNER=$(gh repo view --json owner -q '.owner.login' 2>/dev/null)
+REPO=$(gh repo view --json name -q '.name' 2>/dev/null)
+if [ -z "$OWNER" ] || [ -z "$REPO" ]; then
+  echo "ERROR: could not resolve owner/repo for the current directory" >&2
+  exit 1
+fi
+
+THREADS_JSON=$(gh api graphql -f query='
+  query($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $number) {
+        reviewThreads(first: 100) {
+          nodes {
+            isResolved
+            comments(first: 50) {
+              nodes { databaseId }
+            }
+          }
+        }
+      }
+    }
+  }' -f owner="$OWNER" -f repo="$REPO" -F number="$NUM" 2>&1)
+if [ $? -ne 0 ]; then
+  echo "ERROR: failed to fetch review thread resolution status" >&2
+  echo "$THREADS_JSON" >&2
+  exit 1
+fi
+
+RESOLVED_IDS_JSON=$(echo "$THREADS_JSON" | jq -c '
+  [.data.repository.pullRequest.reviewThreads.nodes[]
+   | select(.isResolved)
+   | .comments.nodes[].databaseId]
+')
+
+COMMENTS=$(echo "$COMMENTS" | jq --argjson resolved "$RESOLVED_IDS_JSON" '
+  [.[] | select((.id as $id | $resolved | index($id)) | not)]
+')
+
 COUNT=$(echo "$COMMENTS" | jq 'length')
 if [ "$COUNT" = "0" ]; then
   echo "=== INLINE REVIEW COMMENTS ==="
-  echo "No inline review comments found on this PR."
+  echo "No unresolved inline review comments found on this PR."
   exit 0
 fi
 
-echo "=== INLINE REVIEW COMMENTS ($COUNT) ==="
+echo "=== UNRESOLVED INLINE REVIEW COMMENTS ($COUNT) ==="
 echo
 
 echo "$COMMENTS" | jq -r '

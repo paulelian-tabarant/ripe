@@ -16,7 +16,7 @@ npm run start         # node dist/index.js
 To run a single test file:
 
 ```bash
-npx vitest run tests/routes/projects.test.ts
+npx vitest run tests/routes/registerProject.test.ts
 ```
 
 ## Required Environment Variables
