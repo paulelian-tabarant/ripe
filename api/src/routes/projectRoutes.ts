@@ -1,8 +1,10 @@
 import type {FastifyInstance, FastifyPluginAsync, FastifySchema} from 'fastify';
-import type {ProjectService} from '../services/ProjectService.js';
+import type {ListProjects} from '../use-cases/ListProjects.js';
+import type {RegisterProject} from '../use-cases/RegisterProject.js';
 
 interface ProjectRouteOptions {
-    projectService: ProjectService;
+    registerProject: RegisterProject;
+    listProjects: ListProjects;
 }
 
 const projectSchema: FastifySchema = {
@@ -28,7 +30,7 @@ export const projectRoutes: FastifyPluginAsync<ProjectRouteOptions> = async (
         '/api/projects',
         {schema: projectSchema},
         async (request, reply) => {
-            const result = opts.projectService.registerProject(request.body.name);
+            const result = opts.registerProject.run(request.body.name);
 
             if (result.created) {
                 return reply.code(201).send({projectId: result.projectId});
@@ -40,4 +42,10 @@ export const projectRoutes: FastifyPluginAsync<ProjectRouteOptions> = async (
             });
         }
     );
+
+    app.get('/api/projects', async (_request, reply) => {
+        const projects = opts.listProjects.run();
+
+        return reply.code(200).send(projects);
+    });
 };

@@ -4,7 +4,8 @@ import { migrateDatabase } from './db/migrateDatabase.js';
 import { healthRoutes } from './routes/healthRoutes.js';
 import { projectRoutes } from './routes/projectRoutes.js';
 import { ProjectRepository } from './repositories/ProjectRepository.js';
-import { ProjectService } from './services/ProjectService.js';
+import { ListProjects } from './use-cases/ListProjects.js';
+import { RegisterProject } from './use-cases/RegisterProject.js';
 
 export function buildApp(
   db: Database.Database,
@@ -15,10 +16,11 @@ export function buildApp(
   migrateDatabase(db);
 
   const projectRepository = new ProjectRepository(db);
-  const projectService = new ProjectService(projectRepository);
+  const registerProject = new RegisterProject(projectRepository);
+  const listProjects = new ListProjects(projectRepository);
 
   app.register(healthRoutes);
-  app.register(projectRoutes, { projectService });
+  app.register(projectRoutes, { registerProject, listProjects });
 
   return app;
 }
