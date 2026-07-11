@@ -52,15 +52,6 @@ Tests use `fastify.inject()` against a real `better-sqlite3` in-memory database 
 internal layers. Each test file creates its own `Database(':memory:')` and `buildApp` instance;
 `afterEach` closes the app.
 
-`POST /api/projects` returns:
-
-- `201 { projectId }` — new project created
-- `409 { projectId, message }` — name already exists (idempotent: returns the existing ID)
-- `400` — missing or empty `name`
-
-`GET /api/projects` returns `200 Array<{ id, name }>` (empty array if none registered; ordering
-is not guaranteed by the backend).
-
 ## Key Conventions
 
 - Project IDs are server-assigned with `nanoid`, prefixed `proj_`.

@@ -20,7 +20,7 @@ export function buildApp(
   const listProjects = new ListProjects(projectRepository);
 
   app.register(healthRoutes);
-  app.register(projectRoutes, { registerProject, listProjects });
+  app.register(projectRoutes, { prefix: '/api', registerProject, listProjects });
 
   return app;
 }

@@ -92,6 +92,12 @@ except where explicitly gated below.
     handoff point. Do this without asking for confirmation first — invoking
     this skill is the standing authorization for the PR it produces.
 
+11. **Mark the user story done.** If this iteration is driven by a spec under
+    `docs/spec/user-stories/`, update that doc's `**Status**` line to `Done`
+    (this repo's existing convention, e.g. commit `4f9643a`), commit it, and
+    push — updating the PR just opened in step 10 rather than opening a
+    second one.
+
 ## Edge cases
 
 - **Task doesn't decompose into independent subtasks** (e.g. a small, tightly

@@ -27,7 +27,7 @@ export const projectRoutes: FastifyPluginAsync<ProjectRouteOptions> = async (
     opts: ProjectRouteOptions,
 ): Promise<void> => {
     app.post<{ Body: ProjectRequestBody }>(
-        '/api/projects',
+        '/projects',
         {schema: projectSchema},
         async (request, reply) => {
             const result = opts.registerProject.run(request.body.name);
@@ -43,7 +43,7 @@ export const projectRoutes: FastifyPluginAsync<ProjectRouteOptions> = async (
         }
     );
 
-    app.get('/api/projects', async (_request, reply) => {
+    app.get('/projects', async (_request, reply) => {
         const projects = opts.listProjects.run();
 
         return reply.code(200).send(projects);
