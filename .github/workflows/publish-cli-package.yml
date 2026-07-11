@@ -1,36 +1,64 @@
 name: Publish CLI to GitHub Packages
 
 on:
-  release:
-    types:
-      - created
+  push:
+    branches:
+      - main
+    paths:
+      - 'cli/package.json'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       packages: write
-      contents: read
+      contents: write
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: version
+        run: |
+          PREV_VERSION=$(git show HEAD^:cli/package.json 2>/dev/null | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).version' || echo "")
+          CURR_VERSION=$(node -p 'require("./cli/package.json").version')
+          if [ "$PREV_VERSION" = "$CURR_VERSION" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "version=$CURR_VERSION" >> "$GITHUB_OUTPUT"
+          fi
 
       # Makes the pnpm version used inside package.json the single source of truth
       - run: corepack enable
+        if: steps.version.outputs.changed == 'true'
       - run: corepack prepare --activate
+        if: steps.version.outputs.changed == 'true'
 
       - uses: actions/setup-node@v6
+        if: steps.version.outputs.changed == 'true'
         with:
           node-version-file: 'package.json'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@paulelian-tabarant'
 
       - run: pnpm install --frozen-lockfile
+        if: steps.version.outputs.changed == 'true'
 
       - name: Build CLI
+        if: steps.version.outputs.changed == 'true'
         run: pnpm --filter ./cli build
 
       - name: Publish @paulelian-tabarant/ripe
+        if: steps.version.outputs.changed == 'true'
         run: pnpm --filter ./cli publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        if: steps.version.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "cli-v${{ steps.version.outputs.version }}" --title "cli-v${{ steps.version.outputs.version }}" --notes ""
