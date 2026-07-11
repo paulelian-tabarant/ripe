@@ -38,11 +38,7 @@ describe('init', () => {
   });
 
   it('exits 0 with warning when .ripe/config.json already exists', async () => {
-    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
-    writeFileSync(
-      join(tmpDir, '.ripe/config.json'),
-      JSON.stringify({ projectId: 'proj_existing123', serverUrl: FAKE_SERVER_URL }),
-    );
+    writeExistingConfig(JSON.stringify({ projectId: 'proj_existing123', serverUrl: FAKE_SERVER_URL }));
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -54,8 +50,7 @@ describe('init', () => {
   });
 
   it('re-registers when .ripe/config.json is empty', async () => {
-    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
-    writeFileSync(join(tmpDir, '.ripe/config.json'), '');
+    writeExistingConfig('');
 
     stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
@@ -74,8 +69,7 @@ describe('init', () => {
   });
 
   it('re-registers when .ripe/config.json contains malformed JSON', async () => {
-    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
-    writeFileSync(join(tmpDir, '.ripe/config.json'), '{ not valid json');
+    writeExistingConfig('{ not valid json');
 
     stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
@@ -94,11 +88,7 @@ describe('init', () => {
   });
 
   it('re-registers when .ripe/config.json is missing projectId', async () => {
-    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
-    writeFileSync(
-      join(tmpDir, '.ripe/config.json'),
-      JSON.stringify({ serverUrl: FAKE_SERVER_URL }),
-    );
+    writeExistingConfig(JSON.stringify({ serverUrl: FAKE_SERVER_URL }));
 
     stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
@@ -117,11 +107,7 @@ describe('init', () => {
   });
 
   it('re-registers when .ripe/config.json is missing serverUrl', async () => {
-    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
-    writeFileSync(
-      join(tmpDir, '.ripe/config.json'),
-      JSON.stringify({ projectId: 'proj_existing123' }),
-    );
+    writeExistingConfig(JSON.stringify({ projectId: 'proj_existing123' }));
 
     stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
@@ -221,6 +207,11 @@ describe('init', () => {
     expect(result.status).toBe('error');
     expect(errorSpy).toHaveBeenCalled();
   });
+
+  function writeExistingConfig(content: string): void {
+    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
+    writeFileSync(join(tmpDir, '.ripe/config.json'), content);
+  }
 
   function readWrittenConfig(): WrittenConfig {
     return JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as WrittenConfig;
