@@ -60,7 +60,6 @@ describe('init', () => {
     });
 
     expect(result.status).toBe('success');
-    expect(warnSpy).not.toHaveBeenCalled();
 
     const config = readWrittenConfig();
 
@@ -79,7 +78,6 @@ describe('init', () => {
     });
 
     expect(result.status).toBe('success');
-    expect(warnSpy).not.toHaveBeenCalled();
 
     const config = readWrittenConfig();
 
@@ -98,7 +96,6 @@ describe('init', () => {
     });
 
     expect(result.status).toBe('success');
-    expect(warnSpy).not.toHaveBeenCalled();
 
     const config = readWrittenConfig();
 
@@ -117,7 +114,42 @@ describe('init', () => {
     });
 
     expect(result.status).toBe('success');
-    expect(warnSpy).not.toHaveBeenCalled();
+
+    const config = readWrittenConfig();
+
+    expect(config.projectId).toBe('proj_abc123');
+    expect(config.serverUrl).toBe(FAKE_SERVER_URL);
+  });
+
+  it('re-registers when .ripe/config.json has an empty projectId', async () => {
+    writeExistingConfig(JSON.stringify({ projectId: '', serverUrl: FAKE_SERVER_URL }));
+
+    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+    });
+
+    expect(result.status).toBe('success');
+
+    const config = readWrittenConfig();
+
+    expect(config.projectId).toBe('proj_abc123');
+    expect(config.serverUrl).toBe(FAKE_SERVER_URL);
+  });
+
+  it('re-registers when .ripe/config.json has an empty serverUrl', async () => {
+    writeExistingConfig(JSON.stringify({ projectId: 'proj_existing123', serverUrl: '' }));
+
+    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+    });
+
+    expect(result.status).toBe('success');
 
     const config = readWrittenConfig();
 

@@ -14,22 +14,15 @@ function isValidRipeConfig(value: unknown): value is RipeConfig {
   );
 }
 
-/**
- * Reads and validates the `.ripe/config.json` file at `configPath`.
- *
- * Returns the parsed config only if the file exists, contains valid JSON, and has
- * non-empty `projectId` and `serverUrl` fields. Otherwise returns `null`, treating the
- * project as not (yet) registered.
- */
-export function readConfig(configPath: string): RipeConfig | null {
-  if (!existsSync(configPath)) return null;
+export function readConfig(configPath: string): RipeConfig | undefined {
+  if (!existsSync(configPath)) return undefined;
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(configPath, 'utf-8'));
   } catch {
-    return null;
+    return undefined;
   }
 
-  return isValidRipeConfig(parsed) ? parsed : null;
+  return isValidRipeConfig(parsed) ? parsed : undefined;
 }
