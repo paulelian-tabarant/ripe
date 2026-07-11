@@ -31,21 +31,11 @@ jobs:
             echo "version=$CURR_VERSION" >> "$GITHUB_OUTPUT"
           fi
 
-      # Makes the pnpm version used inside package.json the single source of truth
-      - run: corepack enable
-        if: steps.version.outputs.changed == 'true'
-      - run: corepack prepare --activate
-        if: steps.version.outputs.changed == 'true'
-
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-node-env
         if: steps.version.outputs.changed == 'true'
         with:
-          node-version-file: 'package.json'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@paulelian-tabarant'
-
-      - run: pnpm install --frozen-lockfile
-        if: steps.version.outputs.changed == 'true'
 
       - name: Build CLI
         if: steps.version.outputs.changed == 'true'
