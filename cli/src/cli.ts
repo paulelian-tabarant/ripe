@@ -1,4 +1,4 @@
-import { init } from './commands/init.js';
+import { init, type InitResult } from './commands/init.js';
 
 const HELP_FLAGS = new Set(['-h', '--help']);
 
@@ -18,7 +18,7 @@ export interface CliResult {
 export interface RunCliOptions {
   logFn?: (message: string) => void;
   errorFn?: (message: string) => void;
-  initFn?: () => Promise<CliResult>;
+  initFn?: () => Promise<InitResult>;
 }
 
 export async function runCli(args: string[], options: RunCliOptions = {}): Promise<CliResult> {
@@ -34,7 +34,9 @@ export async function runCli(args: string[], options: RunCliOptions = {}): Promi
   }
 
   if (command === 'init') {
-    return initFn();
+    const result = await initFn();
+
+    return { exitCode: result.status === 'success' ? 0 : 1 };
   }
 
   errorFn(`Unknown command: ${command ?? '(none)'}`);

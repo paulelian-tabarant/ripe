@@ -25,19 +25,18 @@ pnpm test:e2e          # Playwright, from repo root
 pnpm lint:md           # Markdown lint
 ```
 
-Each package has its own `npm run test` (Vitest) and `npm run typecheck`.
+Each package has its own `npm run test` (Vitest), `npm run typecheck`, and `npm run ci:checks`
+(lint + typecheck + test in one shot).
 
-After every coding task, run lint, typecheck, and the scoped tests for the package(s) you
-touched before considering the task done.
+After every coding task, favor `pnpm --filter <package> ci:checks` (`api`, `./cli`, or `web`) for
+the package(s) you touched before considering the task done.
 
 At the end of every feature branch, run the full pipeline before considering it ready:
 
 ```bash
 pnpm lint:md
-pnpm --filter api lint && pnpm --filter api typecheck
-pnpm --filter ./cli lint && pnpm --filter ./cli typecheck
-DATABASE_PATH=/tmp/test.db pnpm --filter api test
-pnpm --filter ./cli test
+pnpm --filter api ci:checks
+pnpm --filter ./cli ci:checks
 ```
 
 All checks must pass with zero errors before marking the feature complete.

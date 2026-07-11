@@ -43,7 +43,7 @@ describe('runCli', () => {
   });
 
   it('dispatches to init for the "init" command', async () => {
-    const initFn = vi.fn().mockResolvedValue({ exitCode: 0 });
+    const initFn = vi.fn().mockResolvedValue({ status: 'success' });
 
     const result = await runCli(['init'], { initFn });
 
