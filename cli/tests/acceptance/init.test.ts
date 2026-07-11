@@ -5,6 +5,11 @@ import nock from 'nock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { init } from '@/commands/init.js';
 
+interface WrittenConfig {
+  projectId: string;
+  serverUrl: string;
+}
+
 describe('init', () => {
   let tmpDir: string;
   let warnSpy: ReturnType<typeof vi.spyOn>;
@@ -55,13 +60,10 @@ describe('init', () => {
       urlPromptFn: async () => 'http://localhost:3000',
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
     expect(warnSpy).not.toHaveBeenCalled();
 
-    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
-      projectId: string;
-      serverUrl: string;
-    };
+    const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
     expect(config.serverUrl).toBe('http://localhost:3000');
@@ -80,13 +82,10 @@ describe('init', () => {
       urlPromptFn: async () => 'http://localhost:3000',
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
     expect(warnSpy).not.toHaveBeenCalled();
 
-    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
-      projectId: string;
-      serverUrl: string;
-    };
+    const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
     expect(config.serverUrl).toBe('http://localhost:3000');
@@ -108,13 +107,10 @@ describe('init', () => {
       urlPromptFn: async () => 'http://localhost:3000',
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
     expect(warnSpy).not.toHaveBeenCalled();
 
-    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
-      projectId: string;
-      serverUrl: string;
-    };
+    const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
     expect(config.serverUrl).toBe('http://localhost:3000');
@@ -136,13 +132,10 @@ describe('init', () => {
       urlPromptFn: async () => 'http://localhost:3000',
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
     expect(warnSpy).not.toHaveBeenCalled();
 
-    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
-      projectId: string;
-      serverUrl: string;
-    };
+    const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
     expect(config.serverUrl).toBe('http://localhost:3000');
@@ -160,10 +153,7 @@ describe('init', () => {
 
     expect(result.status).toBe('success');
 
-    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
-      projectId: string;
-      serverUrl: string;
-    };
+    const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
     expect(config.serverUrl).toBe('http://localhost:3000');
@@ -182,9 +172,7 @@ describe('init', () => {
 
     expect(result.status).toBe('success');
 
-    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
-      projectId: string;
-    };
+    const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_existing');
   });
@@ -239,4 +227,8 @@ describe('init', () => {
     expect(result.status).toBe('error');
     expect(errorSpy).toHaveBeenCalled();
   });
+
+  function readWrittenConfig(): WrittenConfig {
+    return JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as WrittenConfig;
+  }
 });
