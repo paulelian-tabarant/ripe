@@ -2,7 +2,7 @@ import { init } from './commands/init.js';
 
 const HELP_FLAGS = new Set(['-h', '--help']);
 
-export const HELP_TEXT = `Usage: ripe <command>
+const HELP_TEXT = `Usage: ripe <command>
 
 Commands:
   init    Register this project with a ripe tracking server and write .ripe/config.json
@@ -11,16 +11,17 @@ Options:
   -h, --help    Show this help message and exit
 `;
 
+export interface CliResult {
+  exitCode: 0 | 1;
+}
+
 export interface RunCliOptions {
   logFn?: (message: string) => void;
   errorFn?: (message: string) => void;
-  initFn?: () => Promise<{ exitCode: 0 | 1 }>;
+  initFn?: () => Promise<CliResult>;
 }
 
-export async function runCli(
-  args: string[],
-  options: RunCliOptions = {},
-): Promise<{ exitCode: 0 | 1 }> {
+export async function runCli(args: string[], options: RunCliOptions = {}): Promise<CliResult> {
   const logFn = options.logFn ?? console.log;
   const errorFn = options.errorFn ?? console.error;
   const initFn = options.initFn ?? init;
