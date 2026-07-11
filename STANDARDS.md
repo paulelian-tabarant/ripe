@@ -49,14 +49,12 @@ These rules apply across the whole workspace (`api/` and `cli/`), which share th
   from implementation details, rather than writing separate fine-grained unit tests for every
   internal helper. Drop to fine-grained, implementation-coupled tests only when the behavior is
   critical or complex enough to need them in isolation.
-- **Don't inject dependencies that are never varied**: dependency injection is for testability or
-  genuine alternate implementations — if a parameter is never swapped in practice, call the
-  concrete implementation directly instead of injecting it. That said, for the moment we prefer
-  injecting output sinks like `logFn`/`errorFn` over calling `console.log`/`console.error`
-  directly in production code, even though `vi.spyOn` could reach the latter without adding a
-  parameter — this keeps all side-effecting boundaries (stdin prompts, the filesystem, network
-  calls, output) injected the same way, rather than special-casing console. Revisit if that
-  consistency stops paying for itself.
+- **Favor injection for dependencies that need to be varied**: whether for testing purposes
+  (swapping in a fake) or other purposes (a genuine alternate implementation), if a dependency
+  needs to vary, inject it — including output sinks like `logFn`/`errorFn`, even though
+  `vi.spyOn` could reach `console.log`/`console.error` directly without adding a parameter.
+  Don't inject a parameter that's never actually swapped in practice; call the concrete
+  implementation directly instead.
 - **Given/when/then structure in tests**: separate a test's setup, the action under test, and its
   assertions with a blank line each, in that order — no need to label the sections, the blank
   lines are enough to make the structure legible.
