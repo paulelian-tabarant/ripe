@@ -2,14 +2,16 @@ import Database from 'better-sqlite3';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../src/app.js';
-import { postProjects } from '../helpers/postProjects.js';
+import { createPostProjects } from '../helpers/postProjects.js';
 
 describe('GET /api/projects', () => {
   let app: FastifyInstance;
+  let postProjects: ReturnType<typeof createPostProjects>;
 
   beforeEach(() => {
     const db = new Database(':memory:');
     app = buildApp(db, { logger: false });
+    postProjects = createPostProjects(app);
   });
 
   afterEach(async () => {
@@ -24,8 +26,8 @@ describe('GET /api/projects', () => {
   });
 
   it('returns 200 with all registered projects', async () => {
-    const first = await postProjects(app, { name: 'my-project' });
-    const second = await postProjects(app, { name: 'other-project' });
+    const first = await postProjects({ name: 'my-project' });
+    const second = await postProjects({ name: 'other-project' });
 
     const response = await getProjects();
 
