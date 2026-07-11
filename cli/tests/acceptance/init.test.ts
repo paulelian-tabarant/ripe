@@ -1,9 +1,15 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import nock from 'nock';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { init } from '@/commands/init.js';
+import type {
+  RegisterProjectRequestBody,
+  RegisterProjectResponseBody,
+} from '@/lib/registerProject.js';
+
+const FAKE_SERVER_URL = 'https://fake-server-url';
 
 interface WrittenConfig {
   projectId: string;
@@ -35,12 +41,12 @@ describe('init', () => {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
     writeFileSync(
       join(tmpDir, '.ripe/config.json'),
-      JSON.stringify({ projectId: 'proj_existing123', serverUrl: 'http://localhost:3000' }),
+      JSON.stringify({ projectId: 'proj_existing123', serverUrl: FAKE_SERVER_URL }),
     );
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
     });
 
     expect(result.status).toBe('success');
@@ -51,13 +57,11 @@ describe('init', () => {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
     writeFileSync(join(tmpDir, '.ripe/config.json'), '');
 
-    nock('http://localhost:3000')
-      .post('/api/projects', { name: tmpDir.split('/').pop() })
-      .reply(201, { projectId: 'proj_abc123' });
+    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
     });
 
     expect(result.status).toBe('success');
@@ -66,20 +70,18 @@ describe('init', () => {
     const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
-    expect(config.serverUrl).toBe('http://localhost:3000');
+    expect(config.serverUrl).toBe(FAKE_SERVER_URL);
   });
 
   it('re-registers when .ripe/config.json contains malformed JSON', async () => {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
     writeFileSync(join(tmpDir, '.ripe/config.json'), '{ not valid json');
 
-    nock('http://localhost:3000')
-      .post('/api/projects', { name: tmpDir.split('/').pop() })
-      .reply(201, { projectId: 'proj_abc123' });
+    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
     });
 
     expect(result.status).toBe('success');
@@ -88,23 +90,21 @@ describe('init', () => {
     const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
-    expect(config.serverUrl).toBe('http://localhost:3000');
+    expect(config.serverUrl).toBe(FAKE_SERVER_URL);
   });
 
   it('re-registers when .ripe/config.json is missing projectId', async () => {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
     writeFileSync(
       join(tmpDir, '.ripe/config.json'),
-      JSON.stringify({ serverUrl: 'http://localhost:3000' }),
+      JSON.stringify({ serverUrl: FAKE_SERVER_URL }),
     );
 
-    nock('http://localhost:3000')
-      .post('/api/projects', { name: tmpDir.split('/').pop() })
-      .reply(201, { projectId: 'proj_abc123' });
+    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
     });
 
     expect(result.status).toBe('success');
@@ -113,7 +113,7 @@ describe('init', () => {
     const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
-    expect(config.serverUrl).toBe('http://localhost:3000');
+    expect(config.serverUrl).toBe(FAKE_SERVER_URL);
   });
 
   it('re-registers when .ripe/config.json is missing serverUrl', async () => {
@@ -123,13 +123,11 @@ describe('init', () => {
       JSON.stringify({ projectId: 'proj_existing123' }),
     );
 
-    nock('http://localhost:3000')
-      .post('/api/projects', { name: tmpDir.split('/').pop() })
-      .reply(201, { projectId: 'proj_abc123' });
+    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
     });
 
     expect(result.status).toBe('success');
@@ -138,17 +136,15 @@ describe('init', () => {
     const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
-    expect(config.serverUrl).toBe('http://localhost:3000');
+    expect(config.serverUrl).toBe(FAKE_SERVER_URL);
   });
 
   it('creates .ripe/config.json with projectId and serverUrl on 201', async () => {
-    nock('http://localhost:3000')
-      .post('/api/projects', { name: tmpDir.split('/').pop() })
-      .reply(201, { projectId: 'proj_abc123' });
+    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) });
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
     });
 
     expect(result.status).toBe('success');
@@ -156,17 +152,15 @@ describe('init', () => {
     const config = readWrittenConfig();
 
     expect(config.projectId).toBe('proj_abc123');
-    expect(config.serverUrl).toBe('http://localhost:3000');
+    expect(config.serverUrl).toBe(FAKE_SERVER_URL);
   });
 
   it('writes config and exits 0 on 409 when user confirms', async () => {
-    nock('http://localhost:3000')
-      .post('/api/projects')
-      .reply(409, { projectId: 'proj_existing', message: 'Project already exists' });
+    stubRegisterProjectApi(409, { projectId: 'proj_existing', message: 'Project already exists' });
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
       promptFn: async () => true,
     });
 
@@ -184,7 +178,7 @@ describe('init', () => {
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
       promptFn: async () => false,
     });
 
@@ -193,9 +187,9 @@ describe('init', () => {
   });
 
   it('re-prompts on invalid URL until a valid one is provided', async () => {
-    nock('http://localhost:3000').post('/api/projects').reply(201, { projectId: 'proj_abc123' });
+    stubRegisterProjectApi(201, { projectId: 'proj_abc123' });
 
-    const urls = ['not-a-url', 'ftp://example.com', 'http://localhost:3000'];
+    const urls = ['not-a-url', 'ftp://example.com', FAKE_SERVER_URL];
     let call = 0;
 
     const result = await init({
@@ -215,13 +209,13 @@ describe('init', () => {
   });
 
   it('exits 1 and prints to stderr when server is unreachable', async () => {
-    nock('http://localhost:3000')
+    nock(FAKE_SERVER_URL)
       .post('/api/projects')
       .replyWithError('connect ECONNREFUSED 127.0.0.1:3000');
 
     const result = await init({
       currentDirectoryName: tmpDir,
-      urlPromptFn: async () => 'http://localhost:3000',
+      urlPromptFn: async () => FAKE_SERVER_URL,
     });
 
     expect(result.status).toBe('error');
@@ -232,3 +226,13 @@ describe('init', () => {
     return JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as WrittenConfig;
   }
 });
+
+function stubRegisterProjectApi(
+  status: number,
+  body: RegisterProjectResponseBody,
+  requestBody?: RegisterProjectRequestBody,
+): void {
+  nock(FAKE_SERVER_URL)
+    .post('/api/projects', requestBody as nock.RequestBodyMatcher | undefined)
+    .reply(status, body);
+}

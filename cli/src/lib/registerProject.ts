@@ -4,12 +4,22 @@ export interface ProjectRegistrationResult {
   message?: string;
 }
 
+export interface RegisterProjectResponseBody {
+  projectId: string;
+  message?: string;
+}
+
+export interface RegisterProjectRequestBody {
+  name: string;
+}
+
 export async function registerProject(
   serverUrl: string,
-  name: string
+  name: string,
 ): Promise<ProjectRegistrationResult> {
   const url = new URL('/api/projects', serverUrl);
-  const body = JSON.stringify({ name });
+  const requestBody: RegisterProjectRequestBody = { name };
+  const body = JSON.stringify(requestBody);
 
   const res = await fetch(url, {
     method: 'POST',
@@ -21,7 +31,7 @@ export async function registerProject(
     throw new Error(`Unexpected response status: ${String(res.status)}`);
   }
 
-  const parsed = (await res.json()) as { projectId: string; message?: string };
+  const parsed = (await res.json()) as RegisterProjectResponseBody;
 
   return {
     status: res.status,
