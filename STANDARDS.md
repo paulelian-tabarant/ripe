@@ -25,9 +25,9 @@ These rules apply across the whole workspace (`api/` and `cli/`), which share th
   interception rather than mocking internal modules). Reach for a mock only when there's no
   practical way to exercise the real dependency in a unit test.
 - **No duplicated code, in tests or implementation**: extract a shared helper instead of
-  repeating the same block across test cases or across a command and its lib (e.g. the repeated
-  `JSON.parse(readFileSync(...))` config-reading block across cases in
-  `cli/tests/acceptance/init.test.ts` should be a shared helper).
+  repeating the same block across test cases or across a command and its lib (e.g.
+  `readWrittenConfig()` in `cli/tests/acceptance/init.test.ts` — one helper reads and casts
+  `.ripe/config.json` instead of every test doing its own `JSON.parse(readFileSync(...))`).
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving

@@ -1,8 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
+import { readConfig } from '../lib/readConfig.js';
 import { type ProjectRegistrationResult, registerProject } from '../lib/registerProject.js';
-import { writeConfig, type RipeConfig } from '../lib/writeConfig.js';
+import { writeConfig } from '../lib/writeConfig.js';
 
 export interface InitOptions {
   currentDirectoryName?: string;
@@ -48,8 +48,8 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
   const promptFn = options.promptFn ?? defaultPromptFn;
   const configPath = join(currentDirectoryName, '.ripe/config.json');
 
-  if (existsSync(configPath)) {
-    const existing = JSON.parse(readFileSync(configPath, 'utf-8')) as RipeConfig;
+  const existing = readConfig(configPath);
+  if (existing) {
     console.warn(`.ripe/config.json already exists — project already registered as ${existing.projectId}.`);
 
     return { status: 'success' };
