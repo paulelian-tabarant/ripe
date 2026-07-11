@@ -27,7 +27,12 @@ These rules apply across the whole workspace (`api/` and `cli/`), which share th
 - **No duplicated code, in tests or implementation**: extract a shared helper instead of
   repeating the same block across test cases or across a command and its lib (e.g.
   `readWrittenConfig()` in `cli/tests/acceptance/init.test.ts` — one helper reads and casts
-  `.ripe/config.json` instead of every test doing its own `JSON.parse(readFileSync(...))`).
+  `.ripe/config.json` instead of every test doing its own `JSON.parse(readFileSync(...))`). When
+  several `it()` blocks repeat a whole arrange-and-act sequence (write a fixture, call the
+  command, assert the same shape of outcome) and only the fixture and expectation vary, don't
+  stop at deduping the smallest repeated statement inside them — extract one parameterized test
+  preparation helper for the whole sequence, defined below the `describe` block per the
+  step-down rule.
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving

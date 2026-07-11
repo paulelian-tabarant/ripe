@@ -51,6 +51,18 @@ Both passes matter — a change can be fully standards-compliant and still ship 
    fixing it stops being free — cementing the wrong contract into new code is worse than leaving
    the old violation alone.
 
+   Two rules are easy to skim past holistically — check them explicitly, not just in passing:
+
+   - **No comments unless non-trivial**: for every comment or docstring the diff adds, ask
+     individually whether it says something the code below it doesn't already make obvious.
+     Don't let a hunk-level skim wave through a comment that restates its function's body.
+   - **No duplicated code, in tests**: when several `it()` blocks repeat a whole
+     arrange-and-act sequence and only the fixture/expectation varies, the fix is one
+     parameterized helper for the whole sequence, not just the smallest repeated line inside
+     it (e.g. don't stop at deduping one repeated `JSON.parse(...)` call if the four tests
+     around it are themselves near-identical bodies). Flag the coarsest duplicated unit, not
+     just the first duplicated snippet you spot.
+
 4. **Pass 2 — bugs, performance, security.** Re-read the same diff hunks looking for concrete,
    diff-grounded issues in three categories:
 
