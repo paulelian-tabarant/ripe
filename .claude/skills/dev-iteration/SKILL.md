@@ -1,6 +1,6 @@
 ---
 name: dev-iteration
-description: Runs a full development iteration in this repo end-to-end — clarify intent, propose a plan, implement via parallel subagents, run checks, review via ripe-code-review, auto-fix findings, and open a PR with a pr-recap summary. Use whenever the user wants to build or fix something and have Claude drive the whole cycle to a PR — "let's build X", "implement Y end to end", "run the dev iteration for Z", "take this from idea to PR" — not for one-off small edits the user wants to review step by step themselves.
+description: Runs a full development iteration in this repo end-to-end — clarify intent, propose a plan, implement via parallel subagents, run checks, review via ripe-code-review, auto-fix findings, and open a PR with a pr-recap summary. Use whenever the user wants to build or fix something and have Claude drive the whole cycle to a PR — "let's build X", "implement Y end to end", "run the dev iteration for Z", "take this from idea to PR" — including resuming one already in progress, e.g. "go on with the implementation of the plan in <path>", "continue the dev iteration", "pick up where we left off on this plan" when an approved plan doc already exists (such as under `docs/superpowers/plans/`) — not for one-off small edits the user wants to review step by step themselves.
 ---
 
 # Dev Iteration
@@ -9,6 +9,14 @@ Drive one feature/fix from a loose idea to an open PR, without checking back in
 except where explicitly gated below.
 
 ## Workflow
+
+0. **Resuming from an existing plan doc.** If the user points at an approved plan
+   file (e.g. `docs/superpowers/plans/*.md`, status "Approved") and asks to
+   continue/resume/go on with implementation, treat steps 1–2 as already
+   satisfied — don't re-clarify or re-propose. Use that file's subtask
+   breakdown (and its "Execution notes"/TDD guidance, if present) as the plan
+   for step 3 onward. Only fall back to steps 1–2 if the plan is incomplete,
+   stale, or ambiguous about what to build next.
 
 1. **Clarify intent.** Ask the user one question at a time — no batching — until
    the behavior is unambiguous: what triggers it, expected inputs/outputs, edge
@@ -77,10 +85,12 @@ except where explicitly gated below.
    in step 6.
 
 10. **Recap and open the PR.** Generate a recap using this repo's `pr-recap`
-    skill for the working branch against its base. Push the branch and open the
-    PR (`gh pr create`) using the recap as the body. Do this without asking for
-    confirmation first — invoking this skill is the standing authorization for
-    the PR it produces.
+    skill for the working branch against its base. This step is not done once
+    the recap text exists — immediately continue in the same turn to push the
+    branch and run `gh pr create` using that recap as the `--body`. Printing
+    the recap to the user and stopping there is an incomplete step 10, not a
+    handoff point. Do this without asking for confirmation first — invoking
+    this skill is the standing authorization for the PR it produces.
 
 ## Edge cases
 
