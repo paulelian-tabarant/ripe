@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run lint          # Biome lint (src/ and tests/)
+npm run lint          # Biome ci: lint + format check + import-sort check (src/ and tests/)
 npm run test          # run all tests (Vitest)
 npm run typecheck     # tsc --noEmit
 npm run ci:checks     # lint + typecheck + test in one shot

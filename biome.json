@@ -10,6 +10,15 @@
       "preset": "recommended",
       "nursery": {
         "useExplicitType": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
+      "style": {
+        "useImportType": "error"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "error"
       }
     }
   },
@@ -29,7 +38,7 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
-      "semicolons": "always",
+      "semicolons": "asNeeded",
       "trailingCommas": "all"
     }
   }
