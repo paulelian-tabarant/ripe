@@ -190,9 +190,7 @@ describe('init', () => {
   });
 
   it('exits 0 without writing config on 409 when user declines', async () => {
-    nock('http://localhost:3000')
-      .post('/api/projects')
-      .reply(409, { projectId: 'proj_existing', message: 'Project already exists' });
+    stubRegisterProjectApi(409, { projectId: 'proj_existing', message: 'Project already exists' });
 
     const result = await init({
       currentDirectoryName: tmpDir,
