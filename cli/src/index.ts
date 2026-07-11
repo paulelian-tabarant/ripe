@@ -1,20 +1,11 @@
 #!/usr/bin/env node
-import { init } from './commands/init.js';
+import { runCli } from './cli.js';
 
-const [, , command]: string[] = process.argv;
-
-async function main(): Promise<void> {
-  if (command === 'init') {
-    const { exitCode } = await init();
-    process.exit(exitCode);
-  } else {
-    console.error(`Unknown command: ${command ?? '(none)'}`);
-    process.exit(1);
-  }
-}
+const args = process.argv.slice(2);
 
 try {
-    await main();
+  const { exitCode } = await runCli(args);
+  process.exit(exitCode);
 } catch (err: unknown) {
   console.error(err instanceof Error ? err.message : String(err));
   process.exit(1);
