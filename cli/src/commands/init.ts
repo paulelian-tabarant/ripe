@@ -10,24 +10,23 @@ export interface InitOptions {
   promptFn?: (question: string) => Promise<boolean>;
 }
 
-async function defaultUrlPromptFn(): Promise<string> {
+async function ask(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    return await rl.question('Server URL: ');
+    return await rl.question(question);
   } finally {
     rl.close();
   }
 }
 
-async function defaultPromptFn(question: string): Promise<boolean> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const answer = await rl.question(question);
+async function defaultUrlPromptFn(): Promise<string> {
+  return ask('Server URL: ');
+}
 
-    return answer.toLowerCase() === 'y';
-  } finally {
-    rl.close();
-  }
+async function defaultPromptFn(question: string): Promise<boolean> {
+  const answer = await ask(question);
+
+  return answer.toLowerCase() === 'y';
 }
 
 function isValidHttpUrl(url: string): boolean {
@@ -72,23 +71,22 @@ export async function init(options: InitOptions = {}): Promise<{ exitCode: 0 | 1
     return { exitCode: 1 };
   }
 
+  let message: string;
+
   if (result.status === 201) {
-    writeConfig(configPath, { projectId: result.projectId, serverUrl });
-    console.log(`Project registered: ${result.projectId}`);
+    message = `Project registered: ${result.projectId}`;
+  } else {
+    const useExisting = await promptFn(
+      `A project named '${defaultProjectName}' is already registered on this server. Attach to it? (y/n) `
+    );
 
-    return { exitCode: 0 };
-  }
+    if (!useExisting) return { exitCode: 0 };
 
-  const useExisting = await promptFn(
-    `A project named '${defaultProjectName}' is already registered on this server. Attach to it? (y/n) `
-  );
-
-  if (!useExisting) {
-    return { exitCode: 0 };
+    message = `Using existing project ID: ${result.projectId}`;
   }
 
   writeConfig(configPath, { projectId: result.projectId, serverUrl });
-  console.log(`Using existing project ID: ${result.projectId}`);
+  console.log(message);
 
   return { exitCode: 0 };
 }

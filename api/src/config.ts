@@ -3,14 +3,17 @@ export interface Config {
   port: number;
 }
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value) throw new Error(`Missing required env var: ${name}`);
+
+  return value;
+}
+
 export function loadConfig(): Config {
-  const databasePath = process.env.DATABASE_PATH;
-
-  if (!databasePath) throw new Error('Missing required env var: DATABASE_PATH');
-
-  const portStr = process.env.PORT;
-
-  if (!portStr) throw new Error('Missing required env var: PORT');
+  const databasePath = requireEnv('DATABASE_PATH');
+  const portStr = requireEnv('PORT');
   const port = Number(portStr);
 
   if (!Number.isInteger(port) || port < 1 || port > 65535)

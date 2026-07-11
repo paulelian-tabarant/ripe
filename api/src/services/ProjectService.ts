@@ -1,9 +1,7 @@
 import { nanoid } from 'nanoid';
 import type { ProjectRepository } from '../repositories/ProjectRepository.js';
 
-export type RegisterProjectResult =
-  | { created: true; projectId: string }
-  | { created: false; projectId: string };
+export type RegisterProjectResult = { created: boolean; projectId: string };
 
 export class ProjectService {
   constructor(private readonly repository: ProjectRepository) {}
