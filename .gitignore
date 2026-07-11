@@ -1,3 +1,9 @@
 .idea
 .serena
 node_modules
+.pnpm-store
+.env
+.env.local
+dist/
+*.db
+.ripe/cache.json

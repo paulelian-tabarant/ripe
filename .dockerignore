@@ -1,0 +1,10 @@
+node_modules
+.pnpm-store
+dist
+*.db
+.env
+.git
+docs
+.claude
+.serena
+.superpowers

@@ -1,0 +1,31 @@
+{
+  "name": "@paulelian-tabarant/ripe",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "ripe": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "biome lint ./src ./tests",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check:all": "pnpm run lint && pnpm run typecheck && pnpm run test",
+    "init": "node dist/index.js init",
+    "init:local": "node dist/index.js init http://localhost:3000"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
+    "@types/node": "^22.0.0",
+    "nock": "^14.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^3.0.0"
+  }
+}
