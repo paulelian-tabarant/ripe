@@ -30,7 +30,7 @@ pass — not to guess at answers to comments that are actually asking the author
 3. **Classify each comment.** Conventional Comments labels, in the author's own words:
 
    | Label | Meaning |
-   |---|---|
+   | --- | --- |
    | `praise` | Highlights something good. Doesn't ask for a change. |
    | `nitpick` | Minor, non-blocking style/polish point. |
    | `suggestion` | Proposes a specific change. |
