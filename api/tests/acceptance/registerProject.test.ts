@@ -2,16 +2,16 @@ import Database from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../src/app.js';
-import { createPostProjects } from '../helpers/postProjects.js';
+import { prepareAndBindPostProjectsRequestTo } from '../helpers/postProjects.js';
 
 describe('POST /api/projects', () => {
   let app: FastifyInstance;
-  let postProjects: ReturnType<typeof createPostProjects>;
+  let postProjects: ReturnType<typeof prepareAndBindPostProjectsRequestTo>;
 
   beforeEach(() => {
     const db = new Database(':memory:');
     app = buildApp(db, { logger: false });
-    postProjects = createPostProjects(app);
+    postProjects = prepareAndBindPostProjectsRequestTo(app);
   });
 
   afterEach(async () => {
