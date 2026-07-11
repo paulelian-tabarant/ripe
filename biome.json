@@ -10,6 +10,15 @@
       "preset": "recommended",
       "nursery": {
         "useExplicitType": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
+      "style": {
+        "useImportType": "error"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "error"
       }
     }
   },
