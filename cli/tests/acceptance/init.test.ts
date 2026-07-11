@@ -1,15 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import nock from 'nock';
-import {
-  mkdtempSync,
-  rmSync,
-  existsSync,
-  readFileSync,
-  mkdirSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import nock from 'nock';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { init } from '@/commands/init.js';
 
 describe('init', () => {
@@ -35,7 +28,10 @@ describe('init', () => {
 
   it('exits 0 with warning when .ripe/config.json already exists', async () => {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
-    writeFileSync(join(tmpDir, '.ripe/config.json'), JSON.stringify({ projectId: 'proj_existing123', serverUrl: 'http://localhost:3000' }));
+    writeFileSync(
+      join(tmpDir, '.ripe/config.json'),
+      JSON.stringify({ projectId: 'proj_existing123', serverUrl: 'http://localhost:3000' }),
+    );
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -43,9 +39,7 @@ describe('init', () => {
     });
 
     expect(result.exitCode).toBe(0);
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('proj_existing123')
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('proj_existing123'));
   });
 
   it('creates .ripe/config.json with projectId and serverUrl on 201', async () => {
@@ -60,9 +54,10 @@ describe('init', () => {
 
     expect(result.exitCode).toBe(0);
 
-    const config = JSON.parse(
-      readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')
-    ) as { projectId: string; serverUrl: string };
+    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
+      projectId: string;
+      serverUrl: string;
+    };
 
     expect(config.projectId).toBe('proj_abc123');
     expect(config.serverUrl).toBe('http://localhost:3000');
@@ -81,9 +76,9 @@ describe('init', () => {
 
     expect(result.exitCode).toBe(0);
 
-    const config = JSON.parse(
-      readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')
-    ) as { projectId: string };
+    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
+      projectId: string;
+    };
 
     expect(config.projectId).toBe('proj_existing');
   });
@@ -104,22 +99,25 @@ describe('init', () => {
   });
 
   it('re-prompts on invalid URL until a valid one is provided', async () => {
-    nock('http://localhost:3000')
-      .post('/api/projects')
-      .reply(201, { projectId: 'proj_abc123' });
+    nock('http://localhost:3000').post('/api/projects').reply(201, { projectId: 'proj_abc123' });
 
     const urls = ['not-a-url', 'ftp://example.com', 'http://localhost:3000'];
     let call = 0;
 
     const result = await init({
       currentDirectoryName: tmpDir,
+      // biome-ignore lint/style/noNonNullAssertion: this is safe because the last URL is valid
       urlPromptFn: async () => urls[call++]!,
     });
 
     expect(result.exitCode).toBe(0);
     expect(errorSpy).toHaveBeenCalledTimes(2);
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid server URL: "not-a-url"'));
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid server URL: "ftp://example.com"'));
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Invalid server URL: "not-a-url"'),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Invalid server URL: "ftp://example.com"'),
+    );
   });
 
   it('exits 1 and prints to stderr when server is unreachable', async () => {
