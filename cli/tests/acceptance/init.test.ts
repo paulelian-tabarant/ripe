@@ -42,6 +42,112 @@ describe('init', () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('proj_existing123'));
   });
 
+  it('re-registers when .ripe/config.json is empty', async () => {
+    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
+    writeFileSync(join(tmpDir, '.ripe/config.json'), '');
+
+    nock('http://localhost:3000')
+      .post('/api/projects', { name: tmpDir.split('/').pop() })
+      .reply(201, { projectId: 'proj_abc123' });
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => 'http://localhost:3000',
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
+      projectId: string;
+      serverUrl: string;
+    };
+
+    expect(config.projectId).toBe('proj_abc123');
+    expect(config.serverUrl).toBe('http://localhost:3000');
+  });
+
+  it('re-registers when .ripe/config.json contains malformed JSON', async () => {
+    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
+    writeFileSync(join(tmpDir, '.ripe/config.json'), '{ not valid json');
+
+    nock('http://localhost:3000')
+      .post('/api/projects', { name: tmpDir.split('/').pop() })
+      .reply(201, { projectId: 'proj_abc123' });
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => 'http://localhost:3000',
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
+      projectId: string;
+      serverUrl: string;
+    };
+
+    expect(config.projectId).toBe('proj_abc123');
+    expect(config.serverUrl).toBe('http://localhost:3000');
+  });
+
+  it('re-registers when .ripe/config.json is missing projectId', async () => {
+    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
+    writeFileSync(
+      join(tmpDir, '.ripe/config.json'),
+      JSON.stringify({ serverUrl: 'http://localhost:3000' }),
+    );
+
+    nock('http://localhost:3000')
+      .post('/api/projects', { name: tmpDir.split('/').pop() })
+      .reply(201, { projectId: 'proj_abc123' });
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => 'http://localhost:3000',
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
+      projectId: string;
+      serverUrl: string;
+    };
+
+    expect(config.projectId).toBe('proj_abc123');
+    expect(config.serverUrl).toBe('http://localhost:3000');
+  });
+
+  it('re-registers when .ripe/config.json is missing serverUrl', async () => {
+    mkdirSync(join(tmpDir, '.ripe'), { recursive: true });
+    writeFileSync(
+      join(tmpDir, '.ripe/config.json'),
+      JSON.stringify({ projectId: 'proj_existing123' }),
+    );
+
+    nock('http://localhost:3000')
+      .post('/api/projects', { name: tmpDir.split('/').pop() })
+      .reply(201, { projectId: 'proj_abc123' });
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => 'http://localhost:3000',
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
+      projectId: string;
+      serverUrl: string;
+    };
+
+    expect(config.projectId).toBe('proj_abc123');
+    expect(config.serverUrl).toBe('http://localhost:3000');
+  });
+
   it('creates .ripe/config.json with projectId and serverUrl on 201', async () => {
     nock('http://localhost:3000')
       .post('/api/projects', { name: tmpDir.split('/').pop() })
