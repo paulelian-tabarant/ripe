@@ -1,5 +1,5 @@
-import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 
 export const healthRoutes: FastifyPluginAsync = async (app: FastifyInstance): Promise<void> => {
-  app.get('/api/health', async () => ({ status: 'ok' }));
-};
+  app.get('/api/health', async () => ({ status: 'ok' }))
+}

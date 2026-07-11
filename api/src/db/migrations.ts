@@ -1,4 +1,4 @@
-import type { IMigration } from '@blackglory/better-sqlite3-migrations';
+import type { IMigration } from '@blackglory/better-sqlite3-migrations'
 
 export const migrations: IMigration[] = [
   {
@@ -11,4 +11,4 @@ export const migrations: IMigration[] = [
     `,
     down: 'DROP TABLE IF EXISTS projects',
   },
-];
+]
