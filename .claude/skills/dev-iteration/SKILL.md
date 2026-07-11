@@ -20,10 +20,16 @@ except where explicitly gated below.
 2. **Propose a plan.** Break the work into subtasks. For each: which files it
    touches, what it does, and how to tell it's done. Call out which subtasks are
    independent (touch disjoint files, no shared state) vs which must be
-   sequential. Present the plan and get explicit approval before implementing —
-   revise on feedback, don't proceed on silence or a vague "sounds fine."
+   sequential. Present the plan to the user as a condensed bullet summary (not
+   the full plan-file prose) and keep iterating on it — revise on feedback,
+   don't proceed on silence or a vague "sounds fine." Only move to step 3 once
+   the user clearly states they're ready to proceed to implementation.
 
 3. **Implement.**
+   - TDD, per unit of work: red (write a failing test) → simplest implementation
+     that makes it pass → green → refactor. Applies to each implementer
+     dispatched below — include it explicitly in their prompts, it's a
+     constraint on how they build, not an optional nicety.
    - Record the branch this iteration is building on (`git rev-parse HEAD`) before
      dispatching anything — this is the merge base for every subtask branch and
      for the final review/PR diff.
