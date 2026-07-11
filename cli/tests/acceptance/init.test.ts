@@ -38,7 +38,7 @@ describe('init', () => {
       urlPromptFn: async () => 'http://localhost:3000',
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('proj_existing123'));
   });
 
@@ -52,7 +52,7 @@ describe('init', () => {
       urlPromptFn: async () => 'http://localhost:3000',
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
 
     const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
       projectId: string;
@@ -74,7 +74,7 @@ describe('init', () => {
       promptFn: async () => true,
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
 
     const config = JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as {
       projectId: string;
@@ -94,7 +94,7 @@ describe('init', () => {
       promptFn: async () => false,
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
     expect(existsSync(join(tmpDir, '.ripe/config.json'))).toBe(false);
   });
 
@@ -110,7 +110,7 @@ describe('init', () => {
       urlPromptFn: async () => urls[call++]!,
     });
 
-    expect(result.exitCode).toBe(0);
+    expect(result.status).toBe('success');
     expect(errorSpy).toHaveBeenCalledTimes(2);
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('Invalid server URL: "not-a-url"'),
@@ -130,7 +130,7 @@ describe('init', () => {
       urlPromptFn: async () => 'http://localhost:3000',
     });
 
-    expect(result.exitCode).toBe(1);
+    expect(result.status).toBe('error');
     expect(errorSpy).toHaveBeenCalled();
   });
 });

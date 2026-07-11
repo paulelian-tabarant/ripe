@@ -19,3 +19,8 @@ Package-specific standards for `cli/`. These supplement the general rules in
   touch stdin/stdout directly — those are read in `src/index.ts` and passed in as parameters.
 - **No logging details in commands**: commands don't call `console.*` or any logger directly —
   they return a typed result/message, and `src/index.ts` is responsible for printing it.
+- **Test split mirrors the layer split**: `tests/acceptance/cli.test.ts` covers command routing —
+  help flags, unknown-command handling, dispatch — with each command stubbed (e.g. `initFn`), never
+  exercising real command logic. `tests/acceptance/<command>.test.ts` covers that command in
+  isolation, running through every real layer underneath it (`lib/`, filesystem) except the
+  network, which is intercepted with `nock`.

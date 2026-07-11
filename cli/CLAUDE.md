@@ -9,6 +9,7 @@ npm run lint        # Biome lint (src/ and tests/)
 npm run build       # tsc -p tsconfig.build.json → dist/
 npm run test        # vitest run (all tests under tests/)
 npm run typecheck   # tsc --noEmit (includes src + tests)
+npm run ci:checks   # lint + typecheck + test in one shot
 
 # Run a single test file
 npx vitest run tests/commands/init.test.ts
@@ -18,13 +19,14 @@ npx vitest run tests/commands/init.test.ts
 
 This is the `ripe` CLI — one command today: `ripe init <server-url>`.
 
-**Entry point**: `src/index.ts` — parses `process.argv`, routes to command handlers, calls
-`process.exit`.
+**Entry point**: `src/index.ts` — parses `process.argv`, routes to command handlers via
+`src/cli.ts`, calls `process.exit`.
 
 **Layer split**:
 
-- `src/commands/` — orchestration logic, returns `{ exitCode }`, never calls `process.exit`
-  directly. Accepts injected `cwd` and `promptFn` for testability.
+- `src/commands/` — orchestration logic, returns `{ status: 'success' | 'error' }`, never calls
+  `process.exit` directly. Accepts injected `cwd` and `promptFn` for testability. Exit codes are
+  not this layer's concern — mapping `status` to a process exit code happens in `src/cli.ts`.
 - `src/lib/api.ts` — raw HTTP calls (no dependency, uses `node:http`/`node:https` directly).
   Returns typed result objects.
 - `src/lib/config.ts` — writes `.ripe/config.json` to disk.

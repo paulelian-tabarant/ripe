@@ -10,6 +10,10 @@ export interface InitOptions {
   promptFn?: (question: string) => Promise<boolean>;
 }
 
+export interface InitResult {
+  status: 'success' | 'error';
+}
+
 async function ask(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
@@ -38,7 +42,7 @@ function isValidHttpUrl(url: string): boolean {
   }
 }
 
-export async function init(options: InitOptions = {}): Promise<{ exitCode: 0 | 1 }> {
+export async function init(options: InitOptions = {}): Promise<InitResult> {
   const currentDirectoryName = options.currentDirectoryName ?? process.cwd();
   const urlPromptFn = options.urlPromptFn ?? defaultUrlPromptFn;
   const promptFn = options.promptFn ?? defaultPromptFn;
@@ -48,7 +52,7 @@ export async function init(options: InitOptions = {}): Promise<{ exitCode: 0 | 1
     const existing = JSON.parse(readFileSync(configPath, 'utf-8')) as RipeConfig;
     console.warn(`.ripe/config.json already exists — project already registered as ${existing.projectId}.`);
 
-    return { exitCode: 0 };
+    return { status: 'success' };
   }
 
   let serverUrl: string;
@@ -68,7 +72,7 @@ export async function init(options: InitOptions = {}): Promise<{ exitCode: 0 | 1
 
     if (err instanceof Error) console.error(err.message);
 
-    return { exitCode: 1 };
+    return { status: 'error' };
   }
 
   let message: string;
@@ -80,7 +84,7 @@ export async function init(options: InitOptions = {}): Promise<{ exitCode: 0 | 1
       `A project named '${defaultProjectName}' is already registered on this server. Attach to it? (y/n) `
     );
 
-    if (!useExisting) return { exitCode: 0 };
+    if (!useExisting) return { status: 'success' };
 
     message = `Using existing project ID: ${result.projectId}`;
   }
@@ -88,5 +92,5 @@ export async function init(options: InitOptions = {}): Promise<{ exitCode: 0 | 1
   writeConfig(configPath, { projectId: result.projectId, serverUrl });
   console.log(message);
 
-  return { exitCode: 0 };
+  return { status: 'success' };
 }

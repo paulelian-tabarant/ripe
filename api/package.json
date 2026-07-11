@@ -11,7 +11,7 @@
     "lint": "biome lint ./src ./tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:all": "pnpm run lint && pnpm run typecheck && pnpm run test"
+    "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test"
   },
   "dependencies": {
     "@blackglory/better-sqlite3-migrations": "^0.2.2",

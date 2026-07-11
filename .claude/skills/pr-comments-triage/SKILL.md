@@ -69,7 +69,12 @@ pass — not to guess at answers to comments that are actually asking the author
      of guessing at. Surface each one with enough context to decide quickly, without doing the
      deciding.
 
-5. **Report using this structure:**
+5. **Verify before reporting.** After making the actionable code changes, run lint, typecheck, and
+   the scoped tests for every package you touched (per the root `CLAUDE.md`) before writing the
+   report. A comment isn't actually addressed if it leaves the branch failing checks — fix any
+   failures the same way you would for any other coding task, then re-run until clean.
+
+6. **Report using this structure:**
 
    ```markdown
    ## PR #<number>: <title>
@@ -86,7 +91,7 @@ pass — not to guess at answers to comments that are actually asking the author
    If a comment's label is inferred rather than explicit, no need to flag that in the report —
    the classification should just be right, not narrated.
 
-6. **Confirm, then resolve.** The report in step 5 is a proposal — wait until you and the user
+7. **Confirm, then resolve.** The report in step 6 is a proposal — wait until you and the user
    are actually aligned on what got addressed and what was decided on the judgment-call items
    before touching GitHub. Once aligned, resolve the corresponding review threads for the
    comments that were acted on or explicitly settled — not a reply saying "resolved", an actual
@@ -115,9 +120,9 @@ pass — not to guess at answers to comments that are actually asking the author
   through, some "Needs your input" items may already be settled; a quick glance at the PR page
   catches that faster than trying to infer it here.
 - **Never auto-reply on GitHub, and never resolve a thread before the user has confirmed it's
-  settled.** The report in step 5 is a proposal, not a done deal — the user might want a change
+  settled.** The report in step 6 is a proposal, not a done deal — the user might want a change
   reverted, a different answer to a question, or to leave something open for the reviewer to see.
-  Only step 6, after that confirmation, touches GitHub, and only to resolve — never to post a
+  Only step 7, after that confirmation, touches GitHub, and only to resolve — never to post a
   comment.
 - **Already-resolved threads**: `resolve_review_threads.sh` checks `isResolved` before mutating
   and just reports "already resolved" rather than erroring — safe to re-run on the same comment
