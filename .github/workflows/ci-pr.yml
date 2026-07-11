@@ -6,31 +6,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint-typecheck:
+  static-checks-md:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      # Makes the pnpm version used inside package.json the single source of truth
-      - run: corepack enable
-      - run: corepack prepare --activate
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: 'package.json'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
+      - uses: ./.github/actions/setup-node-env
       - name: Lint markdown
         run: pnpm lint:md
 
+  static-checks-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-node-env
       - name: Lint api
         run: pnpm --filter api lint
 
       - name: Typecheck api
         run: pnpm --filter api typecheck
 
+  static-checks-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-node-env
       - name: Lint cli
         run: pnpm --filter ./cli lint
 
@@ -41,18 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      # Makes the pnpm version used inside package.json the single source of truth
-      - run: corepack enable
-      - run: corepack prepare --activate
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: 'package.json'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
+      - uses: ./.github/actions/setup-node-env
       - name: Test api
         run: pnpm --filter api test
         env:
@@ -62,23 +50,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      # Makes the pnpm version used inside package.json the single source of truth
-      - run: corepack enable
-      - run: corepack prepare --activate
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: 'package.json'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
+      - uses: ./.github/actions/setup-node-env
       - name: Test cli
         run: pnpm --filter ./cli test
 
   deploy-staging:
-    needs: [lint-typecheck, test-api, test-cli]
+    needs: [static-checks-md, static-checks-api, static-checks-cli, test-api, test-cli]
     if: contains(github.event.pull_request.labels.*.name, 'deploy-staging')
     uses: ./.github/workflows/deploy-staging.yml
     secrets: inherit
