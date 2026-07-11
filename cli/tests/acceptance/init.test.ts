@@ -38,7 +38,9 @@ describe('init', () => {
   });
 
   it('exits 0 with warning when .ripe/config.json already exists', async () => {
-    writeExistingConfig(JSON.stringify({ projectId: 'proj_existing123', serverUrl: FAKE_SERVER_URL }));
+    writeExistingConfig(
+      JSON.stringify({ projectId: 'proj_existing123', serverUrl: FAKE_SERVER_URL }),
+    );
 
     const result = await init({
       currentDirectoryName: tmpDir,

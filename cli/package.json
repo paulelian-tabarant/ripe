@@ -16,7 +16,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "lint": "biome lint ./src ./tests",
+    "lint": "biome ci ./src ./tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test",

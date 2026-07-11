@@ -12,7 +12,7 @@ export class ProjectRepository {
 
   constructor(private readonly db: Database.Database) {
     this.findByNameStatement = this.db.prepare<[string], Project>(
-      'SELECT id, name FROM projects WHERE name = ?'
+      'SELECT id, name FROM projects WHERE name = ?',
     );
     this.findAllStatement = this.db.prepare<[], Project>('SELECT id, name FROM projects');
     this.insertStatement = this.db.prepare('INSERT INTO projects (id, name) VALUES (?, ?)');

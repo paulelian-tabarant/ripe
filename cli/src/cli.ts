@@ -1,4 +1,4 @@
-import { init, type InitResult } from './commands/init.js';
+import { type InitResult, init } from './commands/init.js';
 
 const HELP_FLAGS = new Set(['-h', '--help']);
 

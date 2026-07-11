@@ -50,7 +50,9 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
 
   const existing = readConfig(configPath);
   if (existing) {
-    console.warn(`.ripe/config.json already exists — project already registered as ${existing.projectId}.`);
+    console.warn(
+      `.ripe/config.json already exists — project already registered as ${existing.projectId}.`,
+    );
 
     return { status: 'success' };
   }
@@ -81,7 +83,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     message = `Project registered: ${result.projectId}`;
   } else {
     const useExisting = await promptFn(
-      `A project named '${defaultProjectName}' is already registered on this server. Attach to it? (y/n) `
+      `A project named '${defaultProjectName}' is already registered on this server. Attach to it? (y/n) `,
     );
 
     if (!useExisting) return { status: 'success' };

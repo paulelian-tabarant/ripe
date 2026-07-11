@@ -1,6 +1,6 @@
+import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createDatabase } from './db/createDatabase.js';
-import { buildApp } from './app.js';
 
 function main(): void {
   const { databasePath, port } = loadConfig();

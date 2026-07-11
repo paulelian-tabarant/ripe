@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
+import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from '../../src/app.js';
 
 describe('GET /api/health', () => {

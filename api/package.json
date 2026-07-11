@@ -8,7 +8,7 @@
     "start": "node dist/index.js",
     "start:local": "node --env-file=.env.local --import=tsx/esm src/index.ts",
     "flush:local": "node --env-file=.env.local -e 'import(\"node:fs\").then(fs => fs.rmSync(process.env.DATABASE_PATH, { force: true }))'",
-    "lint": "biome lint ./src ./tests",
+    "lint": "biome ci ./src ./tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test"
