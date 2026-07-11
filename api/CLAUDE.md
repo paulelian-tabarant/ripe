@@ -30,13 +30,15 @@ npx vitest run tests/routes/projects.test.ts
 
 ## Architecture
 
-Three-layer: **routes → services → repositories**. Each layer receives `db`
+Three-layer: **routes → use-cases → repositories**. Each layer receives `db`
 (a `better-sqlite3` `Database` instance) explicitly — no singletons, no globals.
 
 - **Routes** (`src/routes/`) — Fastify plugin functions; validate request shape via JSON Schema,
-  delegate to services, map `ProjectResult` to HTTP status codes.
-- **Services** (`src/services/`) — business logic; call repository functions and return typed
-  result objects (e.g. `ProjectResult`).
+  delegate to use-cases, map results to HTTP status codes.
+- **Use-cases** (`src/use-cases/`) — business logic; one class per use case (e.g.
+  `RegisterProject`, `ListProjects`), with `run()` as the single public method. Each use-case
+  class takes a constructor-injected repository, calls repository functions, and returns typed
+  result objects (e.g. `RegisterProjectResult`).
 - **Repositories** (`src/repositories/`) — raw SQL only; accept and return plain objects
   (`ProjectRow`).
 
@@ -55,6 +57,9 @@ internal layers. Each test file creates its own `Database(':memory:')` and `buil
 - `201 { projectId }` — new project created
 - `409 { projectId, message }` — name already exists (idempotent: returns the existing ID)
 - `400` — missing or empty `name`
+
+`GET /api/projects` returns `200 Array<{ id, name }>` (empty array if none registered; ordering
+is not guaranteed by the backend).
 
 ## Key Conventions
 

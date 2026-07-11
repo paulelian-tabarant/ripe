@@ -3,10 +3,10 @@ import type { ProjectRepository } from '../repositories/ProjectRepository.js';
 
 export type RegisterProjectResult = { created: boolean; projectId: string };
 
-export class ProjectService {
+export class RegisterProject {
   constructor(private readonly repository: ProjectRepository) {}
 
-  registerProject(name: string): RegisterProjectResult {
+  run(name: string): RegisterProjectResult {
     const existing = this.repository.findByName(name);
 
     if (existing) {
