@@ -66,14 +66,14 @@ Both passes matter — a change can be fully standards-compliant and still ship 
 
 5. **Report findings, most clear-cut first**, one line per finding:
 
-   ```
+   ```text
    path:line: [tag] what's wrong — why it matters. Fix: concrete suggestion.
    ```
 
    `[tag]` is `[standard-file § rule name]` for pass-1 findings, or `[bug]` / `[performance]` /
    `[security]` for pass-2 findings. Examples:
 
-   ```
+   ```text
    cli/src/commands/sync.ts:42: [cli/STANDARDS.md § No logging details in commands] `console.error` called directly inside a command instead of returning a typed result. Fix: return `{ status: 'error', message }` and let src/index.ts print it.
    api/src/services/projectService.ts:18: [performance] `db.prepare(...).get(id)` called inside a `for` loop over `projectIds`. Fix: batch with a single `WHERE id IN (...)` query.
    ```
