@@ -6,6 +6,12 @@ on:
   workflow_dispatch:
 
 jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: reviewdog/action-actionlint@v1
+
   static-checks-md:
     runs-on: ubuntu-latest
     steps:
@@ -55,7 +61,7 @@ jobs:
         run: pnpm --filter ./cli test
 
   deploy-staging:
-    needs: [static-checks-md, static-checks-api, static-checks-cli, test-api, test-cli]
+    needs: [actionlint, static-checks-md, static-checks-api, static-checks-cli, test-api, test-cli]
     if: contains(github.event.pull_request.labels.*.name, 'deploy-staging')
     uses: ./.github/workflows/deploy-staging.yml
     secrets: inherit
