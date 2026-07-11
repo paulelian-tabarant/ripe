@@ -51,7 +51,11 @@ These rules apply across the whole workspace (`api/` and `cli/`), which share th
   critical or complex enough to need them in isolation.
 - **Don't inject dependencies that are never varied**: dependency injection is for testability or
   genuine alternate implementations — if a parameter is never swapped in practice, call the
-  concrete implementation directly instead of injecting it.
+  concrete implementation directly instead of injecting it. The testability exception only holds
+  when there's no simpler test technique available: a plain output sink like `console.log`/
+  `console.error` can be asserted on with `vi.spyOn` without adding a parameter at all, so prefer
+  that over injecting a `logFn`/`errorFn`. Reserve injection for dependencies a spy can't reach
+  (stdin prompts, the filesystem, network calls).
 - **Given/when/then structure in tests**: separate a test's setup, the action under test, and its
   assertions with a blank line each, in that order — no need to label the sections, the blank
   lines are enough to make the structure legible.

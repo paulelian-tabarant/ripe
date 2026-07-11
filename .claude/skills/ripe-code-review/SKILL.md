@@ -45,6 +45,12 @@ Both passes matter — a change can be fully standards-compliant and still ship 
    formatting, explicit-return-types, unused-exports, and anything else Biome/tsc enforce are
    already gated by `pnpm lint`/`typecheck`.
 
+   Exception: if new code in the diff types against, calls into, or otherwise formalizes a
+   pre-existing violation in a file the diff didn't touch (e.g. a new interface whose signature
+   locks in a return shape that already violates a rule), flag it. The diff is the point where
+   fixing it stops being free — cementing the wrong contract into new code is worse than leaving
+   the old violation alone.
+
 4. **Pass 2 — bugs, performance, security.** Re-read the same diff hunks looking for concrete,
    diff-grounded issues in three categories:
 
