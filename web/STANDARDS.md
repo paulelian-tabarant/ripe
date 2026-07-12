@@ -17,11 +17,12 @@ Package-specific standards for `web/`. These supplement the general rules in
 General testing principles live in [`../STANDARDS.md`](../STANDARDS.md). This section covers
 only the `web/`-specific test conventions.
 
-- **MSW at the network boundary**: HTTP is intercepted with `msw` (`src/mocks/handlers.ts`,
-  `src/mocks/server.ts`), not by mocking `fetch` directly — the same "intercept at the boundary,
-  not the internals" philosophy `cli/` applies with `nock`. Tests can override a handler
-  per-test with `server.use(...)` (e.g. `HomePage.test.tsx` overriding `/api/health` to simulate
-  an error).
+- **MSW at the network boundary**: HTTP is intercepted with `msw` (`src/mocks/server.ts`), not by
+  mocking `fetch` directly — the same "intercept at the boundary, not the internals" philosophy
+  `cli/` applies with `nock`. `server` starts with no handlers; each test registers what it needs
+  with `server.use(...)` (e.g. `HomePage.test.tsx` defining a success handler in one test and an
+  error handler in another) rather than sharing a default handlers module — handlers stay local to
+  the test that needs them instead of accumulating in a shared file most tests don't use.
 - **Page-level tests with React Testing Library**: tests render a page (or `App`) and assert on
   what a user would see (`screen.getByText`/`findByText`), not on implementation details or
   internal state.

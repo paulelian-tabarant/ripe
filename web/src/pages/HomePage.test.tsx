@@ -7,6 +7,8 @@ import { HomePage } from './HomePage'
 
 describe('HomePage', () => {
   it('renders the heading immediately and the API health status once resolved', async () => {
+    server.use(http.get('/api/health', () => HttpResponse.json({ status: 'ok' })))
+
     render(
       <MemoryRouter>
         <HomePage />
