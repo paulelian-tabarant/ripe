@@ -49,6 +49,6 @@
     }
   },
   "deploy": {
-    "startCommand": "SHOULD_SERVE_BUILT_FRONTEND=true pnpm --filter api start"
+    "startCommand": "pnpm --filter api start:prod"
   }
 }

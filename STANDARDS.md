@@ -47,6 +47,9 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   step-down rule.
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
+- **`async`/`await` over chained promises**: write asynchronous code with `async`/`await`; reserve
+  `.then`/`.catch` chains for the rare case `async`/`await` can't express (e.g. `Promise.all`
+  combinators feeding straight into further chaining).
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving
   from high-level intent to low-level detail (see `api/tests/endpoints/registerProject.test.ts`: the
   `it` blocks read first, the `postProjects` helper they call is defined last).

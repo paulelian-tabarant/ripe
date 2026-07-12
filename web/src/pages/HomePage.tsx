@@ -10,30 +10,31 @@ type HealthState =
   | { kind: 'success'; status: string }
   | { kind: 'error'; message: string }
 
+async function fetchHealth(): Promise<HealthState> {
+  try {
+    const response = await fetch('/api/health')
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`)
+    }
+    const data = (await response.json()) as HealthResponse
+    return { kind: 'success', status: data.status }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return { kind: 'error', message }
+  }
+}
+
 export function HomePage(): ReactElement {
   const [health, setHealth] = useState<HealthState>({ kind: 'loading' })
 
   useEffect(() => {
     let cancelled = false
 
-    fetch('/api/health')
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`)
-        }
-        return (await response.json()) as HealthResponse
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setHealth({ kind: 'success', status: data.status })
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          const message = error instanceof Error ? error.message : 'Unknown error'
-          setHealth({ kind: 'error', message })
-        }
-      })
+    fetchHealth().then((result) => {
+      if (!cancelled) {
+        setHealth(result)
+      }
+    })
 
     return () => {
       cancelled = true

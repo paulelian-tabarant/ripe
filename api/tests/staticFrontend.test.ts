@@ -3,12 +3,17 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Database from 'better-sqlite3'
 import type { FastifyInstance } from 'fastify'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../src/app.js'
 
 describe('static frontend serving', () => {
   let app: FastifyInstance
+  let db: Database.Database
   let tmpDir: string
+
+  beforeEach(() => {
+    db = new Database(':memory:')
+  })
 
   afterEach(async () => {
     if (app) await app.close()
@@ -16,7 +21,6 @@ describe('static frontend serving', () => {
   })
 
   it('returns a normal 404 for an unmatched path when disabled', async () => {
-    const db = new Database(':memory:')
     app = buildApp(db, { logger: false })
 
     const response = await app.inject({ method: 'GET', url: '/some/unmatched/path' })
@@ -26,7 +30,6 @@ describe('static frontend serving', () => {
 
   it('serves index.html for unmatched non-api routes without shadowing /api', async () => {
     tmpDir = writeFixtureFrontend()
-    const db = new Database(':memory:')
     app = buildApp(db, { logger: false, shouldServeBuiltFrontend: true, staticDir: tmpDir })
 
     const rootResponse = await app.inject({ method: 'GET', url: '/' })
@@ -45,7 +48,6 @@ describe('static frontend serving', () => {
 
   it('serves index.html for a path that merely starts with "api" but is not /api/*', async () => {
     tmpDir = writeFixtureFrontend()
-    const db = new Database(':memory:')
     app = buildApp(db, { logger: false, shouldServeBuiltFrontend: true, staticDir: tmpDir })
 
     const response = await app.inject({ method: 'GET', url: '/apiary' })
@@ -55,7 +57,6 @@ describe('static frontend serving', () => {
   })
 
   it('throws on startup when staticDir does not exist', () => {
-    const db = new Database(':memory:')
     const missingDir = join(tmpdir(), 'ripe-test-does-not-exist')
 
     expect(() =>
@@ -65,7 +66,6 @@ describe('static frontend serving', () => {
 
   it('throws on startup when staticDir is empty', () => {
     tmpDir = mkdtempSync(join(tmpdir(), 'ripe-test-'))
-    const db = new Database(':memory:')
 
     expect(() =>
       buildApp(db, { logger: false, shouldServeBuiltFrontend: true, staticDir: tmpDir }),

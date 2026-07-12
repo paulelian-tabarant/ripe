@@ -11,10 +11,6 @@ Package-specific standards for `web/`. These supplement the general rules in
 - **Client-side routing with `react-router`**: `src/App.tsx` declares routes with `<Routes>`/
   `<Route>`; `src/main.tsx` wraps `<App />` in a `<BrowserRouter>` for the real app (tests use
   `<MemoryRouter>` instead — see Testing below).
-- **Walking skeleton, one real page**: `src/pages/HomePage.tsx` renders "Hello, World" and fetches
-  `GET /api/health` to show the API's status (loading/success/error state). `src/pages/
-  NotFoundPage.tsx` is the catch-all (`path="*"`) for unmatched routes. There is no feature
-  functionality yet beyond this skeleton — don't read more into it than what's there.
 
 ## Testing
 
