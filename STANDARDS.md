@@ -9,10 +9,11 @@ Package-specific standards live alongside each package:
 
 - [`cli/STANDARDS.md`](cli/STANDARDS.md)
 - [`api/STANDARDS.md`](api/STANDARDS.md)
+- [`web/STANDARDS.md`](web/STANDARDS.md)
 
 ## General
 
-These rules apply across the whole workspace (`api/` and `cli/`), which share the root
+These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which share the root
 `biome.json` and `tsconfig.base.json`.
 
 ### Types & Data
