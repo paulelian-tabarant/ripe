@@ -16,7 +16,7 @@ npm run start         # node dist/index.js
 To run a single test file:
 
 ```bash
-npx vitest run tests/routes/registerProject.test.ts
+npx vitest run tests/endpoints/registerProject.test.ts
 ```
 
 ## Required Environment Variables
@@ -33,8 +33,8 @@ npx vitest run tests/routes/registerProject.test.ts
 Three-layer: **routes → use-cases → repositories**. Each layer receives `db`
 (a `better-sqlite3` `Database` instance) explicitly — no singletons, no globals.
 
-- **Routes** (`src/routes/`) — Fastify plugin functions; validate request shape via JSON Schema,
-  delegate to use-cases, map results to HTTP status codes.
+- **Routes** (`src/routes/`) — Fastify plugin functions, one per API endpoint; validate request
+  shape via JSON Schema, delegate to use-cases, map results to HTTP status codes.
 - **Use-cases** (`src/use-cases/`) — business logic; one class per use case (e.g.
   `RegisterProject`, `ListProjects`), with `run()` as the single public method. Each use-case
   class takes a constructor-injected repository, calls repository functions, and returns typed

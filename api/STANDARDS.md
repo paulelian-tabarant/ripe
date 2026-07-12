@@ -3,6 +3,8 @@
 Package-specific standards for `api/`. These supplement the general rules in
 [`../STANDARDS.md`](../STANDARDS.md) and the architecture notes in [`CLAUDE.md`](CLAUDE.md).
 
+## Architecture
+
 - **Three-layer split**: routes → use-cases → repositories. Routes validate the request shape
   (JSON Schema) and translate results to HTTP status codes; use-cases hold business logic, one
   class per use case with `run()` as the single public method; repositories hold raw SQL only.
@@ -22,3 +24,19 @@ Package-specific standards for `api/`. These supplement the general rules in
   never reference raw table/column names.
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
   codes, request/response shapes, headers) — that mapping belongs to routes.
+
+## Testing
+
+General testing principles live in [`../STANDARDS.md`](../STANDARDS.md). This section covers
+only the `api/`-specific test layout.
+
+- **Unit vs. endpoint split**: `tests/config.test.ts` is the one pure unit test — `loadConfig()`
+  env-var validation, no server involved. Everything else is an endpoint test under
+  `tests/endpoints/`, exercised via `fastify.inject()` against a real in-memory
+  `better-sqlite3` database — no mocking of routes, use-cases, or repositories.
+
+```mermaid
+flowchart TD
+    A[tests/config.test.ts] -->|unit| B[loadConfig env-var validation]
+    C[tests/endpoints/*.test.ts] -->|fastify.inject + real in-memory DB| D[routes -> use-cases -> repositories]
+```
