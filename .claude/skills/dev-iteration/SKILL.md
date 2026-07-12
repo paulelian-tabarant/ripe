@@ -101,11 +101,12 @@ except where explicitly gated below.
    in step 6.
 
 10. **Recap acceptance criteria.** If this iteration is driven by a spec under
-    `docs/spec/user-stories/`, list that story's acceptance criteria verbatim
-    and state, for each, whether it's met, deferred, or out of scope for this
-    iteration — with a one-line reason for anything not "met". Present this to
-    the user before opening the PR. If there's no source user story (ad hoc
-    fix/feature), skip this step.
+    `docs/spec/user-stories/`, list that story's `## Scenarios` (or, for a
+    story that predates that convention, its `## Acceptance Criteria`)
+    verbatim and state, for each, whether it's met, deferred, or out of scope
+    for this iteration — with a one-line reason for anything not "met".
+    Present this to the user before opening the PR. If there's no source user
+    story (ad hoc fix/feature), skip this step.
 
 11. **Recap and open the PR.** Generate a recap using this repo's `pr-recap`
     skill for the working branch against its base. This step is not done once
