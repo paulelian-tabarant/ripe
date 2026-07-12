@@ -11,6 +11,7 @@
       "Bash(pnpm --filter api test*)",
       "Bash(pnpm --filter ./cli typecheck*)",
       "Bash(pnpm --filter api typecheck*)",
+      "Bash(pnpm --filter web ci:checks*)",
       "Read(**)"
     ],
     "deny": [

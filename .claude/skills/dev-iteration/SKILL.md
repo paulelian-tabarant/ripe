@@ -10,7 +10,7 @@ except where explicitly gated below.
 
 ## Workflow
 
-0. **Resuming from an existing plan doc.** If the user points at an approved plan
+1. **Resuming from an existing plan doc.** If the user points at an approved plan
    file (e.g. `docs/superpowers/plans/*.md`, status "Approved") and asks to
    continue/resume/go on with implementation, treat steps 1–2 as already
    satisfied — don't re-clarify or re-propose. Use that file's subtask
@@ -18,14 +18,14 @@ except where explicitly gated below.
    for step 3 onward. Only fall back to steps 1–2 if the plan is incomplete,
    stale, or ambiguous about what to build next.
 
-1. **Clarify intent.** Ask the user one question at a time — no batching — until
+2. **Clarify intent.** Ask the user one question at a time — no batching — until
    the behavior is unambiguous: what triggers it, expected inputs/outputs, edge
    cases, error handling, what's explicitly out of scope. Prefer multiple-choice
    questions (`AskUserQuestion`) when the option space is small. Stay in chat —
    don't write a spec doc for this. Stop asking once another question wouldn't
    change the plan.
 
-2. **Propose a plan.** Break the work into subtasks. For each: which files it
+3. **Propose a plan.** Break the work into subtasks. For each: which files it
    touches, what it does, and how to tell it's done. Call out which subtasks are
    independent (touch disjoint files, no shared state) vs which must be
    sequential. Present the plan to the user as a condensed bullet summary (not
@@ -33,7 +33,7 @@ except where explicitly gated below.
    don't proceed on silence or a vague "sounds fine." Only move to step 3 once
    the user clearly states they're ready to proceed to implementation.
 
-3. **Implement.**
+4. **Implement.**
    - TDD, per unit of work: red (write a failing test) → simplest implementation
      that makes it pass → green → refactor. Applies to each implementer
      dispatched below — include it explicitly in their prompts, it's a
@@ -59,22 +59,22 @@ except where explicitly gated below.
    - If only one subtask exists, dispatch a single implementer — parallelism is
      a means, not a requirement.
 
-4. **Merge.** For each implementer that returns a worktree/branch, merge it back
+5. **Merge.** For each implementer that returns a worktree/branch, merge it back
    into the iteration's working branch, one at a time (`git merge <branch>`).
    Resolve trivial conflicts yourself; if a conflict isn't trivial (both sides
    meaningfully changed the same logic), stop and ask the user which should win.
 
-5. **Run checks.** Run this project's checks yourself, directly via Bash — do
+6. **Run checks.** Run this project's checks yourself, directly via Bash — do
    not delegate this to a subagent. Use `pnpm --filter <package> ci:checks` for
    each touched package (`api`, `./cli`, `web`), per this repo's CLAUDE.md.
 
-6. **Review.** Dispatch one subagent to review the diff from the recorded merge
+7. **Review.** Dispatch one subagent to review the diff from the recorded merge
    base to `HEAD`, instructing it to use this repo's `ripe-code-review` skill.
    Give it the merge-base SHA and the working branch — don't make it guess the
    diff range. Instruct it to favor dedicated code navigation tools over raw
    file reads when available, falling back to raw reads otherwise.
 
-7. **Fix.** Dispatch exactly one subagent with both: any failing check output
+8. **Fix.** Dispatch exactly one subagent with both: any failing check output
    from step 5, and the full findings list from step 6. Instruct it to:
    - Fix every clear-cut finding (a concrete bug, standards violation, or
      failing check with an obvious correct fix) without asking anyone.
@@ -89,16 +89,16 @@ except where explicitly gated below.
      — if it doesn't, stop and report that back as a blocker instead of
      continuing to edit blind.
 
-8. **Gate on ambiguity.** If the fixer returned any "needs a decision" items,
+9. **Gate on ambiguity.** If the fixer returned any "needs a decision" items,
    stop and present them to the user — do not resolve them yourself and do not
    continue to step 9 until they're resolved. Otherwise, continue.
 
-9. **Re-run checks.** Run the project checks again yourself (same as step 5).
-   If they still fail, dispatch one more fix subagent with the new failure
-   output, then re-run. There is no second review pass — review happens once,
-   in step 6.
+10. **Re-run checks.** Run the project checks again yourself (same as step 5).
+    If they still fail, dispatch one more fix subagent with the new failure
+    output, then re-run. There is no second review pass — review happens once,
+    in step 6.
 
-10. **Recap and open the PR.** Generate a recap using this repo's `pr-recap`
+11. **Recap and open the PR.** Generate a recap using this repo's `pr-recap`
     skill for the working branch against its base. This step is not done once
     the recap text exists — immediately continue in the same turn to push the
     branch and run `gh pr create` using that recap verbatim as the `--body`.
@@ -106,20 +106,18 @@ except where explicitly gated below.
     10, not a handoff point. Do this without asking for confirmation first —
     invoking this skill is the standing authorization for the PR it produces.
 
-11. **Mark the user story done.** If this iteration is driven by a spec under
+12. **Mark the user story done.** If this iteration is driven by a spec under
     `docs/spec/user-stories/`, update that doc's `**Status**` line to `Done`
     (this repo's existing convention, e.g. commit `4f9643a`), commit it, and
     push — updating the PR just opened in step 10 rather than opening a
     second one.
 
-12. **Suggest process improvements.** Reflect on friction from this iteration —
-    repeated corrections, missing context an implementer had to guess at,
-    permission prompts, ambiguity that reached step 8, subagents re-deriving
-    things this file could've told them upfront. Turn that into concrete,
-    actionable suggestions: CLAUDE.md wording, this skill's own steps,
-    `settings.json` permissions, or memory entries. Present as a short bullet
-    list to the user — don't apply any of it yourself unless asked. Skip this
-    step (say so briefly) if nothing surfaced worth suggesting.
+13. **Suggest process improvements.** Invoke this repo's `iteration-retro` skill,
+    pointing it at this iteration's transcript, the plan doc (if any), and the
+    PR/diff just opened. It covers auto-allow candidates, underused tools,
+    missing STANDARDS.md/CLAUDE.md coverage, and tooling gaps — don't
+    re-derive that checklist here. Present its output to the user; don't apply
+    any of it yourself unless asked.
 
 ## Edge cases
 
