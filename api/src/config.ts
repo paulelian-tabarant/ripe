@@ -1,6 +1,7 @@
 export interface Config {
   databasePath: string
   port: number
+  shouldServeBuiltFrontend: boolean
 }
 
 function requireEnv(name: string): string {
@@ -19,5 +20,7 @@ export function loadConfig(): Config {
   if (!Number.isInteger(port) || port < 1 || port > 65535)
     throw new Error(`PORT must be a valid port number, got: "${portStr}"`)
 
-  return { databasePath, port }
+  const shouldServeBuiltFrontend = process.env.SHOULD_SERVE_BUILT_FRONTEND === 'true'
+
+  return { databasePath, port, shouldServeBuiltFrontend }
 }

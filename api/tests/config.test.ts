@@ -5,13 +5,26 @@ describe('loadConfig', () => {
   afterEach(() => {
     delete process.env.DATABASE_PATH
     delete process.env.PORT
+    delete process.env.SHOULD_SERVE_BUILT_FRONTEND
   })
 
   it('returns parsed config when all vars are valid', () => {
     process.env.DATABASE_PATH = '/tmp/test.db'
     process.env.PORT = '4000'
 
-    expect(loadConfig()).toEqual({ databasePath: '/tmp/test.db', port: 4000 })
+    expect(loadConfig()).toEqual({
+      databasePath: '/tmp/test.db',
+      port: 4000,
+      shouldServeBuiltFrontend: false,
+    })
+  })
+
+  it('returns shouldServeBuiltFrontend true when SHOULD_SERVE_BUILT_FRONTEND is "true"', () => {
+    process.env.DATABASE_PATH = '/tmp/test.db'
+    process.env.PORT = '4000'
+    process.env.SHOULD_SERVE_BUILT_FRONTEND = 'true'
+
+    expect(loadConfig().shouldServeBuiltFrontend).toBe(true)
   })
 
   it('throws when PORT is not set', () => {

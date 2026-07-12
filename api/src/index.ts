@@ -1,11 +1,13 @@
+import { join } from 'node:path'
 import { buildApp } from './app.js'
 import { loadConfig } from './config.js'
 import { createDatabase } from './db/createDatabase.js'
 
 function main(): void {
-  const { databasePath, port } = loadConfig()
+  const { databasePath, port, shouldServeBuiltFrontend } = loadConfig()
   const db = createDatabase(databasePath)
-  const app = buildApp(db)
+  const staticDir = join(process.cwd(), 'static')
+  const app = buildApp(db, { shouldServeBuiltFrontend, staticDir })
 
   app.listen({ port, host: '0.0.0.0' }, (err, address) => {
     if (err) {
