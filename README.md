@@ -20,3 +20,5 @@ This project tracks skill invocation events across teams, providing:
 
 Focus is on custom `.claude/skills/` defined within projects — the skills teams maintain themselves
 — not third-party plugins.
+
+<!-- CI path-filter test: docs-only change, should skip api/cli jobs -->
