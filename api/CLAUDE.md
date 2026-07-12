@@ -16,7 +16,7 @@ npm run start         # node dist/index.js
 To run a single test file:
 
 ```bash
-npx vitest run tests/routes/registerProject.test.ts
+npx vitest run tests/endpoints/registerProject.test.ts
 ```
 
 ## Required Environment Variables
@@ -30,11 +30,11 @@ npx vitest run tests/routes/registerProject.test.ts
 
 ## Architecture
 
-Three-layer: **routes → use-cases → repositories**. Each layer receives `db`
+Three-layer: **endpoints → use-cases → repositories**. Each layer receives `db`
 (a `better-sqlite3` `Database` instance) explicitly — no singletons, no globals.
 
-- **Routes** (`src/routes/`) — Fastify plugin functions; validate request shape via JSON Schema,
-  delegate to use-cases, map results to HTTP status codes.
+- **Endpoints** (`src/endpoints/`) — Fastify plugin functions, one per API endpoint; validate
+  request shape via JSON Schema, delegate to use-cases, map results to HTTP status codes.
 - **Use-cases** (`src/use-cases/`) — business logic; one class per use case (e.g.
   `RegisterProject`, `ListProjects`), with `run()` as the single public method. Each use-case
   class takes a constructor-injected repository, calls repository functions, and returns typed
@@ -42,7 +42,7 @@ Three-layer: **routes → use-cases → repositories**. Each layer receives `db`
 - **Repositories** (`src/repositories/`) — raw SQL only; accept and return plain objects
   (`ProjectRow`).
 
-`buildApp(db, opts)` in `src/app.ts` wires all routes together and runs migrations.
+`buildApp(db, opts)` in `src/app.ts` wires all endpoints together and runs migrations.
 `src/index.ts` is the process entry point: loads config, creates the DB, calls `buildApp`,
 and starts listening.
 

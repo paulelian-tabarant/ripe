@@ -3,6 +3,8 @@
 Package-specific standards for `cli/`. These supplement the general rules in
 [`../STANDARDS.md`](../STANDARDS.md) and the architecture notes in [`CLAUDE.md`](CLAUDE.md).
 
+## Architecture
+
 - **Layer split**: `src/commands/` holds orchestration logic; `src/lib/` holds single-purpose
   helpers (HTTP calls, config file I/O). Don't mix the two — a command function should read as a
   sequence of calls into `lib/`, not inline `fs`/`fetch` logic.
@@ -19,8 +21,21 @@ Package-specific standards for `cli/`. These supplement the general rules in
   touch stdin/stdout directly — those are read in `src/index.ts` and passed in as parameters.
 - **No logging details in commands**: commands don't call `console.*` or any logger directly —
   they return a typed result/message, and `src/index.ts` is responsible for printing it.
-- **Test split mirrors the layer split**: `tests/acceptance/cli.test.ts` covers command routing —
-  help flags, unknown-command handling, dispatch — with each command stubbed (e.g. `initFn`), never
-  exercising real command logic. `tests/acceptance/<command>.test.ts` covers that command in
+
+## Testing
+
+General testing principles live in [`../STANDARDS.md`](../STANDARDS.md). This section covers
+only the `cli/`-specific test layout.
+
+- **Test split mirrors the layer split**: `tests/cli.test.ts` covers command routing — help
+  flags, unknown-command handling, dispatch — with each command mocked (e.g. `initFn: vi.fn()`),
+  never exercising real command logic. `tests/commands/<command>.test.ts` covers that command in
   isolation, running through every real layer underneath it (`lib/`, filesystem) except the
   network, which is intercepted with `nock`.
+
+```mermaid
+flowchart TD
+    A[tests/cli.test.ts] -->|mocked command fns| B[Routing: help, unknown command, dispatch]
+    C[tests/commands/init.test.ts] -->|real command + lib/ + filesystem| D[Command behavior]
+    C -->|nock intercepts network only| E[HTTP boundary]
+```

@@ -1,9 +1,9 @@
 import type Database from 'better-sqlite3'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { migrateDatabase } from './db/migrateDatabase.js'
+import { healthEndpoints } from './endpoints/healthEndpoints.js'
+import { projectEndpoints } from './endpoints/projectEndpoints.js'
 import { ProjectRepository } from './repositories/ProjectRepository.js'
-import { healthRoutes } from './routes/healthRoutes.js'
-import { projectRoutes } from './routes/projectRoutes.js'
 import { ListProjects } from './use-cases/ListProjects.js'
 import { RegisterProject } from './use-cases/RegisterProject.js'
 
@@ -19,8 +19,8 @@ export function buildApp(
   const registerProject = new RegisterProject(projectRepository)
   const listProjects = new ListProjects(projectRepository)
 
-  app.register(healthRoutes)
-  app.register(projectRoutes, { prefix: '/api', registerProject, listProjects })
+  app.register(healthEndpoints)
+  app.register(projectEndpoints, { prefix: '/api', registerProject, listProjects })
 
   return app
 }

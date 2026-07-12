@@ -1,5 +1,5 @@
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
-import type { ProjectRequestBody } from '../../src/routes/projectRoutes.js'
+import type { ProjectRequestBody } from '../../src/endpoints/projectEndpoints.js'
 
 export function prepareAndBindPostProjectsRequestTo(
   app: FastifyInstance,

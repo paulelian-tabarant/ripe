@@ -101,16 +101,25 @@ except where explicitly gated below.
 10. **Recap and open the PR.** Generate a recap using this repo's `pr-recap`
     skill for the working branch against its base. This step is not done once
     the recap text exists — immediately continue in the same turn to push the
-    branch and run `gh pr create` using that recap as the `--body`. Printing
-    the recap to the user and stopping there is an incomplete step 10, not a
-    handoff point. Do this without asking for confirmation first — invoking
-    this skill is the standing authorization for the PR it produces.
+    branch and run `gh pr create` using that recap verbatim as the `--body`.
+    Printing the recap to the user and stopping there is an incomplete step
+    10, not a handoff point. Do this without asking for confirmation first —
+    invoking this skill is the standing authorization for the PR it produces.
 
 11. **Mark the user story done.** If this iteration is driven by a spec under
     `docs/spec/user-stories/`, update that doc's `**Status**` line to `Done`
     (this repo's existing convention, e.g. commit `4f9643a`), commit it, and
     push — updating the PR just opened in step 10 rather than opening a
     second one.
+
+12. **Suggest process improvements.** Reflect on friction from this iteration —
+    repeated corrections, missing context an implementer had to guess at,
+    permission prompts, ambiguity that reached step 8, subagents re-deriving
+    things this file could've told them upfront. Turn that into concrete,
+    actionable suggestions: CLAUDE.md wording, this skill's own steps,
+    `settings.json` permissions, or memory entries. Present as a short bullet
+    list to the user — don't apply any of it yourself unless asked. Skip this
+    step (say so briefly) if nothing surfaced worth suggesting.
 
 ## Edge cases
 
