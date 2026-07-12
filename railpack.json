@@ -38,7 +38,10 @@
       ],
       "commands": [
         { "src": "tsconfig.base.json", "dest": "tsconfig.base.json" },
-        { "src": "web", "dest": "web" },
+        { "src": "web/tsconfig.json", "dest": "web/tsconfig.json" },
+        { "src": "web/vite.config.ts", "dest": "web/vite.config.ts" },
+        { "src": "web/index.html", "dest": "web/index.html" },
+        { "src": "web/src", "dest": "web/src" },
         "pnpm --filter web build",
         "mkdir -p api/static && cp -r web/dist/. api/static/",
         { "src": "api/tsconfig.json", "dest": "api/tsconfig.json" },
