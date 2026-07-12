@@ -12,7 +12,8 @@ Fastify server. A React dashboard displays skill usage rankings.
 
 - `api/` — Fastify + SQLite backend. See [`api/CLAUDE.md`](api/CLAUDE.md) for architecture and conventions.
 - `cli/` — CLI script (`ripe init` and `ripe sync`). See [`cli/CLAUDE.md`](cli/CLAUDE.md) for details.
-- `web/` — React + Vite SPA, served as static files by the server in production.
+- `web/` — React + Vite SPA, served as static files by the server in production. See
+  [`web/CLAUDE.md`](web/CLAUDE.md) for architecture and conventions.
 
 ## Root Commands
 

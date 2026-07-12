@@ -23,7 +23,11 @@
           "src": "cli/package.json",
           "dest": "cli/package.json"
         },
-        "pnpm install --frozen-lockfile --filter api"
+        {
+          "src": "web/package.json",
+          "dest": "web/package.json"
+        },
+        "pnpm install --frozen-lockfile --filter api --filter web"
       ]
     },
     "build": {
@@ -34,6 +38,12 @@
       ],
       "commands": [
         { "src": "tsconfig.base.json", "dest": "tsconfig.base.json" },
+        { "src": "web/tsconfig.json", "dest": "web/tsconfig.json" },
+        { "src": "web/vite.config.ts", "dest": "web/vite.config.ts" },
+        { "src": "web/index.html", "dest": "web/index.html" },
+        { "src": "web/src", "dest": "web/src" },
+        "pnpm --filter web build",
+        "mkdir -p api/static && cp -r web/dist/. api/static/",
         { "src": "api/tsconfig.json", "dest": "api/tsconfig.json" },
         { "src": "api/tsconfig.build.json", "dest": "api/tsconfig.build.json" },
         { "src": "api/src", "dest": "api/src" },
@@ -42,6 +52,6 @@
     }
   },
   "deploy": {
-    "startCommand": "pnpm --filter api start"
+    "startCommand": "pnpm --filter api start:prod"
   }
 }

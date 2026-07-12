@@ -9,10 +9,11 @@ Package-specific standards live alongside each package:
 
 - [`cli/STANDARDS.md`](cli/STANDARDS.md)
 - [`api/STANDARDS.md`](api/STANDARDS.md)
+- [`web/STANDARDS.md`](web/STANDARDS.md)
 
 ## General
 
-These rules apply across the whole workspace (`api/` and `cli/`), which share the root
+These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which share the root
 `biome.json` and `tsconfig.base.json`.
 
 ### Types & Data
@@ -46,6 +47,9 @@ These rules apply across the whole workspace (`api/` and `cli/`), which share th
   step-down rule.
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
+- **`async`/`await` over chained promises**: write asynchronous code with `async`/`await`; reserve
+  `.then`/`.catch` chains for the rare case `async`/`await` can't express (e.g. `Promise.all`
+  combinators feeding straight into further chaining).
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving
   from high-level intent to low-level detail (see `api/tests/endpoints/registerProject.test.ts`: the
   `it` blocks read first, the `postProjects` helper they call is defined last).
