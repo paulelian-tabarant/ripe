@@ -41,6 +41,15 @@ pnpm --filter ./cli ci:checks
 
 All checks must pass with zero errors before marking the feature complete.
 
+## Tool Usage
+
+- **Project skills over built-in equivalents**: check `.claude/skills/` before using a built-in
+  Claude skill for the same purpose (e.g. review, PR triage, PR recap). Use the project skill.
+- **Commands run from repo root** via `pnpm --filter <package> <script>` (e.g.
+  `pnpm --filter ./cli ci:checks`). Never `cd` into a workspace and run `npm`/`pnpm` directly there.
+- **Subagents are read-only by default**: when dispatching a subagent for exploration or review,
+  it must only report findings — never edit code — unless explicitly instructed to make changes.
+
 ## Cross-Cutting Architecture Decisions
 
 **Skill IDs**: server-assigned, not client-generated (ADR-015). The client caches

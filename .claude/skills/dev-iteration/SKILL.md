@@ -49,6 +49,13 @@ except where explicitly gated below.
      the files it owns, relevant interfaces from other subtasks it depends on,
      and an instruction to commit its work when done. It should not need the
      rest of this conversation's history.
+   - Instruct it to favor dedicated code navigation/editing tools over raw
+     file reads/writes when available, falling back to raw reads/writes
+     otherwise. If such tools are available, have it do a quick test
+     read+write early on and confirm the change actually appears on its
+     current branch/worktree (e.g. via `git status`/`git diff`) — if it
+     doesn't, stop and report that back to you as a blocker instead of
+     continuing to edit blind.
    - If only one subtask exists, dispatch a single implementer — parallelism is
      a means, not a requirement.
 
@@ -64,7 +71,8 @@ except where explicitly gated below.
 6. **Review.** Dispatch one subagent to review the diff from the recorded merge
    base to `HEAD`, instructing it to use this repo's `ripe-code-review` skill.
    Give it the merge-base SHA and the working branch — don't make it guess the
-   diff range.
+   diff range. Instruct it to favor dedicated code navigation tools over raw
+   file reads when available, falling back to raw reads otherwise.
 
 7. **Fix.** Dispatch exactly one subagent with both: any failing check output
    from step 5, and the full findings list from step 6. Instruct it to:
@@ -74,6 +82,12 @@ except where explicitly gated below.
      an explicit decision from the plan (step 2) — instead return those,
      unfixed, as a separate "needs a decision" list alongside what it did fix.
    - Commit its fixes when done.
+   - Favor dedicated code navigation/editing tools over raw file reads/writes
+     when available, falling back to raw reads/writes otherwise. If such
+     tools are available, do a quick test read+write early on and confirm
+     the change actually appears on the working branch (e.g. via `git status`)
+     — if it doesn't, stop and report that back as a blocker instead of
+     continuing to edit blind.
 
 8. **Gate on ambiguity.** If the fixer returned any "needs a decision" items,
    stop and present them to the user — do not resolve them yourself and do not
