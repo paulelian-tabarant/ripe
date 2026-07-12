@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import Database from 'better-sqlite3'
 import type { FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { buildApp } from '../src/app.js'
+import { buildApp } from '../../src/app.js'
 
 describe('static frontend serving', () => {
   let app: FastifyInstance
