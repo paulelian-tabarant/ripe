@@ -1,5 +1,6 @@
 import { type InitResult, init } from './commands/init.js'
 
+// CI path-filter test: cli-only change, should skip api jobs
 const HELP_FLAGS = new Set(['-h', '--help'])
 
 const HELP_TEXT = `Usage: ripe <command>
