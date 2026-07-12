@@ -23,7 +23,11 @@
           "src": "cli/package.json",
           "dest": "cli/package.json"
         },
-        "pnpm install --frozen-lockfile --filter api"
+        {
+          "src": "web/package.json",
+          "dest": "web/package.json"
+        },
+        "pnpm install --frozen-lockfile --filter api --filter web"
       ]
     },
     "build": {
@@ -33,6 +37,9 @@
         }
       ],
       "commands": [
+        { "src": "web", "dest": "web" },
+        "pnpm --filter web build",
+        "mkdir -p api/static && cp -r web/dist/. api/static/",
         { "src": "tsconfig.base.json", "dest": "tsconfig.base.json" },
         { "src": "api/tsconfig.json", "dest": "api/tsconfig.json" },
         { "src": "api/tsconfig.build.json", "dest": "api/tsconfig.build.json" },
@@ -42,6 +49,6 @@
     }
   },
   "deploy": {
-    "startCommand": "pnpm --filter api start"
+    "startCommand": "SHOULD_SERVE_BUILT_FRONTEND=true pnpm --filter api start"
   }
 }

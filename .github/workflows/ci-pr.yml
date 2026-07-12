@@ -11,6 +11,7 @@ jobs:
     outputs:
       run-api: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.api == 'true' || steps.filter.outputs.shared == 'true' }}
       run-cli: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.cli == 'true' || steps.filter.outputs.shared == 'true' }}
+      run-web: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.web == 'true' || steps.filter.outputs.shared == 'true' }}
       run-md: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.md == 'true' || steps.filter.outputs.shared == 'true' }}
       run-workflows: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.workflows == 'true' }}
     steps:
@@ -32,6 +33,8 @@ jobs:
               - 'api/**'
             cli:
               - 'cli/**'
+            web:
+              - 'web/**'
             md:
               - '**/*.md'
             workflows:
@@ -81,6 +84,19 @@ jobs:
       - name: Typecheck cli
         run: pnpm --filter ./cli typecheck
 
+  static-checks-web:
+    needs: changes
+    if: needs.changes.outputs.run-web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-node-env
+      - name: Lint web
+        run: pnpm --filter web lint
+
+      - name: Typecheck web
+        run: pnpm --filter web typecheck
+
   test-api:
     needs: changes
     if: needs.changes.outputs.run-api == 'true'
@@ -103,8 +119,18 @@ jobs:
       - name: Test cli
         run: pnpm --filter ./cli test
 
+  test-web:
+    needs: changes
+    if: needs.changes.outputs.run-web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-node-env
+      - name: Test web
+        run: pnpm --filter web test
+
   deploy-staging:
-    needs: [actionlint, static-checks-md, static-checks-api, static-checks-cli, test-api, test-cli]
+    needs: [actionlint, static-checks-md, static-checks-api, static-checks-cli, static-checks-web, test-api, test-cli, test-web]
     if: |
       always() &&
       contains(github.event.pull_request.labels.*.name, 'deploy-staging') &&
