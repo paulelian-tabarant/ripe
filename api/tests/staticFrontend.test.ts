@@ -43,6 +43,17 @@ describe('static frontend serving', () => {
     expect(missingApiResponse.statusCode).toBe(404)
   })
 
+  it('serves index.html for a path that merely starts with "api" but is not /api/*', async () => {
+    tmpDir = writeFixtureFrontend()
+    const db = new Database(':memory:')
+    app = buildApp(db, { logger: false, shouldServeBuiltFrontend: true, staticDir: tmpDir })
+
+    const response = await app.inject({ method: 'GET', url: '/apiary' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.body).toContain('<title>fixture</title>')
+  })
+
   it('throws on startup when staticDir does not exist', () => {
     const db = new Database(':memory:')
     const missingDir = join(tmpdir(), 'ripe-test-does-not-exist')

@@ -35,7 +35,8 @@ function registerBuiltFrontend(app: FastifyInstance, staticDir: string | undefin
   app.register(fastifyStatic, { root: verifiedStaticDir })
 
   app.setNotFoundHandler((request, reply) => {
-    if (request.method === 'GET' && !request.url.startsWith('/api')) {
+    const isApiRoute = request.url === '/api' || request.url.startsWith('/api/')
+    if (request.method === 'GET' && !isApiRoute) {
       reply.sendFile('index.html')
       return
     }
