@@ -18,20 +18,22 @@ except where explicitly gated below.
    for step 3 onward. Only fall back to steps 1–2 if the plan is incomplete,
    stale, or ambiguous about what to build next.
 
-1. **Clarify intent.** Ask the user one question at a time — no batching — until
-   the behavior is unambiguous: what triggers it, expected inputs/outputs, edge
-   cases, error handling, what's explicitly out of scope. Prefer multiple-choice
-   questions (`AskUserQuestion`) when the option space is small. Stay in chat —
-   don't write a spec doc for this. Stop asking once another question wouldn't
-   change the plan.
+1. **Clarify intent.** Invoke this repo's `spec-refinement` skill to turn the
+   loose idea (or underspecified story) into unambiguous, example-based
+   behavior. It asks product/behavior questions one at a time and writes
+   resolved scenarios into the source story doc's `## Scenarios` section (or
+   keeps clarification in chat for ad hoc work with no source story). Don't
+   re-ask anything it already covers.
 
-2. **Propose a plan.** Break the work into subtasks. For each: which files it
-   touches, what it does, and how to tell it's done. Call out which subtasks are
-   independent (touch disjoint files, no shared state) vs which must be
-   sequential. Present the plan to the user as a condensed bullet summary (not
-   the full plan-file prose) and keep iterating on it — revise on feedback,
-   don't proceed on silence or a vague "sounds fine." Only move to step 3 once
-   the user clearly states they're ready to proceed to implementation.
+2. **Propose a plan.** Ground the plan in the source user story's `## Scenarios`
+   (Given/When/Then) written by step 1. Break the work into subtasks. For each:
+   which files it touches, what it does, and how to tell it's done. Call out
+   which subtasks are independent (touch disjoint files, no shared state) vs
+   which must be sequential. Present the plan to the user as a condensed bullet
+   summary (not the full plan-file prose) and keep iterating on it — revise on
+   feedback, don't proceed on silence or a vague "sounds fine." Only move to
+   step 3 once the user clearly states they're ready to proceed to
+   implementation.
 
 3. **Implement.**
    - TDD, per unit of work: red (write a failing test) → simplest implementation
@@ -98,21 +100,28 @@ except where explicitly gated below.
    output, then re-run. There is no second review pass — review happens once,
    in step 6.
 
-10. **Recap and open the PR.** Generate a recap using this repo's `pr-recap`
+10. **Recap acceptance criteria.** If this iteration is driven by a spec under
+    `docs/spec/user-stories/`, list that story's acceptance criteria verbatim
+    and state, for each, whether it's met, deferred, or out of scope for this
+    iteration — with a one-line reason for anything not "met". Present this to
+    the user before opening the PR. If there's no source user story (ad hoc
+    fix/feature), skip this step.
+
+11. **Recap and open the PR.** Generate a recap using this repo's `pr-recap`
     skill for the working branch against its base. This step is not done once
     the recap text exists — immediately continue in the same turn to push the
     branch and run `gh pr create` using that recap verbatim as the `--body`.
     Printing the recap to the user and stopping there is an incomplete step
-    10, not a handoff point. Do this without asking for confirmation first —
+    11, not a handoff point. Do this without asking for confirmation first —
     invoking this skill is the standing authorization for the PR it produces.
 
-11. **Mark the user story done.** If this iteration is driven by a spec under
+12. **Mark the user story done.** If this iteration is driven by a spec under
     `docs/spec/user-stories/`, update that doc's `**Status**` line to `Done`
     (this repo's existing convention, e.g. commit `4f9643a`), commit it, and
-    push — updating the PR just opened in step 10 rather than opening a
+    push — updating the PR just opened in step 11 rather than opening a
     second one.
 
-12. **Suggest process improvements.** Reflect on friction from this iteration —
+13. **Suggest process improvements.** Reflect on friction from this iteration —
     repeated corrections, missing context an implementer had to guess at,
     permission prompts, ambiguity that reached step 8, subagents re-deriving
     things this file could've told them upfront. Turn that into concrete,
