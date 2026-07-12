@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(.claude/skills/*)"
+      "Bash(.claude/skills/*)",
+      "Bash(pnpm lint:md*)",
+      "Bash(pnpm --filter api ci:checks*)",
+      "Bash(pnpm --filter ./cli ci:checks*)",
+      "Bash(pnpm --filter api lint*)",
+      "Bash(pnpm --filter ./cli lint*)",
+      "Bash(pnpm --filter ./cli test*)",
+      "Bash(pnpm --filter api test*)",
+      "Bash(pnpm --filter ./cli typecheck*)",
+      "Bash(pnpm --filter api typecheck*)",
+      "Read(**)"
+    ],
+    "deny": [
+      "Bash(gh auth token*)",
+      "Bash(gh auth status --show-token*)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)",
+      "Read(**/node_modules/**)"
     ]
   }
 }
