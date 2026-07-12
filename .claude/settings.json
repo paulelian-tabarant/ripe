@@ -10,9 +10,7 @@
       "Bash(pnpm --filter ./cli test*)",
       "Bash(pnpm --filter api test*)",
       "Bash(pnpm --filter ./cli typecheck*)",
-      "Bash(pnpm --filter api typecheck*)",
-      "Bash(rtk proxy pnpm *)",
-      "Bash(rtk proxy npm *)"
+      "Bash(pnpm --filter api typecheck*)"
     ]
   }
 }
