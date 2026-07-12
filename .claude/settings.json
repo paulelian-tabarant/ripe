@@ -11,6 +11,12 @@
       "Bash(pnpm --filter api test*)",
       "Bash(pnpm --filter ./cli typecheck*)",
       "Bash(pnpm --filter api typecheck*)"
+    ],
+    "deny": [
+      "Bash(gh auth token*)",
+      "Bash(gh auth status --show-token*)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)"
     ]
   }
 }
