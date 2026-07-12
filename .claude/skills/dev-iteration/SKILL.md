@@ -1,6 +1,6 @@
 ---
 name: dev-iteration
-description: Runs a full development iteration in this repo end-to-end — clarify intent, propose a plan, implement via parallel subagents, run checks, review via ripe-code-review, auto-fix findings, and open a PR with a pr-recap summary. Use whenever the user wants to build or fix something and have Claude drive the whole cycle to a PR — "let's build X", "implement Y end to end", "run the dev iteration for Z", "take this from idea to PR" — including resuming one already in progress, e.g. "go on with the implementation of the plan in <path>", "continue the dev iteration", "pick up where we left off on this plan" when an approved plan doc already exists (such as under `docs/superpowers/plans/`) — not for one-off small edits the user wants to review step by step themselves.
+description: Runs a full development iteration in this repo end-to-end — clarify intent, propose a plan, implement via parallel subagents, run checks, review via ripe-code-review, auto-fix findings, and open a PR with a pr-recap summary. Use whenever the user wants to build or fix something and have Claude drive the whole cycle to a PR — "let's build X", "implement Y end to end", "run the dev iteration for Z", "take this from idea to PR" — including resuming one already in progress, e.g. "go on with the implementation of the plan in <path>", "continue the dev iteration", "pick up where we left off on this plan" when an approved plan doc already exists (such as under `docs/_plans/`) — not for one-off small edits the user wants to review step by step themselves.
 ---
 
 # Dev Iteration
@@ -11,7 +11,7 @@ except where explicitly gated below.
 ## Workflow
 
 0. **Resuming from an existing plan doc.** If the user points at an approved plan
-   file (e.g. `docs/superpowers/plans/*.md`, status "Approved") and asks to
+   file (e.g. `docs/_plans/*.md`, status "Approved") and asks to
    continue/resume/go on with implementation, treat steps 1–2 as already
    satisfied — don't re-clarify or re-propose. Use that file's subtask
    breakdown (and its "Execution notes"/TDD guidance, if present) as the plan
@@ -30,10 +30,13 @@ except where explicitly gated below.
    which files it touches, what it does, and how to tell it's done. Call out
    which subtasks are independent (touch disjoint files, no shared state) vs
    which must be sequential. Present the plan to the user as a condensed bullet
-   summary (not the full plan-file prose) and keep iterating on it — revise on
-   feedback, don't proceed on silence or a vague "sounds fine." Only move to
-   step 3 once the user clearly states they're ready to proceed to
-   implementation.
+   summary (not the full plan-file prose) — default to the shortest version
+   that still names every subtask and file; skip rationale, tables, and
+   restating context the user already gave you. If the user says the recap is
+   still too long, cut further before adding detail back. Keep iterating on
+   it — revise on feedback, don't proceed on silence or a vague "sounds
+   fine." Only move to step 3 once the user clearly states they're ready to
+   proceed to implementation.
 
 3. **Implement.**
    - TDD, per unit of work: red (write a failing test) → simplest implementation
