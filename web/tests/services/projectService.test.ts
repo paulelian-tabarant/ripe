@@ -20,17 +20,22 @@ describe('fetchProjects', () => {
       ),
     )
 
-    const projects = await fetchProjects()
+    const result = await fetchProjects()
 
-    expect(projects).toEqual([
-      { id: 'proj_1', name: 'Alpha' },
-      { id: 'proj_2', name: 'Beta' },
-    ])
+    expect(result).toEqual({
+      status: 'success',
+      projects: [
+        { id: 'proj_1', name: 'Alpha' },
+        { id: 'proj_2', name: 'Beta' },
+      ],
+    })
   })
 
-  it('throws when the API responds with an error status', async () => {
+  it('returns an error result when the API responds with an error status', async () => {
     server.use(http.get('/api/projects', () => new HttpResponse(null, { status: 500 })))
 
-    await expect(fetchProjects()).rejects.toThrow()
+    const result = await fetchProjects()
+
+    expect(result).toEqual({ status: 'error' })
   })
 })

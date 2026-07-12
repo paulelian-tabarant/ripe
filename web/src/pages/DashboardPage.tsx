@@ -1,10 +1,10 @@
 import { type ReactElement, useState } from 'react'
 import { ProjectListing } from '../components/organisms/ProjectListing'
 import { useProjects } from '../hooks/useProjects'
-import type { Project } from '../services/projectService'
+import type { FetchProjectsResult } from '../services/projectService'
 
 interface DashboardPageProps {
-  fetchProjectsFn?: () => Promise<Project[]>
+  fetchProjectsFn?: () => Promise<FetchProjectsResult>
 }
 
 export function DashboardPage({ fetchProjectsFn }: DashboardPageProps = {}): ReactElement {

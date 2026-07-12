@@ -3,12 +3,19 @@ export interface Project {
   name: string
 }
 
-export async function fetchProjects(): Promise<Project[]> {
-  const response = await fetch('/api/projects')
+export type FetchProjectsResult = { status: 'success'; projects: Project[] } | { status: 'error' }
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch projects: ${response.status}`)
+export async function fetchProjects(): Promise<FetchProjectsResult> {
+  try {
+    const response = await fetch('/api/projects')
+
+    if (!response.ok) {
+      return { status: 'error' }
+    }
+
+    const projects = (await response.json()) as Project[]
+    return { status: 'success', projects }
+  } catch {
+    return { status: 'error' }
   }
-
-  return (await response.json()) as Project[]
 }

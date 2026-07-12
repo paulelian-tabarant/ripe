@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import { fetchProjects, type Project } from '../services/projectService'
+import { type FetchProjectsResult, fetchProjects, type Project } from '../services/projectService'
 
-export interface ProjectsState {
-  status: 'loading' | 'error' | 'success'
+export type ProjectsStatus = 'loading' | 'error' | 'success'
+
+interface ProjectsState {
+  status: ProjectsStatus
   projects: Project[]
 }
 
 export function useProjects(
-  fetchProjectsFn: () => Promise<Project[]> = fetchProjects,
+  fetchProjectsFn: () => Promise<FetchProjectsResult> = fetchProjects,
 ): ProjectsState {
   const [state, setState] = useState<ProjectsState>({ status: 'loading', projects: [] })
 
@@ -15,17 +17,17 @@ export function useProjects(
     let cancelled = false
     setState({ status: 'loading', projects: [] })
 
-    fetchProjectsFn()
-      .then((projects) => {
-        if (!cancelled) {
-          setState({ status: 'success', projects })
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setState({ status: 'error', projects: [] })
-        }
-      })
+    fetchProjectsFn().then((result) => {
+      if (cancelled) {
+        return
+      }
+
+      if (result.status === 'success') {
+        setState({ status: 'success', projects: result.projects })
+      } else {
+        setState({ status: 'error', projects: [] })
+      }
+    })
 
     return () => {
       cancelled = true

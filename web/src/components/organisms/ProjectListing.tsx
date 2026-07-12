@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import type { ProjectsStatus } from '../../hooks/useProjects'
 import type { Project } from '../../services/projectService'
 import { EmptyState } from '../atoms/EmptyState'
 import { ErrorMessage } from '../atoms/ErrorMessage'
@@ -6,7 +7,7 @@ import { LoadingSpinner } from '../atoms/LoadingSpinner'
 import { ProjectSelector } from '../molecules/ProjectSelector'
 
 interface ProjectListingProps {
-  status: 'loading' | 'error' | 'success'
+  status: ProjectsStatus
   projects: Project[]
   selectedProjectId: string | undefined
   onSelect: (projectId: string) => void

@@ -3,6 +3,18 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { DashboardPage } from '../../src/pages/DashboardPage'
 
+const TWO_PROJECTS = [
+  { id: 'proj_1', name: 'Alpha' },
+  { id: 'proj_2', name: 'Beta' },
+]
+
+async function renderWithTwoProjects(): Promise<void> {
+  const fetchProjectsFn = vi.fn().mockResolvedValue({ status: 'success', projects: TWO_PROJECTS })
+
+  render(<DashboardPage fetchProjectsFn={fetchProjectsFn} />)
+  await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+}
+
 describe('DashboardPage', () => {
   it('shows a loading indicator and nothing else while the request is pending', () => {
     const fetchProjectsFn = vi.fn().mockReturnValue(new Promise(() => {}))
@@ -16,14 +28,7 @@ describe('DashboardPage', () => {
   })
 
   it('lists the registered projects with no default selection', async () => {
-    const fetchProjectsFn = vi.fn().mockResolvedValue([
-      { id: 'proj_1', name: 'Alpha' },
-      { id: 'proj_2', name: 'Beta' },
-    ])
-
-    render(<DashboardPage fetchProjectsFn={fetchProjectsFn} />)
-
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+    await renderWithTwoProjects()
 
     expect(screen.getByRole('option', { name: 'Alpha' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Beta' })).toBeInTheDocument()
@@ -31,21 +36,16 @@ describe('DashboardPage', () => {
   })
 
   it('lets the user select a project', async () => {
-    const fetchProjectsFn = vi.fn().mockResolvedValue([
-      { id: 'proj_1', name: 'Alpha' },
-      { id: 'proj_2', name: 'Beta' },
-    ])
     const user = userEvent.setup()
 
-    render(<DashboardPage fetchProjectsFn={fetchProjectsFn} />)
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument())
+    await renderWithTwoProjects()
     await user.selectOptions(screen.getByRole('combobox'), 'Beta')
 
     expect(screen.getByRole('combobox')).toHaveValue('proj_2')
   })
 
   it('shows an empty-state message when no projects are registered', async () => {
-    const fetchProjectsFn = vi.fn().mockResolvedValue([])
+    const fetchProjectsFn = vi.fn().mockResolvedValue({ status: 'success', projects: [] })
 
     render(<DashboardPage fetchProjectsFn={fetchProjectsFn} />)
 
@@ -54,7 +54,7 @@ describe('DashboardPage', () => {
   })
 
   it('shows an error message when the request fails', async () => {
-    const fetchProjectsFn = vi.fn().mockRejectedValue(new Error('network error'))
+    const fetchProjectsFn = vi.fn().mockResolvedValue({ status: 'error' })
 
     render(<DashboardPage fetchProjectsFn={fetchProjectsFn} />)
 
