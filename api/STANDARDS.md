@@ -5,12 +5,12 @@ Package-specific standards for `api/`. These supplement the general rules in
 
 ## Architecture
 
-- **Three-layer split**: routes → use-cases → repositories. Routes validate the request shape
-  (JSON Schema) and translate results to HTTP status codes; use-cases hold business logic, one
-  class per use case with `run()` as the single public method; repositories hold raw SQL only.
-  Don't skip a layer (no SQL in routes, no HTTP concerns in use-cases).
+- **Three-layer split**: endpoints → use-cases → repositories. Endpoints validate the request
+  shape (JSON Schema) and translate results to HTTP status codes; use-cases hold business logic,
+  one class per use case with `run()` as the single public method; repositories hold raw SQL
+  only. Don't skip a layer (no SQL in endpoints, no HTTP concerns in use-cases).
 - **Expected outcomes as typed results**: outcomes like "project already exists" are typed
-  return values (e.g. `RegisterProjectResult`), which routes map to status codes (see the
+  return values (e.g. `RegisterProjectResult`), which endpoints map to status codes (see the
   general result-objects-over-throwing rule in [`../STANDARDS.md`](../STANDARDS.md);
   `loadConfig()` throwing on missing env vars is the kind of startup condition that's genuinely
   exceptional instead).
@@ -23,7 +23,7 @@ Package-specific standards for `api/`. These supplement the general rules in
   into the use-case layer — repository functions return domain-shaped objects, so use-cases
   never reference raw table/column names.
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
-  codes, request/response shapes, headers) — that mapping belongs to routes.
+  codes, request/response shapes, headers) — that mapping belongs to endpoints.
 
 ## Testing
 
@@ -33,10 +33,10 @@ only the `api/`-specific test layout.
 - **Unit vs. endpoint split**: `tests/config.test.ts` is the one pure unit test — `loadConfig()`
   env-var validation, no server involved. Everything else is an endpoint test under
   `tests/endpoints/`, exercised via `fastify.inject()` against a real in-memory
-  `better-sqlite3` database — no mocking of routes, use-cases, or repositories.
+  `better-sqlite3` database — no mocking of endpoints, use-cases, or repositories.
 
 ```mermaid
 flowchart TD
     A[tests/config.test.ts] -->|unit| B[loadConfig env-var validation]
-    C[tests/endpoints/*.test.ts] -->|fastify.inject + real in-memory DB| D[routes -> use-cases -> repositories]
+    C[tests/endpoints/*.test.ts] -->|fastify.inject + real in-memory DB| D[endpoints -> use-cases -> repositories]
 ```

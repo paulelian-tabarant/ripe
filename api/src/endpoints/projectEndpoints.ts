@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync, FastifySchema } from 'fastify
 import type { ListProjects } from '../use-cases/ListProjects.js'
 import type { RegisterProject } from '../use-cases/RegisterProject.js'
 
-interface ProjectRouteOptions {
+interface ProjectEndpointOptions {
   registerProject: RegisterProject
   listProjects: ListProjects
 }
@@ -22,9 +22,9 @@ export interface ProjectRequestBody {
   name: string
 }
 
-export const projectRoutes: FastifyPluginAsync<ProjectRouteOptions> = async (
+export const projectEndpoints: FastifyPluginAsync<ProjectEndpointOptions> = async (
   app: FastifyInstance,
-  opts: ProjectRouteOptions,
+  opts: ProjectEndpointOptions,
 ): Promise<void> => {
   app.post<{ Body: ProjectRequestBody }>(
     '/projects',
