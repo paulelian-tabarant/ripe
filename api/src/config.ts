@@ -1,3 +1,4 @@
+// CI path-filter test: api-only change, should skip cli jobs
 export interface Config {
   databasePath: string
   port: number
