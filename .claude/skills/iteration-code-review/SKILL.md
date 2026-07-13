@@ -1,9 +1,9 @@
 ---
-name: ripe-code-review
+name: iteration-code-review
 description: Reviews a completed diff, branch, or PR in this repo. In this repo, "review" means checking the change against this repo's own written coding standards — STANDARDS.md (general rules), cli/STANDARDS.md, and api/STANDARDS.md (package-specific rules) — plus a judgment pass for bugs, performance issues, and security concerns that no written doc covers. Use this whenever the user asks to review, look over, or check finished work in this repo — "review this PR", "can you review my changes", "review this branch before I merge", "take a look at what I just wrote", "is this ready to merge" — even without the word "standards" anywhere, since that's what a review means here.
 ---
 
-# Ripe Code Review
+# Iteration Code Review
 
 Review a diff along two axes:
 
