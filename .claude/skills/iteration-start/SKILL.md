@@ -29,10 +29,15 @@ except where explicitly gated below.
    step 3 (Implement) once the user clearly states they're ready to proceed.
 
 3. **Implement.**
-   - TDD, per unit of work: red (write a failing test) → simplest implementation
-     that makes it pass → green → refactor. Applies to each implementer
-     dispatched below — include it explicitly in their prompts, it's a
-     constraint on how they build, not an optional nicety.
+   - **Outside-in TDD is the standard practice for every implementer**: red (a
+     failing test at the granularity Specify, step 1, settled on — e.g.
+     page-level, not per internal layer) → simplest implementation that makes
+     it pass, building out only the internal pieces (services/hooks/
+     components/etc.) that case demands → green → refactor. Don't mock
+     internal layers along the way — only the I/O boundary Specify identified
+     as stubbed. This applies to each implementer dispatched below — state it
+     explicitly in their prompts, it's a constraint on how they build, not an
+     optional nicety.
    - Record the branch this iteration is building on (`git rev-parse HEAD`) before
      dispatching anything — this is the merge base for every subtask branch and
      for the final review/PR diff.

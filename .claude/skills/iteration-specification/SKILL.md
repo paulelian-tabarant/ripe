@@ -26,11 +26,13 @@ before any implementation plan or code exists.
    or cases below.
 
 3. **Define the test strategy.** State, don't just imply:
-   - **Granularity**: unit / endpoint-integration / page-level / e2e — per this repo's
-     per-package conventions (`api/STANDARDS.md`, `cli/STANDARDS.md`, `web/STANDARDS.md`).
-     Don't invent a granularity a package doesn't already use (e.g. `api/` has no
-     use-case-level unit tests today — stay at the endpoint-integration level it actually
-     uses).
+   - **Granularity**: per root `STANDARDS.md`'s "Coarse-grained tests over fine-grained
+     ones" — default to the coarsest granularity the target package already relies on
+     (page-level for `web`, endpoint-level for `api`, command-level for `cli`; see each
+     package's own `STANDARDS.md`), exercising the real path from entry point down to the
+     stubbed I/O boundary rather than one test per internal layer. Drop to a finer
+     granularity only where the package already does (e.g. `api`'s one pure-unit
+     `config.test.ts`) or the behavior is critical/complex enough to need isolation.
    - **Typology**: what shape each test takes — state assertion, contract/shape assertion,
      error-path, behavior/interaction — whichever fits the case, not one typology forced
      onto everything.
