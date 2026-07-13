@@ -1,9 +1,9 @@
 ---
-name: pr-recap
+name: iteration-recap
 description: Generate a short, reader-guiding markdown recap of a pull request or feature branch — what changed and why, not a line-by-line diff walkthrough. Use this whenever the user wants to sum up, recap, or summarize a PR, merge request, or feature branch — even without the words "PR" or "recap" explicitly, e.g. "what did we ship on this branch", "give me the highlights of #42", "catch me up on what's been done here", "write up this feature for the changelog", or "summarize what changed since main". Works for open PRs (via gh CLI) and local feature branches with no PR yet (via git log/diff against the merge-base). Prefer this over manually running git log/diff and eyeballing it — the skill's script gathers commits, diffstat, and PR metadata/CI status in one pass and the output format is built to orient someone skimming history later, not to review the diff itself.
 ---
 
-# PR Recap
+# Iteration Recap
 
 Produce a concise recap of a pull request or feature branch aimed at a reader who wasn't
 there for the work and wants the gist fast: what changed, compared to the base branch,
@@ -21,7 +21,7 @@ state, or code quality unless the user asks for that separately.
    hand with separate `gh`/`git` calls — it already knows the fallback logic:
 
    ```bash
-   .claude/skills/pr-recap/scripts/gather_recap_data.sh [ref] [base]
+   .claude/skills/iteration-recap/scripts/gather_recap_data.sh [ref] [base]
    ```
 
    - `ref` — PR number, PR URL, or branch name. Omit to use the current branch.

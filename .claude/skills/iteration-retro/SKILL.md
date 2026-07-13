@@ -1,6 +1,6 @@
 ---
 name: iteration-retro
-description: End-of-iteration self-assessment across four fixed dimensions — auto-allow candidates, underused tools/skills, missing STANDARDS.md/CLAUDE.md coverage for decisions made this iteration, and tooling gaps (skills/plugins/MCPs). Use as the last step of dev-iteration, or standalone whenever asked to reflect, retro, or suggest process improvements on finished work.
+description: End-of-iteration self-assessment across four fixed dimensions — auto-allow candidates, underused tools/skills, missing STANDARDS.md/CLAUDE.md coverage for decisions made this iteration, and tooling gaps (skills/plugins/MCPs). Use as the last step of iteration-start, or standalone whenever asked to reflect, retro, or suggest process improvements on finished work.
 ---
 
 # Iteration Retro
@@ -12,7 +12,7 @@ asks it to apply a specific suggestion afterward.
 
 ## When to use
 
-- Invoked as the final step of `dev-iteration` (see that skill's last workflow step).
+- Invoked as the final step of `iteration-start` (see that skill's last workflow step).
 - Standalone, whenever the user asks to reflect, retro, or wants process-improvement
   suggestions on a branch, PR, or session that just finished.
 
@@ -40,8 +40,8 @@ finding to fill a section.
 
 2. **Underused tools.** Find moments where a dedicated tool or skill existed and was the better
    choice, but plain reasoning, raw `Read`/`Edit`/`Grep`, an ad hoc approach, or the wrong CLI
-   for this repo's package manager was used instead — e.g. a project skill (`ripe-code-review`,
-   `pr-recap`, `verify`, `spec-refinement`) that fits but wasn't invoked, the Playwright MCP
+   for this repo's package manager was used instead — e.g. a project skill (`iteration-code-review`,
+   `iteration-recap`, `verify`, `spec-refinement`) that fits but wasn't invoked, the Playwright MCP
    available for UI verification but skipped when a frontend change shipped untested in a
    browser, or `npm`/`npx` reached for in a repo pinned to `pnpm` (this repo's `packageManager`
    field) when a `pnpm` equivalent exists. Only flag tools available to everyone working in this

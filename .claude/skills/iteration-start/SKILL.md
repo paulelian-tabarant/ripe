@@ -1,9 +1,9 @@
 ---
-name: dev-iteration
-description: Runs a full development iteration in this repo end-to-end — clarify intent, propose a plan, implement via parallel subagents, run checks, review via ripe-code-review, auto-fix findings, and open a PR with a pr-recap summary. Use whenever the user wants to build or fix something and have Claude drive the whole cycle to a PR — "let's build X", "implement Y end to end", "run the dev iteration for Z", "take this from idea to PR" — including resuming one already in progress, e.g. "go on with the implementation of the plan in <path>", "continue the dev iteration", "pick up where we left off on this plan" when an approved plan doc already exists (such as under `docs/superpowers/plans/`) — not for one-off small edits the user wants to review step by step themselves.
+name: iteration-start
+description: Runs a full development iteration in this repo end-to-end — clarify intent, propose a plan, implement via parallel subagents, run checks, review via iteration-code-review, auto-fix findings, and open a PR with an iteration-recap summary. Use whenever the user wants to build or fix something and have Claude drive the whole cycle to a PR — "let's build X", "implement Y end to end", "run the dev iteration for Z", "take this from idea to PR" — including resuming one already in progress, e.g. "go on with the implementation of the plan in <path>", "continue the dev iteration", "pick up where we left off on this plan" when an approved plan doc already exists (such as under `docs/superpowers/plans/`) — not for one-off small edits the user wants to review step by step themselves.
 ---
 
-# Dev Iteration
+# Iteration Start
 
 Drive one feature/fix from a loose idea to an open PR, without checking back in
 except where explicitly gated below.
@@ -69,7 +69,7 @@ except where explicitly gated below.
    each touched package (`api`, `./cli`, `web`), per this repo's CLAUDE.md.
 
 7. **Review.** Dispatch one subagent to review the diff from the recorded merge
-   base to `HEAD`, instructing it to use this repo's `ripe-code-review` skill.
+   base to `HEAD`, instructing it to use this repo's `iteration-code-review` skill.
    Give it the merge-base SHA and the working branch — don't make it guess the
    diff range. Instruct it to favor dedicated code navigation tools over raw
    file reads when available, falling back to raw reads otherwise.
@@ -98,7 +98,7 @@ except where explicitly gated below.
     output, then re-run. There is no second review pass — review happens once,
     in step 6.
 
-11. **Recap and open the PR.** Generate a recap using this repo's `pr-recap`
+11. **Recap and open the PR.** Generate a recap using this repo's `iteration-recap`
     skill for the working branch against its base. This step is not done once
     the recap text exists — immediately continue in the same turn to push the
     branch and run `gh pr create` using that recap verbatim as the `--body`.
@@ -135,7 +135,7 @@ except where explicitly gated below.
 - **No PR-worthy findings from review:** step 7's fixer still runs (to catch
   any check failures) but may have nothing to fix from review; that's fine,
   it just reports nothing to fix on that front.
-- **`gh` not installed/authenticated:** the `pr-recap` skill already handles
+- **`gh` not installed/authenticated:** the `iteration-recap` skill already handles
   this by falling back to git history for the recap; `gh pr create` itself has
   no fallback — report the failure to the user rather than silently stopping
   short of a PR.
