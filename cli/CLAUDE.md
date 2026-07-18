@@ -41,3 +41,5 @@ project.
 
 **Build output**: `dist/` (ESM, `"type": "module"`). Published to GitHub Packages registry as
 `@paulelian-tabarant/ripe`.
+
+See [`cli/STANDARDS.md`](STANDARDS.md) for style and testing conventions specific to this package.
