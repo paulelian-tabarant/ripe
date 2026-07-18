@@ -3,17 +3,16 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
-  workflow_dispatch:
 
 jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      run-api: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.api == 'true' || steps.classify-changes.outputs.shared == 'true' }}
-      run-cli: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.cli == 'true' || steps.classify-changes.outputs.shared == 'true' }}
-      run-web: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.web == 'true' || steps.classify-changes.outputs.shared == 'true' }}
-      run-md: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.md == 'true' || steps.classify-changes.outputs.shared == 'true' }}
-      run-workflows: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.workflows == 'true' }}
+      run-api: ${{ steps.classify-changes.outputs.api == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-cli: ${{ steps.classify-changes.outputs.cli == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-web: ${{ steps.classify-changes.outputs.web == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-md: ${{ steps.classify-changes.outputs.md == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-workflows: ${{ steps.classify-changes.outputs.workflows == 'true' }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/classify-changes
