@@ -5,14 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run lint        # Biome ci: lint + format check + import-sort check (src/ and tests/)
-npm run build       # tsc -p tsconfig.build.json → dist/
-npm run test        # vitest run (all tests under tests/)
-npm run typecheck   # tsc --noEmit (includes src + tests)
-npm run ci:checks   # lint + typecheck + test in one shot
+pnpm --filter ./cli lint        # Biome ci: lint + format check + import-sort check (src/ and tests/)
+pnpm --filter ./cli build       # tsc -p tsconfig.build.json → dist/
+pnpm --filter ./cli test        # vitest run (all tests under tests/)
+pnpm --filter ./cli typecheck   # tsc --noEmit (includes src + tests)
+pnpm --filter ./cli ci:checks   # lint + typecheck + test in one shot
+pnpm --filter ./cli cli -- <command-name>   # build, then invoke the CLI, e.g. `init`
 
 # Run a single test file
-npx vitest run tests/commands/init.test.ts
+pnpm --filter ./cli test tests/commands/init.test.ts
 ```
 
 ## Architecture
