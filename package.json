@@ -17,7 +17,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"
   },
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.13.1",
   "license": "ISC",
   "devDependencies": {
     "likec4": "latest",
