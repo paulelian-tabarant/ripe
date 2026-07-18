@@ -14,7 +14,7 @@ See [`STANDARDS.md`](STANDARDS.md) for coding standards that apply across the wh
 ## Package Structure (pnpm workspace)
 
 - `api/` — Fastify + SQLite backend. See [`api/CLAUDE.md`](api/CLAUDE.md) for architecture and conventions.
-- `cli/` — CLI script (`ripe init`). See [`cli/CLAUDE.md`](cli/CLAUDE.md) for details.
+- `cli/` — CLI script. See [`cli/CLAUDE.md`](cli/CLAUDE.md) for details.
 - `web/` — React + Vite SPA, served as static files by the server in production. See
   [`web/CLAUDE.md`](web/CLAUDE.md) for architecture and conventions.
 
