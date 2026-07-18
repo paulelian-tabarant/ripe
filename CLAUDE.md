@@ -4,9 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-A telemetry system for tracking custom skill invocations in Claude Code projects. A CLI client
-(`ripe`) runs via the `SessionEnd` hook, parses the session transcript, and POSTs events to a
-Fastify server. A React dashboard displays skill usage rankings.
+A telemetry system for tracking custom skill invocations in Claude Code projects. Target design
+(see `docs/spec/` and `docs/architecture/decisions/`): a CLI client (`ripe`) runs via the
+`SessionEnd` hook, parses the session transcript, and POSTs events to a Fastify server, with a
+React dashboard displaying skill usage rankings.
+
+Current state: `cli/` only implements `ripe init` (project registration) — transcript parsing and
+event submission aren't built yet. `web/` is a walking skeleton with no feature functionality yet.
+See each package's own CLAUDE.md for what's actually there.
 
 ## Package Structure (pnpm workspace)
 
@@ -21,8 +26,6 @@ Fastify server. A React dashboard displays skill usage rankings.
 pnpm --filter api test
 pnpm --filter ./cli test
 pnpm --filter web test
-pnpm test:e2e          # Playwright, from repo root
-
 pnpm lint:md           # Markdown lint
 ```
 
@@ -53,7 +56,8 @@ All checks must pass with zero errors before marking the feature complete.
 
 ## Cross-Cutting Architecture Decisions
 
-**Skill IDs**: server-assigned, not client-generated (ADR-015). The client caches
+**Skill IDs**: server-assigned, not client-generated
+([ADR-012](docs/architecture/decisions/ADR-012-server-managed-skill-ids.md)). The client caches
 `(skill_name → skill_id)` locally. If the cache is lost, re-registering recreates it.
 
 **Deduplication key**: `(session_id, tool_use_id)` — re-submitting the same transcript is safe.
