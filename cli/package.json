@@ -20,7 +20,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test",
-    "init": "node dist/index.js init"
+    "run": "pnpm run build && node dist/index.js"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",

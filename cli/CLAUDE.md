@@ -10,6 +10,7 @@ npm run build       # tsc -p tsconfig.build.json → dist/
 npm run test        # vitest run (all tests under tests/)
 npm run typecheck   # tsc --noEmit (includes src + tests)
 npm run ci:checks   # lint + typecheck + test in one shot
+npm run run -- <command-name>   # build, then invoke the CLI, e.g. `init`
 
 # Run a single test file
 npx vitest run tests/commands/init.test.ts

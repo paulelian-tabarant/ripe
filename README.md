@@ -68,8 +68,7 @@ pnpm --filter web test
 ### CLI (`cli/`)
 
 ```bash
-pnpm --filter ./cli build
-node cli/dist/index.js <command-name>   # e.g. `init`
+pnpm --filter ./cli run run <command-name>   # builds, then runs the CLI — e.g. `init`
 pnpm --filter ./cli test
 ```
 
