@@ -59,3 +59,5 @@ internal layers. Each test file creates its own `Database(':memory:')` and `buil
   `migrateDatabase(db)` runs them at startup. Add new migrations as versioned entries with `up`/`down` SQL.
 - The `db` instance is passed down through Fastify plugin options, not imported as a
   module-level singleton.
+
+See [`api/STANDARDS.md`](STANDARDS.md) for style and testing conventions specific to this package.

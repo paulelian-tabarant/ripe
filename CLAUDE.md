@@ -4,19 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-A telemetry system for tracking custom skill invocations in Claude Code projects. Target design
-(see `docs/spec/` and `docs/architecture/decisions/`): a CLI client (`ripe`) runs via the
-`SessionEnd` hook, parses the session transcript, and POSTs events to a Fastify server, with a
-React dashboard displaying skill usage rankings.
+A telemetry system for tracking custom skill invocations in Claude Code projects, currently at the
+stage described in each package's own `CLAUDE.md` (see below). For where the project is headed
+and why it's built this way, see [`docs/spec/`](docs/spec/) (requirements/roadmap) and
+[`docs/architecture/decisions/`](docs/architecture/decisions/) (one ADR per decision).
 
-Current state: `cli/` only implements `ripe init` (project registration) — transcript parsing and
-event submission aren't built yet. `web/` is a walking skeleton with no feature functionality yet.
-See each package's own CLAUDE.md for what's actually there.
+See [`STANDARDS.md`](STANDARDS.md) for coding standards that apply across the whole workspace.
 
 ## Package Structure (pnpm workspace)
 
 - `api/` — Fastify + SQLite backend. See [`api/CLAUDE.md`](api/CLAUDE.md) for architecture and conventions.
-- `cli/` — CLI script (`ripe init` and `ripe sync`). See [`cli/CLAUDE.md`](cli/CLAUDE.md) for details.
+- `cli/` — CLI script. See [`cli/CLAUDE.md`](cli/CLAUDE.md) for details.
 - `web/` — React + Vite SPA, served as static files by the server in production. See
   [`web/CLAUDE.md`](web/CLAUDE.md) for architecture and conventions.
 
