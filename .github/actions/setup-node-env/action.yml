@@ -1,5 +1,5 @@
 name: Setup node env
-description: Enable corepack, setup Node, install dependencies
+description: Setup pnpm, Node, install dependencies
 inputs:
   registry-url:
     description: 'Registry URL to configure for publishing (optional)'
@@ -12,11 +12,7 @@ inputs:
 runs:
   using: composite
   steps:
-    # Makes the pnpm version used inside package.json the single source of truth
-    - run: corepack enable
-      shell: bash
-    - run: corepack prepare --activate
-      shell: bash
+    - uses: pnpm/action-setup@v6
 
     - uses: actions/setup-node@v6
       with:

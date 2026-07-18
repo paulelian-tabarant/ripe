@@ -29,7 +29,25 @@ cd ripe
 pnpm install
 ```
 
-Requires Node 24.18.0 and pnpm 11.8.0 (see `packageManager` in `package.json`).
+### Runtime & Package Manager Versions
+
+Node and pnpm versions are pinned in `package.json`, but different parts of the SDLC read
+different fields:
+
+- **Node**: declared in both `devEngines` and `engines`. Locally and in CI, `actions/setup-node`
+  reads `devEngines` first, falling back to `engines` only if it's absent. At deploy time,
+  Railway's Railpack builder reads `engines.node` directly and doesn't know about `devEngines`.
+- **pnpm**: pinned via `packageManager`, read by `pnpm/action-setup` in CI's setup step.
+
+Both Node fields are kept in sync so every stage resolves the same version.
+
+**Using [mise](https://mise.jdx.dev) locally**: mise doesn't pick up `devEngines` or
+`packageManager` automatically — each needs explicit configuration:
+
+- Node: enable idiomatic version files — see mise's
+  [Node docs](https://mise.jdx.dev/lang/node.html).
+- pnpm: enable mise's experimental hooks and trigger Corepack on install — see mise's
+  [Node.js cookbook](https://mise.jdx.dev/mise-cookbook/nodejs.html).
 
 ### API (`api/`)
 
@@ -49,7 +67,30 @@ pnpm --filter web test
 ### CLI (`cli/`)
 
 ```bash
-pnpm --filter ./cli build
-pnpm --filter ./cli init   # runs the built CLI's `init` command
+pnpm --filter ./cli cli <command-name>   # builds, then runs the CLI — e.g. `init`
 pnpm --filter ./cli test
 ```
+
+The instructions below cover testing the `init` command against a locally running API. To test
+it, pass `http://localhost:<PORT>` when prompted for the server URL, using the `PORT` value from
+`api/.env.local`. The API must already be running (`pnpm --filter api start:local`), and
+`cli/.ripe/config.json` must not already exist — delete it first (`rm cli/.ripe/config.json`) to
+re-run `init` from a clean state.
+
+## Deployment
+
+Built via [Railpack](https://railpack.com) (`railpack.json`), hosted on
+[Railway](https://railway.com). `main` is protected — merging a PR is what triggers a staging
+deploy.
+
+```mermaid
+flowchart LR
+    PR[PR merged into main] --> CI["ci-main.yml (push to main)"]
+    Label["'deploy-staging' label<br/>added to a PR"] --> CIPR["ci-pr.yml (checks pass)"]
+    CI --> Staging["Staging (Railway)<br/>DB resets each deploy"]
+    CIPR --> Staging
+    Dispatch["Manual workflow_dispatch<br/>(GitHub Actions, main only)"] --> Prod["Production (Railway)"]
+```
+
+Adding the `deploy-staging` label to an open PR deploys that branch to staging once all checks
+pass — useful for testing a change before merging.

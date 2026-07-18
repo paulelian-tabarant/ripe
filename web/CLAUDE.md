@@ -5,13 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev           # vite dev server, with /api proxied to http://localhost:3000
-npm run build         # vite build → static assets
-npm run preview       # preview the production build locally
-npm run lint          # Biome ci: lint + format check + import-sort check (src/)
-npm run typecheck     # tsc --noEmit
-npm run test          # vitest run
-npm run ci:checks     # lint + typecheck + test in one shot
+pnpm --filter web dev           # vite dev server, with /api proxied to http://localhost:3000
+pnpm --filter web build         # vite build → static assets
+pnpm --filter web preview       # preview the production build locally
+pnpm --filter web lint          # Biome ci: lint + format check + import-sort check (src/)
+pnpm --filter web typecheck     # tsc --noEmit
+pnpm --filter web test          # vitest run
+pnpm --filter web ci:checks     # lint + typecheck + test in one shot
 ```
 
 ## Architecture

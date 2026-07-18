@@ -5,18 +5,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run lint          # Biome ci: lint + format check + import-sort check (src/ and tests/)
-npm run test          # run all tests (Vitest)
-npm run typecheck     # tsc --noEmit
-npm run ci:checks     # lint + typecheck + test in one shot
-npm run build         # compile to dist/
-npm run start         # node dist/index.js
+pnpm --filter api lint          # Biome ci: lint + format check + import-sort check (src/ and tests/)
+pnpm --filter api test          # run all tests (Vitest)
+pnpm --filter api typecheck     # tsc --noEmit
+pnpm --filter api ci:checks     # lint + typecheck + test in one shot
+pnpm --filter api build         # compile to dist/
+pnpm --filter api start         # node dist/index.js
 ```
 
 To run a single test file:
 
 ```bash
-npx vitest run tests/endpoints/registerProject.test.ts
+pnpm --filter api test tests/endpoints/registerProject.test.ts
 ```
 
 ## Required Environment Variables
