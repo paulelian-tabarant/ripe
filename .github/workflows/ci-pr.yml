@@ -110,7 +110,7 @@ jobs:
         run: pnpm --filter web test
 
   deploy-staging:
-    needs: [actionlint, static-checks-md, static-checks-api, static-checks-cli, static-checks-web, test-api, test-cli, test-web]
+    needs: [actionlint, static-checks-api, static-checks-cli, static-checks-web, test-api, test-cli, test-web]
     if: |
       always() &&
       contains(github.event.pull_request.labels.*.name, 'deploy-staging') &&
