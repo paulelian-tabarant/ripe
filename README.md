@@ -68,7 +68,7 @@ pnpm --filter web test
 ### CLI (`cli/`)
 
 ```bash
-pnpm --filter ./cli run run <command-name>   # builds, then runs the CLI — e.g. `init`
+pnpm --filter ./cli cli <command-name>   # builds, then runs the CLI — e.g. `init`
 pnpm --filter ./cli test
 ```
 
