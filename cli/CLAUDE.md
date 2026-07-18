@@ -17,7 +17,7 @@ npx vitest run tests/commands/init.test.ts
 
 ## Architecture
 
-This is the `ripe` CLI — one command today: `ripe init <server-url>`.
+This is the `ripe` CLI — one command today: `ripe init` (prompts for the server URL).
 
 **Entry point**: `src/index.ts` — parses `process.argv`, routes to command handlers via
 `src/cli.ts`, calls `process.exit`.
