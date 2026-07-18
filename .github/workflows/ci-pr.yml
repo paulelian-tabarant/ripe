@@ -9,36 +9,17 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      run-api: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.api == 'true' || steps.filter.outputs.shared == 'true' }}
-      run-cli: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.cli == 'true' || steps.filter.outputs.shared == 'true' }}
-      run-web: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.web == 'true' || steps.filter.outputs.shared == 'true' }}
-      run-md: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.md == 'true' || steps.filter.outputs.shared == 'true' }}
-      run-workflows: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.workflows == 'true' }}
+      run-api: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.api == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-cli: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.cli == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-web: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.web == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-md: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.md == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-workflows: ${{ github.event_name == 'workflow_dispatch' || steps.classify-changes.outputs.workflows == 'true' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v3
-        id: filter
+      - uses: ./.github/actions/classify-changes
+        id: classify-changes
         with:
           base: ${{ github.event.pull_request.base.ref || 'main' }}
-          filters: |
-            shared:
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'pnpm-workspace.yaml'
-              - 'tsconfig.base.json'
-              - 'biome.json'
-              - '.github/actions/**'
-              - '.github/workflows/ci-pr.yml'
-            api:
-              - 'api/**'
-            cli:
-              - 'cli/**'
-            web:
-              - 'web/**'
-            md:
-              - '**/*.md'
-            workflows:
-              - '.github/**'
 
   actionlint:
     needs: changes

@@ -6,6 +6,19 @@ on:
       - main
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.classify-changes.outputs.api }}
+      web: ${{ steps.classify-changes.outputs.web }}
+      shared: ${{ steps.classify-changes.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/classify-changes
+        id: classify-changes
+
   deploy-staging:
+    needs: changes
+    if: needs.changes.outputs.api == 'true' || needs.changes.outputs.web == 'true' || needs.changes.outputs.shared == 'true'
     uses: ./.github/workflows/deploy-staging.yml
     secrets: inherit

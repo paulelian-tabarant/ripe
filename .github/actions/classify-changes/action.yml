@@ -1,0 +1,57 @@
+name: Classify changes
+description: Classify changed paths into workspace/shared buckets via dorny/paths-filter
+
+inputs:
+  base:
+    description: Git ref to diff against (defaults to dorny/paths-filter's own default)
+    required: false
+    default: ''
+
+outputs:
+  api:
+    description: api/** changed
+    value: ${{ steps.filter.outputs.api }}
+  cli:
+    description: cli/** changed
+    value: ${{ steps.filter.outputs.cli }}
+  web:
+    description: web/** changed
+    value: ${{ steps.filter.outputs.web }}
+  md:
+    description: any *.md changed
+    value: ${{ steps.filter.outputs.md }}
+  workflows:
+    description: .github/** changed
+    value: ${{ steps.filter.outputs.workflows }}
+  shared:
+    description: root config or shared CI/build files changed
+    value: ${{ steps.filter.outputs.shared }}
+
+runs:
+  using: composite
+  steps:
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        base: ${{ inputs.base }}
+        filters: |
+          shared:
+            - 'package.json'
+            - 'pnpm-lock.yaml'
+            - 'pnpm-workspace.yaml'
+            - 'tsconfig.base.json'
+            - 'biome.json'
+            - '.github/actions/**'
+            - '.github/workflows/ci-pr.yml'
+            - '.github/workflows/ci-main.yml'
+            - '.github/workflows/deploy-staging.yml'
+          api:
+            - 'api/**'
+          cli:
+            - 'cli/**'
+          web:
+            - 'web/**'
+          md:
+            - '**/*.md'
+          workflows:
+            - '.github/**'
