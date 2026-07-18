@@ -29,7 +29,26 @@ cd ripe
 pnpm install
 ```
 
-Requires Node 24.18.0 and pnpm 11.8.0 (see `packageManager` in `package.json`).
+### Runtime & Package Manager Versions
+
+Node and pnpm versions are pinned in `package.json`, but different parts of the SDLC read
+different fields:
+
+- **Node**: declared in both `devEngines` and `engines`. Locally and in CI, `actions/setup-node`
+  reads `devEngines` first, falling back to `engines` only if it's absent. At deploy time,
+  Railway's Railpack builder reads `engines.node` directly and doesn't know about `devEngines`.
+- **pnpm**: pinned via `packageManager`, read by Corepack (`corepack prepare --activate` in CI's
+  setup step).
+
+Both Node fields are kept in sync so every stage resolves the same version.
+
+**Using [mise](https://mise.jdx.dev) locally**: mise doesn't pick up `devEngines` or
+`packageManager` automatically — each needs explicit configuration:
+
+- Node: enable idiomatic version files — see mise's
+  [Node docs](https://mise.jdx.dev/lang/node.html).
+- pnpm: enable mise's experimental hooks and trigger Corepack on install — see mise's
+  [Node.js cookbook](https://mise.jdx.dev/mise-cookbook/nodejs.html).
 
 ### API (`api/`)
 
