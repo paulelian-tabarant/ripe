@@ -37,8 +37,7 @@ different fields:
 - **Node**: declared in both `devEngines` and `engines`. Locally and in CI, `actions/setup-node`
   reads `devEngines` first, falling back to `engines` only if it's absent. At deploy time,
   Railway's Railpack builder reads `engines.node` directly and doesn't know about `devEngines`.
-- **pnpm**: pinned via `packageManager`, read by Corepack (`corepack prepare --activate` in CI's
-  setup step).
+- **pnpm**: pinned via `packageManager`, read by `pnpm/action-setup` in CI's setup step.
 
 Both Node fields are kept in sync so every stage resolves the same version.
 
