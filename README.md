@@ -77,3 +77,21 @@ it, pass `http://localhost:<PORT>` when prompted for the server URL, using the `
 `api/.env.local`. The API must already be running (`pnpm --filter api start:local`), and
 `cli/.ripe/config.json` must not already exist — delete it first (`rm cli/.ripe/config.json`) to
 re-run `init` from a clean state.
+
+## Deployment
+
+Built via [Railpack](https://railpack.com) (`railpack.json`), hosted on
+[Railway](https://railway.com). `main` is protected — merging a PR is what triggers a staging
+deploy.
+
+```mermaid
+flowchart LR
+    PR[PR merged into main] --> CI["ci-main.yml (push to main)"]
+    Label["'deploy-staging' label<br/>added to a PR"] --> CIPR["ci-pr.yml (checks pass)"]
+    CI --> Staging["Staging (Railway)<br/>DB resets each deploy"]
+    CIPR --> Staging
+    Dispatch["Manual workflow_dispatch<br/>(GitHub Actions, main only)"] --> Prod["Production (Railway)"]
+```
+
+Adding the `deploy-staging` label to an open PR deploys that branch to staging once all checks
+pass — useful for testing a change before merging.
