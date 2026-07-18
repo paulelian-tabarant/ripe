@@ -24,6 +24,7 @@ See [`STANDARDS.md`](STANDARDS.md) for coding standards that apply across the wh
 pnpm --filter api test
 pnpm --filter ./cli test
 pnpm --filter web test
+
 pnpm lint:md           # Markdown lint
 ```
 
