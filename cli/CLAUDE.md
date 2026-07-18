@@ -13,7 +13,7 @@ pnpm --filter ./cli ci:checks   # lint + typecheck + test in one shot
 pnpm --filter ./cli cli -- <command-name>   # build, then invoke the CLI, e.g. `init`
 
 # Run a single test file
-pnpm --filter ./cli exec vitest run tests/commands/init.test.ts
+pnpm --filter ./cli test tests/commands/init.test.ts
 ```
 
 ## Architecture

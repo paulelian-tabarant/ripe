@@ -16,7 +16,7 @@ pnpm --filter api start         # node dist/index.js
 To run a single test file:
 
 ```bash
-pnpm --filter api exec vitest run tests/endpoints/registerProject.test.ts
+pnpm --filter api test tests/endpoints/registerProject.test.ts
 ```
 
 ## Required Environment Variables
