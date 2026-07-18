@@ -53,3 +53,8 @@ pnpm --filter ./cli build
 pnpm --filter ./cli init   # runs the built CLI's `init` command
 pnpm --filter ./cli test
 ```
+
+To test the CLI against a locally running API, pass `http://localhost:<PORT>` when prompted for
+the server URL, using the `PORT` value from `api/.env.local`. The API must already be running
+(`pnpm --filter api start:local`), and `cli/.ripe/config.json` must not already exist — delete it
+first (`rm cli/.ripe/config.json`) to re-run `init` from a clean state.
