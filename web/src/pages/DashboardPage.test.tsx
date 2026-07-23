@@ -75,4 +75,16 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('No projects registered')).toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
   })
+
+  it('shows an error message when the request fails', async () => {
+    server.use(http.get('/api/projects', () => HttpResponse.error()))
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('Failed to load projects')).toBeInTheDocument()
+  })
 })

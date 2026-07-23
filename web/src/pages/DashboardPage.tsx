@@ -4,7 +4,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 import { Message } from '../components/Message'
 import { type Project, ProjectSelector } from '../components/ProjectSelector'
 
-type State = { kind: 'loading' } | { kind: 'success'; projects: Project[] }
+type State = { kind: 'loading' } | { kind: 'success'; projects: Project[] } | { kind: 'error' }
 
 export function DashboardPage(): ReactElement {
   const [state, setState] = useState<State>({ kind: 'loading' })
@@ -14,10 +14,20 @@ export function DashboardPage(): ReactElement {
     let cancelled = false
 
     fetch('/api/projects')
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`)
+        }
+        return response.json()
+      })
       .then((projects: Project[]) => {
         if (!cancelled) {
           setState({ kind: 'success', projects })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState({ kind: 'error' })
         }
       })
 
@@ -28,6 +38,10 @@ export function DashboardPage(): ReactElement {
 
   if (state.kind === 'loading') {
     return <LoadingSpinner />
+  }
+
+  if (state.kind === 'error') {
+    return <Message variant="error">Failed to load projects</Message>
   }
 
   if (state.projects.length === 0) {
