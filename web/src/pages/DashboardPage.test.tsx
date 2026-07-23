@@ -62,4 +62,17 @@ describe('DashboardPage', () => {
 
     expect(screen.getByRole('combobox')).toHaveValue('2')
   })
+
+  it('shows an empty-state message and no dropdown when there are no projects', async () => {
+    server.use(http.get('/api/projects', () => HttpResponse.json([])))
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('No projects registered')).toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
 })
