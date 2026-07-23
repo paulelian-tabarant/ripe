@@ -38,13 +38,22 @@ except where explicitly gated below.
      as stubbed. This applies to each implementer dispatched below — state it
      explicitly in their prompts, it's a constraint on how they build, not an
      optional nicety.
+   - **Build order follows the same outside-in philosophy**: implement inline
+     at the entry point first; only extract into a separate file/layer at the
+     refactor step, once a case actually justifies the split (duplication, or
+     a later case needing the same shape) — don't pre-build a layered
+     structure before a test demands it. Standing architectural decisions
+     (e.g. an existing ADR mandating a given component/module structure) are
+     the exception — build those as their own pieces from the start; they're
+     not speculative structure being invented for this task.
    - Record the branch this iteration is building on (`git rev-parse HEAD`) before
-     dispatching anything — this is the merge base for every subtask branch and
-     for the final review/PR diff.
-   - For each independent subtask, dispatch an `Agent` call with
-     `isolation: "worktree"`. Dispatch all independent subtasks' `Agent` calls in
-     a single message so they run in parallel. Sequential/dependent subtasks go
-     in their own message, after the subtask they depend on returns.
+     dispatching anything — this is the base for the final review/PR diff.
+   - For each independent subtask, dispatch an `Agent` call. Dispatch all
+     independent subtasks' `Agent` calls in a single message so they run in
+     parallel. Sequential/dependent subtasks go in their own message, after the
+     subtask they depend on returns. No worktree isolation — implementers work
+     directly on the iteration's working branch; independence (step 2) means
+     disjoint files, so parallel dispatch is safe without it.
    - Each implementer prompt must be self-contained: the subtask's description,
      the files it owns, relevant interfaces from other subtasks it depends on,
      and an instruction to commit its work when done. It should not need the
@@ -52,30 +61,25 @@ except where explicitly gated below.
    - Instruct it to favor dedicated code navigation/editing tools over raw
      file reads/writes when available, falling back to raw reads/writes
      otherwise. If such tools are available, have it do a quick test
-     read+write early on and confirm the change actually appears on its
-     current branch/worktree (e.g. via `git status`/`git diff`) — if it
-     doesn't, stop and report that back to you as a blocker instead of
-     continuing to edit blind.
+     read+write early on and confirm the change actually appears on the
+     working branch (e.g. via `git status`/`git diff`) — if it doesn't, stop
+     and report that back to you as a blocker instead of continuing to edit
+     blind.
    - If only one subtask exists, dispatch a single implementer — parallelism is
      a means, not a requirement.
 
-4. **Merge.** For each implementer that returns a worktree/branch, merge it back
-   into the iteration's working branch, one at a time (`git merge <branch>`).
-   Resolve trivial conflicts yourself; if a conflict isn't trivial (both sides
-   meaningfully changed the same logic), stop and ask the user which should win.
-
-5. **Run checks.** Run this project's checks yourself, directly via Bash — do
+4. **Run checks.** Run this project's checks yourself, directly via Bash — do
    not delegate this to a subagent. Use `pnpm --filter <package> ci:checks` for
    each touched package (`api`, `./cli`, `web`), per this repo's CLAUDE.md.
 
-6. **Review.** Dispatch one subagent to review the diff from the recorded merge
-   base to `HEAD`, instructing it to use this repo's `iteration-code-review` skill.
-   Give it the merge-base SHA and the working branch — don't make it guess the
-   diff range. Instruct it to favor dedicated code navigation tools over raw
+5. **Review.** Dispatch one subagent to review the diff from the recorded base
+   to `HEAD`, instructing it to use this repo's `iteration-code-review` skill.
+   Give it the base SHA and the working branch — don't make it guess the diff
+   range. Instruct it to favor dedicated code navigation tools over raw
    file reads when available, falling back to raw reads otherwise.
 
-7. **Fix.** Dispatch exactly one subagent with both: any failing check output
-   from step 5, and the full findings list from step 6. Instruct it to:
+6. **Fix.** Dispatch exactly one subagent with both: any failing check output
+   from step 4, and the full findings list from step 5. Instruct it to:
    - Fix every clear-cut finding (a concrete bug, standards violation, or
      failing check with an obvious correct fix) without asking anyone.
    - NOT guess on findings that are genuinely ambiguous or that conflict with
@@ -89,30 +93,30 @@ except where explicitly gated below.
      — if it doesn't, stop and report that back as a blocker instead of
      continuing to edit blind.
 
-8. **Gate on ambiguity.** If the fixer returned any "needs a decision" items,
+7. **Gate on ambiguity.** If the fixer returned any "needs a decision" items,
    stop and present them to the user — do not resolve them yourself and do not
-   continue to step 9 until they're resolved. Otherwise, continue.
+   continue to step 8 until they're resolved. Otherwise, continue.
 
-9. **Re-run checks.** Run the project checks again yourself (same as step 5).
+8. **Re-run checks.** Run the project checks again yourself (same as step 4).
    If they still fail, dispatch one more fix subagent with the new failure
    output, then re-run. There is no second review pass — review happens once,
-   in step 6.
+   in step 5.
 
-10. **Recap and open the PR.** Generate a recap using this repo's `iteration-recap`
-    skill for the working branch against its base. This step is not done once
-    the recap text exists — immediately continue in the same turn to push the
-    branch and run `gh pr create` using that recap verbatim as the `--body`.
-    Printing the recap to the user and stopping there is an incomplete step
-    10, not a handoff point. Do this without asking for confirmation first —
-    invoking this skill is the standing authorization for the PR it produces.
+9. **Recap and open the PR.** Generate a recap using this repo's `iteration-recap`
+   skill for the working branch against its base. This step is not done once
+   the recap text exists — immediately continue in the same turn to push the
+   branch and run `gh pr create` using that recap verbatim as the `--body`.
+   Printing the recap to the user and stopping there is an incomplete step
+   9, not a handoff point. Do this without asking for confirmation first —
+   invoking this skill is the standing authorization for the PR it produces.
 
-11. **Mark the user story done.** If this iteration is driven by a spec under
+10. **Mark the user story done.** If this iteration is driven by a spec under
     `docs/spec/user-stories/`, update that doc's `**Status**` line to `Done`
     (this repo's existing convention, e.g. commit `4f9643a`), commit it, and
-    push — updating the PR just opened in step 10 rather than opening a
+    push — updating the PR just opened in step 9 rather than opening a
     second one.
 
-12. **Suggest process improvements.** Invoke this repo's `iteration-retro` skill,
+11. **Suggest process improvements.** Invoke this repo's `iteration-retro` skill,
     pointing it at this iteration's transcript, the plan doc (if any), and the
     PR/diff just opened. It covers auto-allow candidates, underused tools,
     missing STANDARDS.md/CLAUDE.md coverage, and tooling gaps — don't
@@ -128,11 +132,11 @@ except where explicitly gated below.
 - **An implementer subagent asks a question mid-task:** answer it yourself from
   the plan/clarified intent; don't silently guess and don't forward it to the
   user unless it reveals a genuine gap the Specify step (1) missed — in that
-  case, treat it like step 8's gate.
-- **Checks fail before review can even run** (step 5, first pass): don't
+  case, treat it like step 7's gate.
+- **Checks fail before review can even run** (step 4, first pass): don't
   dispatch a fixer yet — that only happens once, bundled with review findings
-  in step 7. Note the failures and carry them into step 7's fixer dispatch.
-- **No PR-worthy findings from review:** step 7's fixer still runs (to catch
+  in step 6. Note the failures and carry them into step 6's fixer dispatch.
+- **No PR-worthy findings from review:** step 6's fixer still runs (to catch
   any check failures) but may have nothing to fix from review; that's fine,
   it just reports nothing to fix on that front.
 - **`gh` not installed/authenticated:** the `iteration-recap` skill already handles
