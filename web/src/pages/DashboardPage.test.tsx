@@ -10,11 +10,7 @@ describe('DashboardPage', () => {
   it('shows a loading indicator while the API has not responded yet', () => {
     server.use(http.get('/api/projects', () => new Promise(() => {})))
 
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    )
+    renderDashboardPage()
 
     expect(screen.getByText('Loading projects…')).toBeInTheDocument()
   })
@@ -29,11 +25,7 @@ describe('DashboardPage', () => {
       ),
     )
 
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    )
+    renderDashboardPage()
 
     expect(await screen.findByRole('option', { name: 'Alpha' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Beta' })).toBeInTheDocument()
@@ -51,11 +43,7 @@ describe('DashboardPage', () => {
       ),
     )
 
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    )
+    renderDashboardPage()
 
     await screen.findByRole('option', { name: 'Alpha' })
     await user.selectOptions(screen.getByRole('combobox'), 'Beta')
@@ -66,11 +54,7 @@ describe('DashboardPage', () => {
   it('shows an empty-state message and no dropdown when there are no projects', async () => {
     server.use(http.get('/api/projects', () => HttpResponse.json([])))
 
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    )
+    renderDashboardPage()
 
     expect(await screen.findByText('No projects registered')).toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
@@ -79,12 +63,16 @@ describe('DashboardPage', () => {
   it('shows an error message when the request fails', async () => {
     server.use(http.get('/api/projects', () => HttpResponse.error()))
 
-    render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
-    )
+    renderDashboardPage()
 
     expect(await screen.findByText('Failed to load projects')).toBeInTheDocument()
   })
 })
+
+function renderDashboardPage(): void {
+  render(
+    <MemoryRouter>
+      <DashboardPage />
+    </MemoryRouter>,
+  )
+}
