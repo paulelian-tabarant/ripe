@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
@@ -37,5 +38,28 @@ describe('DashboardPage', () => {
     expect(await screen.findByRole('option', { name: 'Alpha' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Beta' })).toBeInTheDocument()
     expect(screen.getByRole('combobox')).toHaveValue('')
+  })
+
+  it('updates the selected value when the user picks a project', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.get('/api/projects', () =>
+        HttpResponse.json([
+          { id: '1', name: 'Alpha' },
+          { id: '2', name: 'Beta' },
+        ]),
+      ),
+    )
+
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    )
+
+    await screen.findByRole('option', { name: 'Alpha' })
+    await user.selectOptions(screen.getByRole('combobox'), 'Beta')
+
+    expect(screen.getByRole('combobox')).toHaveValue('2')
   })
 })
