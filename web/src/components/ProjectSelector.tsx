@@ -1,9 +1,5 @@
 import type { ChangeEvent, ReactElement } from 'react'
-
-export interface Project {
-  id: string
-  name: string
-}
+import type { Project } from '../services/projects'
 
 interface ProjectSelectorProps {
   projects: Project[]
