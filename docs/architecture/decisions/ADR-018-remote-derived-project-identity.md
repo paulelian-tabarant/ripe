@@ -38,15 +38,19 @@ target for team telemetry in the first place.
 - The server-assigned `id` (`proj_<nanoid>` format) is unchanged and stays the value used in URL
   paths (e.g. `GET /api/projects/{project_id}/activity`). `repo_key` is not used in URLs — this
   avoids needing to slugify or hash a value containing `/` and `.` for path-safety.
-- `project_id` is **not cached locally at all**. Because `repo_key` is deterministic (recomputed
-  from `git remote get-url origin` on every invocation) and lookup is idempotent server-side,
-  `init` and `sync` simply resolve it fresh on every call. This removes the problem ADR-016 was
-  solving — there is no longer anything that needs to be committed to git for team members to
-  share, because every team member's local git remote already produces the same `repo_key`.
-- `.ripe/config.json` (committed) is retired. All remaining local state — skill ID cache,
-  `last_synced_sha` (for future rename detection), the per-developer consent flag, and `serverUrl`
-  — is consolidated into a single gitignored `.ripe/cache.json`. Nothing under `.ripe/` is
-  committed to git anymore.
+- `project_id` **may still be cached locally as an optimization** (avoids a resolve call on every
+  `sync`), but the cache is never load-bearing and never committed. Because `repo_key` is
+  deterministic (recomputed from `git remote get-url origin`) and lookup is idempotent
+  server-side, a missing or stale cache entry just means the next call re-resolves `project_id`
+  from the server — no ambiguity, no risk of duplicate or misattached data. This removes the
+  problem ADR-016 was solving — there is no longer anything that needs to be committed to git for
+  team members to share, because every team member's local git remote already produces the same
+  `repo_key`, and the server resolves it to the same `project_id` regardless of whether any given
+  machine has it cached.
+- `.ripe/config.json` (committed) is retired. All remaining local state — `project_id` cache,
+  skill ID cache, `last_synced_sha` (for future rename detection), the per-developer consent flag,
+  and `serverUrl` — is consolidated into a single gitignored `.ripe/cache.json`. Nothing under
+  `.ripe/` is committed to git anymore.
 
 **Explicitly out of scope for this decision:**
 
