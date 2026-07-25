@@ -37,25 +37,25 @@ model {
     description 'Coding agent running on developer machine'
   }
 
-  skillTelemetry = script 'Telemetry Client Script' {
-    description 'TypeScript/Node.js client script invoked by the SessionEnd hook. Syncs skills with the server and submits invocation events. Name and install location TBD.'
+  ripeCli = script 'ripe CLI' {
+    description '`ripe init` registers the project; `ripe sync`, invoked by the SessionEnd hook, syncs skills and submits invocation events.'
   }
 
-  localSkillStore = database 'Skill ID Cache' {
-    description 'Local gitignored file: maps skill names to server-assigned IDs. Format TBD.'
+  localCache = database 'Local Cache' {
+    description 'Local gitignored .ripe/cache.json: serverUrl, cached project_id, skill name -> ID cache, last_synced_sha.'
   }
 
   telemetryServer = system 'Telemetry Server' {
-    description 'Fastify + SQLite, hosted on Fly.io'
+    description 'Fastify + SQLite, hosted on Railway'
 
-    fastapiServer = container 'Fastify Server' {
+    fastifyServer = container 'Fastify Server' {
       technology 'TypeScript, Node.js, Fastify'
       description 'Handles ingest and serves the dashboard API and SPA'
     }
 
     sqliteDb = database 'SQLite Database' {
       technology 'SQLite'
-      description '/data/telemetry.db on Fly.io persistent volume'
+      description 'Railway volume-mounted path (DATABASE_PATH)'
     }
 
     reactSpa = webapp 'React SPA' {
@@ -63,20 +63,27 @@ model {
       description 'Dashboard SPA served by FastAPI at /'
     }
 
-    fastapiServer -> sqliteDb 'reads/writes'
-    fastapiServer -> reactSpa 'serves at /'
-    reactSpa -> fastapiServer 'GET /api/projects/{id}/activity' {
+    fastifyServer -> sqliteDb 'reads/writes'
+    fastifyServer -> reactSpa 'serves at /'
+    reactSpa -> fastifyServer 'GET /api/projects' {
+      technology 'HTTP/JSON'
+    }
+    reactSpa -> fastifyServer 'GET /api/projects/{id}/activity' {
       technology 'HTTP/JSON'
     }
   }
 
   developer -> claudeCode 'uses'
-  claudeCode -> skillTelemetry 'SessionEnd hook invokes'
-  skillTelemetry -> localSkillStore 'reads/writes skill IDs'
-  skillTelemetry -> telemetryServer.fastapiServer 'POST /api/skills' {
+  developer -> ripeCli 'runs `ripe init` once per project'
+  claudeCode -> ripeCli 'SessionEnd hook invokes `ripe sync`'
+  ripeCli -> localCache 'reads/writes cached state'
+  ripeCli -> telemetryServer.fastifyServer 'POST /api/projects (find-or-create by repo_key)' {
     technology 'HTTP/JSON'
   }
-  skillTelemetry -> telemetryServer.fastapiServer 'POST /api/events' {
+  ripeCli -> telemetryServer.fastifyServer 'POST /api/skills' {
+    technology 'HTTP/JSON'
+  }
+  ripeCli -> telemetryServer.fastifyServer 'POST /api/events' {
     technology 'HTTP/JSON'
   }
   developer -> telemetryServer.reactSpa 'views dashboard' {
@@ -87,25 +94,36 @@ model {
 views {
   view context {
     title 'System Context (C4 Level 1)'
-    include developer, claudeCode, skillTelemetry, localSkillStore, telemetryServer
+    include developer, claudeCode, ripeCli, localCache, telemetryServer
   }
 
   view containers of telemetryServer {
     title 'Container View (C4 Level 2)'
-    include developer, claudeCode, skillTelemetry, localSkillStore, *
+    include developer, claudeCode, ripeCli, localCache, *
+  }
+
+  dynamic view initFlow {
+    title '`ripe init` — Project Registration'
+
+    developer -> ripeCli 'runs `ripe init` (prints consent notice, derives repo_key from `git remote get-url origin`)'
+    ripeCli -> telemetryServer.fastifyServer 'POST /api/projects { name, repo_key }'
+    ripeCli <- telemetryServer.fastifyServer 'returns project_id (idempotent find-or-create)'
+    ripeCli -> localCache 'writes serverUrl + project_id'
   }
 
   dynamic view sessionEndFlow {
-    title 'SessionEnd Hook — Two-Step Flow'
+    title '`ripe sync` (SessionEnd Hook) — Two-Phase Flow'
+
+    claudeCode -> ripeCli 'SessionEnd: invokes `ripe sync`'
+    ripeCli -> localCache 'reads cached project_id (or re-resolves via repo_key if missing)'
 
     // Phase 1: Skill sync
-    claudeCode -> skillTelemetry 'SessionEnd: invokes telemetry client script'
-    skillTelemetry -> localSkillStore 'reads cached skill IDs'
-    skillTelemetry -> telemetryServer.fastapiServer 'POST /api/skills (unregistered skills only)'
-    skillTelemetry <- telemetryServer.fastapiServer 'returns server-assigned IDs'
-    skillTelemetry -> localSkillStore 'persists new IDs (gitignored)'
+    ripeCli -> localCache 'reads cached skill IDs'
+    ripeCli -> telemetryServer.fastifyServer 'POST /api/skills (unregistered skills only)'
+    ripeCli <- telemetryServer.fastifyServer 'returns server-assigned IDs'
+    ripeCli -> localCache 'persists new skill IDs'
 
     // Phase 2: Event submission
-    skillTelemetry -> telemetryServer.fastapiServer 'POST /api/events (session invocations)'
+    ripeCli -> telemetryServer.fastifyServer 'POST /api/events (session invocations; user.email/user.name read live, not cached; client_type: "claude-code")'
   }
 }
