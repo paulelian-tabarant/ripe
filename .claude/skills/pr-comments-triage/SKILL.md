@@ -76,26 +76,40 @@ pass — not to guess at answers to comments that are actually asking the author
    report. A comment isn't actually addressed if it leaves the branch failing checks — fix any
    failures the same way you would for any other coding task, then re-run until clean.
 
-6. **Report using this structure:**
+6. **Report the actionable bucket, then walk the judgment bucket one by one.** Don't dump both
+   buckets as a single list and wait for one omnibus reply — the judgment-call items need a
+   real back-and-forth, and bundling them invites the user to skim instead of deciding.
+
+   First, report what's already done:
 
    ```markdown
    ## PR #<number>: <title>
 
    **Addressed:**
    - `path:line` — [<label>] <one-line gist of the comment>. <what you did, or why you didn't>.
-
-   **Needs your input:**
-   - `path:line` — [<label>] "<quoted comment>"
-     <one-line note on what a reasonable response might be, if it helps them decide faster>
    ```
 
-   Omit either section if it's empty (e.g. a PR with only nitpicks has no "Addressed" section).
-   If a comment's label is inferred rather than explicit, no need to flag that in the report —
-   the classification should just be right, not narrated.
+   Omit this section if nothing was actionable. If a comment's label is inferred rather than
+   explicit, no need to flag that in the report — the classification should just be right, not
+   narrated.
 
-7. **Confirm, then resolve.** The report in step 6 is a proposal — wait until you and the user
-   are actually aligned on what got addressed and what was decided on the judgment-call items
-   before touching GitHub. Once aligned, resolve the corresponding review threads for the
+   Then, for the judgment bucket (`question`, `thought`, `praise`, `nitpick`, or any actionable
+   item you chose not to apply as written), present them **one at a time**, in file order. For
+   each:
+   - Quote the comment with its `path:line` and label.
+   - Give a one-line note on what a reasonable response might be, if it helps them decide faster
+     — but don't decide for them.
+   - Wait for the user's answer before moving to the next one. If the answer implies a code
+     change, make it before moving on, so context stays fresh and each item is fully closed out
+     before the next.
+
+   If there are many items, it's fine to ask once whether the user wants them one-by-one or
+   batched — but default to one-by-one unless they say otherwise.
+
+7. **Confirm, then resolve.** Wait until you and the user are actually aligned on what got
+   addressed and what was decided on each judgment-call item before touching GitHub. Once
+   aligned (either after the full one-by-one walk, or as you go if the user prefers resolving
+   threads immediately after each decision), resolve the corresponding review threads for the
    comments that were acted on or explicitly settled — not a reply saying "resolved", an actual
    resolved conversation, since that's what the label means to a reviewer scanning the PR:
 

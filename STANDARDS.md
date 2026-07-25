@@ -50,6 +50,9 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **`async`/`await` over chained promises**: write asynchronous code with `async`/`await`; reserve
   `.then`/`.catch` chains for the rare case `async`/`await` can't express (e.g. `Promise.all`
   combinators feeding straight into further chaining).
+- **Early returns over nested conditionals**: guard against the exceptional/short-circuit case
+  first and return, instead of wrapping the main logic in an `if`. Prefer flat, sequential code
+  over deep nesting.
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving
   from high-level intent to low-level detail (see `api/tests/endpoints/registerProject.test.ts`: the
   `it` blocks read first, the `postProjects` helper they call is defined last).
