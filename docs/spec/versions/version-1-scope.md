@@ -95,3 +95,18 @@ the cache first — a stale `project_id` from the old server won't resolve again
 **Before broader rollout**: automate environment switching and document staging data retention policy.
 
 ---
+
+### Ongoing: Transcript Format Recheck
+
+`ripe sync` Phase 2 parses Claude Code's `.jsonl` transcript format
+([ADR-001](../../architecture/decisions/ADR-001-sessionend-hook-transcript-parsing.md)). Stability
+was assessed once, across 31 patch versions (see
+[transcript-format-stability.md](../../architecture/analysis/transcript-format-stability.md)), not
+verified continuously.
+
+**v1 commitment**: recheck the transcript structure against the latest installed Claude Code CLI
+version whenever it bumps a minor/major version (e.g. 2.1 → 2.2), or at minimum once per quarter.
+Re-run the schema validation tests against a fresh transcript sample; update the parser and the
+stability doc if the structure changed.
+
+---
