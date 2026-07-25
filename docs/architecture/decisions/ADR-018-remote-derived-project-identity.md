@@ -48,9 +48,10 @@ target for team telemetry in the first place.
   `repo_key`, and the server resolves it to the same `project_id` regardless of whether any given
   machine has it cached.
 - `.ripe/config.json` (committed) is retired. All remaining local state — `project_id` cache,
-  skill ID cache, `last_synced_sha` (for future rename detection), the per-developer consent flag,
-  and `serverUrl` — is consolidated into a single gitignored `.ripe/cache.json`. Nothing under
-  `.ripe/` is committed to git anymore.
+  skill ID cache, `last_synced_sha` (for future rename detection), and `serverUrl` — is
+  consolidated into a single gitignored `.ripe/cache.json`. Nothing under `.ripe/` is committed to
+  git anymore. (No consent flag is stored — [US-2.2](../../spec/user-stories/2026-06-21-us-2.2-event-submission.md)
+  prints a consent notice on every `ripe init` instead of gating on a stored flag.)
 
 **Explicitly out of scope for this decision:**
 

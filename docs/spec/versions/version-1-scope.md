@@ -83,11 +83,14 @@ in a multi-team deployment.
 
 ### Manual Environment Switching
 
-Switching between local, staging, and production requires manually reconfiguring the client's server
-URL (exact mechanism TBD). Project identity is derived from the git remote and resolved fresh on
-each server call (see [ADR-018](../../architecture/decisions/ADR-018-remote-derived-project-identity.md)) —
-it is not cached locally, so it remains valid across environments regardless of which server URL
-is configured. No automated promotion pipeline for v1.
+Switching between local, staging, and production requires manually reconfiguring the client's
+server URL: delete `.ripe/cache.json` and run `ripe init` again (see `cli/README.md`). No env var
+override, no automated promotion pipeline for v1. `repo_key` is derived from the git remote and
+recomputed fresh on each server call (see
+[ADR-018](../../architecture/decisions/ADR-018-remote-derived-project-identity.md)) — it is never
+cached, so it resolves consistently regardless of server URL. `project_id` *is* cached locally as
+a call-skipping optimization, which is exactly why re-pointing to a new server requires clearing
+the cache first — a stale `project_id` from the old server won't resolve against the new one.
 
 **Before broader rollout**: automate environment switching and document staging data retention policy.
 
