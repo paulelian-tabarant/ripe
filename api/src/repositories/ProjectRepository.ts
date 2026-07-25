@@ -18,15 +18,15 @@ export class ProjectRepository {
     this.insertStatement = this.db.prepare('INSERT INTO projects (id, name) VALUES (?, ?)')
   }
 
-  findByName(name: string): Project | undefined {
+  getByName(name: string): Project | undefined {
     return this.findByNameStatement.get(name)
   }
 
-  findAll(): Project[] {
+  list(): Project[] {
     return this.findAllStatement.all()
   }
 
-  insert(project: Project): void {
+  addNewProject(project: Project): void {
     this.insertStatement.run(project.id, project.name)
   }
 }

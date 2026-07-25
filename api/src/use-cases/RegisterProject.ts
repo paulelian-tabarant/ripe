@@ -7,14 +7,14 @@ export class RegisterProject {
   constructor(private readonly repository: ProjectRepository) {}
 
   run(name: string): RegisterProjectResult {
-    const existing = this.repository.findByName(name)
+    const existing = this.repository.getByName(name)
 
     if (existing) {
       return { created: false, projectId: existing.id }
     }
 
     const projectId = `proj_${nanoid()}`
-    this.repository.insert({ id: projectId, name })
+    this.repository.addNewProject({ id: projectId, name })
 
     return { created: true, projectId }
   }
