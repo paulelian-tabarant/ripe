@@ -4,6 +4,6 @@ export class ListProjects {
   constructor(private readonly repository: ProjectRepository) {}
 
   run(): Project[] {
-    return this.repository.findAll()
+    return this.repository.list()
   }
 }
