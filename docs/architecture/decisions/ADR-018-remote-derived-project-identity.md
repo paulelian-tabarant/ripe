@@ -62,6 +62,10 @@ target for team telemetry in the first place.
   is the same accepted limitation as V1 skill renames (see
   [version-2-scope.md](../../spec/versions/version-2-scope.md)); revisit later using a similar
   git-diff-based technique if it becomes a real pain point.
+- **Duplicate display names**: `name` (directory basename) is no longer unique, so two unrelated
+  repos sharing a basename render identically in the [US-1.2](../../spec/user-stories/2026-06-21-us-1.2-project-listing.md)
+  dropdown, with no `repo_key`/org disambiguator shown. Accepted for now — revisit only if this
+  causes an actual user-reported mix-up.
 
 ## Rationale
 
