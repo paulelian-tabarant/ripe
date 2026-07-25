@@ -56,13 +56,18 @@ The server expects:
 
 ```typescript
 interface SkillInvocationEvent {
-    skill_id: string;
-    skill_name: string;
+    event_type: "skill_invocation";
     timestamp: string;
     user_email: string;
+    user_name: string;
     project_id: string;
     session_id: string;
-    tool_use_id: string;
+    client_type: string;
+    payload: {
+        skill_id: string;
+        skill_name: string;
+        tool_use_id: string;
+    };
 }
 ```
 
