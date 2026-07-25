@@ -23,6 +23,13 @@ export function DashboardPage(): ReactElement {
   }
 
   return (
-    <ProjectSelector projects={projectsState.data} value={selectedId} onChange={setSelectedId} />
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold">Projects</h1>
+      <ProjectSelector
+        projects={projectsState.data}
+        selectedProjectId={selectedId}
+        onChange={setSelectedId}
+      />
+    </div>
   )
 }
