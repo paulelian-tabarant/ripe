@@ -36,12 +36,22 @@ data spanning several weeks is required in the test environment.
 Detect when a skill file is renamed (not deleted+added) and preserve historical telemetry data
 under the new name.
 
-**Changes**:
+**Detection technique**: use git's own rename detection instead of diffing local cache state.
 
-- Compare `.ripe/skills.json` cache (old name) against current `.claude/skills/` (new filename)
-- Heuristics to distinguish rename from delete+add (Git uses similar logic)
-- `PUT /api/skills/:skill_id` endpoint to update skill name server-side
-- Migration preserves historical event data under new name
+- Client persists `last_synced_sha` locally (gitignored, not `.ripe/skills.json` — that cache is
+  a call-skipping optimization only, not a historical record)
+- On `ripe sync`: `git diff -M --name-status <last_synced_sha> HEAD -- .claude/skills/` — git
+  reports renames (`R100 old/path new/path`), adds, and deletes in one call, using its own
+  content-similarity heuristic (same one behind `git log --follow`)
+- Renames reported by git → look up the old name's `skill_id` (from cache or a fresh server
+  lookup) → `PUT /api/skills/:skill_id { name: new_name }`, preserving history under the same ID
+- Adds reported by git with no matching rename → register as new skills (existing `POST` flow)
+- No historical name list needs to be stored separately — `git ls-tree -r --name-only
+  <last_synced_sha> -- .claude/skills/` reconstructs the old skill directory on demand, straight
+  from git's object store
+- Update `last_synced_sha` to current `HEAD` after a successful sync
+- Ambiguous cases (content rewritten enough that git doesn't detect a rename) fall back to
+  delete+add, same as V1 behavior
 
 **Why**: In V1, renaming a skill orphans all historical data (treated as delete + add with new ID).
 This makes refactoring skill names costly for teams with long telemetry history.
