@@ -13,14 +13,13 @@
     "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.0.0",
-    "tailwindcss": "^4.3.3"
+    "react-router-dom": "^7.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.0",
@@ -29,6 +28,7 @@
     "@vitejs/plugin-react": "^4.3.0",
     "jsdom": "^25.0.0",
     "msw": "^2.6.0",
+    "tailwindcss": "^4.3.3",
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
   }

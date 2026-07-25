@@ -10,11 +10,11 @@ export function DashboardPage(): ReactElement {
   const projectsState = useAsync(fetchProjects)
   const [selectedId, setSelectedId] = useState('')
 
-  if (projectsState.kind === 'loading') {
+  if (projectsState.status === 'loading') {
     return <LoadingSpinner />
   }
 
-  if (projectsState.kind === 'error') {
+  if (projectsState.status === 'error') {
     return <Message variant="error">Failed to load projects</Message>
   }
 

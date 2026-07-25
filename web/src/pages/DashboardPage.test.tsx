@@ -4,6 +4,7 @@ import { HttpResponse, http } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { server } from '../mocks/server'
+import type { Project } from '../services/projects'
 import { DashboardPage } from './DashboardPage'
 
 describe('DashboardPage', () => {
@@ -16,14 +17,10 @@ describe('DashboardPage', () => {
   })
 
   it('lists both projects as dropdown options with a placeholder selected', async () => {
-    server.use(
-      http.get('/api/projects', () =>
-        HttpResponse.json([
-          { id: '1', name: 'Alpha' },
-          { id: '2', name: 'Beta' },
-        ]),
-      ),
-    )
+    stubListProjects([
+      { id: '1', name: 'Alpha' },
+      { id: '2', name: 'Beta' },
+    ])
 
     renderDashboardPage()
 
@@ -34,14 +31,10 @@ describe('DashboardPage', () => {
 
   it('updates the selected value when the user picks a project', async () => {
     const user = userEvent.setup()
-    server.use(
-      http.get('/api/projects', () =>
-        HttpResponse.json([
-          { id: '1', name: 'Alpha' },
-          { id: '2', name: 'Beta' },
-        ]),
-      ),
-    )
+    stubListProjects([
+      { id: '1', name: 'Alpha' },
+      { id: '2', name: 'Beta' },
+    ])
 
     renderDashboardPage()
 
@@ -52,7 +45,7 @@ describe('DashboardPage', () => {
   })
 
   it('shows an empty-state message and no dropdown when there are no projects', async () => {
-    server.use(http.get('/api/projects', () => HttpResponse.json([])))
+    stubListProjects([])
 
     renderDashboardPage()
 
@@ -75,4 +68,8 @@ function renderDashboardPage(): void {
       <DashboardPage />
     </MemoryRouter>,
   )
+}
+
+function stubListProjects(projects: Project[]): void {
+  server.use(http.get('/api/projects', () => HttpResponse.json(projects)))
 }
