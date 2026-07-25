@@ -1,10 +1,10 @@
+import type { ProjectResponseBodyItem } from '@ripe/api/contracts/projects.js'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { server } from '../mocks/server'
-import type { Project } from '../services/projects'
 import { DashboardPage } from './DashboardPage'
 
 describe('DashboardPage', () => {
@@ -70,6 +70,6 @@ function renderDashboardPage(): void {
   )
 }
 
-function stubListProjects(projects: Project[]): void {
+function stubListProjects(projects: ProjectResponseBodyItem[]): void {
   server.use(http.get('/api/projects', () => HttpResponse.json(projects)))
 }

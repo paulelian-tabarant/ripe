@@ -1,10 +1,10 @@
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify'
-import type { ProjectRequestBody } from '../../src/endpoints/projectEndpoints.js'
+import type { RegisterProjectRequestBody } from '../../src/contracts/projects.js'
 
 export function prepareAndBindPostProjectsRequestTo(
   app: FastifyInstance,
-): (body: Partial<ProjectRequestBody>) => Promise<LightMyRequestResponse> {
-  return async (body: Partial<ProjectRequestBody>) =>
+): (body: Partial<RegisterProjectRequestBody>) => Promise<LightMyRequestResponse> {
+  return async (body: Partial<RegisterProjectRequestBody>) =>
     await app.inject({
       method: 'POST',
       url: '/api/projects',

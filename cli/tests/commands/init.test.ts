@@ -1,13 +1,14 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+import type {
+  ProjectConflictResponseBody,
+  RegisterProjectRequestBody,
+  RegisterProjectResponseBody,
+} from '@ripe/api/contracts/projects.js'
 import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { init } from '@/commands/init.js'
-import type {
-  RegisterProjectRequestBody,
-  RegisterProjectResponseBody,
-} from '@/lib/registerProject.js'
 
 const FAKE_SERVER_URL = 'https://fake-server-url'
 
@@ -252,7 +253,7 @@ describe('init', () => {
 
 function stubRegisterProjectApi(
   status: number,
-  body: RegisterProjectResponseBody,
+  body: RegisterProjectResponseBody | ProjectConflictResponseBody,
   requestBody?: RegisterProjectRequestBody,
 ): void {
   nock(FAKE_SERVER_URL)

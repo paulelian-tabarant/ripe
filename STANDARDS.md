@@ -30,6 +30,14 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   anticipated outcome of the operation — bad input, not found, already exists, server
   unreachable — is returned as a typed result, not thrown. Reserve `throw` for failures the
   code isn't designed to handle (bugs, startup misconfiguration).
+- **Shared API contract types live in `api`, not duplicated per client**: request/response wire
+  shapes for `api` endpoints are declared once, in `api/src/contracts/<domain>.ts` (types only —
+  no Fastify, DB, or other runtime imports), and exposed to `cli`/`web` via a dedicated `exports`
+  subpath in `api/package.json` (`./contracts/*.js`). Response bodies get their own dedicated
+  interface, not a reuse of the internal use-case/domain result type — the wire shape and the
+  internal shape are allowed to diverge. Consumers add `"@ripe/api": "workspace:*"` and import
+  with `import type { ... } from '@ripe/api/contracts/<domain>.js'` (type-only, so bundlers elide
+  it at build time) — never redeclare the same shape locally.
 
 ### Structure & Simplicity
 

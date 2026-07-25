@@ -1,4 +1,10 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifySchema } from 'fastify'
+import type {
+  ProjectConflictResponseBody,
+  ProjectResponseBodyItem,
+  RegisterProjectRequestBody,
+  RegisterProjectResponseBody,
+} from '../contracts/projects.js'
 import type { ListProjects } from '../use-cases/ListProjects.js'
 import type { RegisterProject } from '../use-cases/RegisterProject.js'
 
@@ -18,33 +24,31 @@ const projectSchema: FastifySchema = {
   },
 } as const
 
-export interface ProjectRequestBody {
-  name: string
-}
-
 export const projectEndpoints: FastifyPluginAsync<ProjectEndpointOptions> = async (
   app: FastifyInstance,
   opts: ProjectEndpointOptions,
 ): Promise<void> => {
-  app.post<{ Body: ProjectRequestBody }>(
+  app.post<{ Body: RegisterProjectRequestBody }>(
     '/projects',
     { schema: projectSchema },
     async (request, reply) => {
       const result = opts.registerProject.run(request.body.name)
 
       if (result.created) {
-        return reply.code(201).send({ projectId: result.projectId })
+        const body: RegisterProjectResponseBody = { projectId: result.projectId }
+        return reply.code(201).send(body)
       }
 
-      return reply.code(409).send({
+      const body: ProjectConflictResponseBody = {
         projectId: result.projectId,
         message: 'Project already exists',
-      })
+      }
+      return reply.code(409).send(body)
     },
   )
 
   app.get('/projects', async (_request, reply) => {
-    const projects = opts.listProjects.run()
+    const projects: ProjectResponseBodyItem[] = opts.listProjects.run()
 
     return reply.code(200).send(projects)
   })

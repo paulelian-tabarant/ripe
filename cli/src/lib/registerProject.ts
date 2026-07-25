@@ -1,16 +1,11 @@
+import type {
+  RegisterProjectRequestBody,
+  RegisterProjectResponseBody,
+} from '@ripe/api/contracts/projects.js'
+
 export interface ProjectRegistrationResult {
-  status: 201 | 409
+  created: boolean
   projectId: string
-  message?: string
-}
-
-export interface RegisterProjectResponseBody {
-  projectId: string
-  message?: string
-}
-
-export interface RegisterProjectRequestBody {
-  name: string
 }
 
 export async function registerProject(
@@ -33,9 +28,5 @@ export async function registerProject(
 
   const parsed = (await res.json()) as RegisterProjectResponseBody
 
-  return {
-    status: res.status,
-    projectId: parsed.projectId,
-    message: parsed.message,
-  }
+  return { created: res.status === 201, projectId: parsed.projectId }
 }
