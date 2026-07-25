@@ -33,6 +33,14 @@ model {
     description 'Uses Claude Code to write code'
   }
 
+  viewer = actor 'Dashboard Viewer' {
+    description 'Any team member checking skill usage - not necessarily someone coding with Claude Code'
+  }
+
+  browser = system 'Browser' {
+    description 'Runs the downloaded SPA client-side, on the viewer machine'
+  }
+
   claudeCode = system 'Claude Code CLI' {
     description 'Coding agent running on developer machine'
   }
@@ -60,17 +68,11 @@ model {
 
     reactSpa = webapp 'React SPA' {
       technology 'React, Vite, TypeScript'
-      description 'Dashboard SPA, downloaded once from Fastify and executed in the developer browser'
+      description 'Dashboard SPA bundle, built and served as a static artifact - executes in the Browser system, not on the server'
     }
 
     fastifyServer -> sqliteDb 'reads/writes'
     fastifyServer -> reactSpa 'serves static SPA bundle'
-    reactSpa -> fastifyServer 'GET /api/projects' {
-      technology 'HTTP/JSON'
-    }
-    reactSpa -> fastifyServer 'GET /api/projects/{id}/activity' {
-      technology 'HTTP/JSON'
-    }
   }
 
   developer -> claudeCode 'uses'
@@ -86,20 +88,27 @@ model {
   ripeCli -> telemetryServer.fastifyServer 'POST /api/events' {
     technology 'HTTP/JSON'
   }
-  developer -> telemetryServer.reactSpa 'loads and interacts with, in browser' {
+  viewer -> browser 'opens the dashboard URL'
+  browser -> telemetryServer.fastifyServer 'GET / (downloads SPA bundle)' {
     technology 'HTTPS'
+  }
+  browser -> telemetryServer.fastifyServer 'GET /api/projects' {
+    technology 'HTTP/JSON'
+  }
+  browser -> telemetryServer.fastifyServer 'GET /api/projects/{id}/activity' {
+    technology 'HTTP/JSON'
   }
 }
 
 views {
   view context {
     title 'System Context (C4 Level 1)'
-    include developer, claudeCode, ripeCli, localCache, telemetryServer
+    include developer, viewer, browser, claudeCode, ripeCli, localCache, telemetryServer
   }
 
   view containers of telemetryServer {
     title 'Container View (C4 Level 2)'
-    include developer, claudeCode, ripeCli, localCache, *
+    include developer, viewer, browser, claudeCode, ripeCli, localCache, *
   }
 
   dynamic view initFlow {
@@ -125,5 +134,15 @@ views {
 
     // Phase 2: Event submission
     ripeCli -> telemetryServer.fastifyServer 'POST /api/events (session invocations; user.email/user.name read live, not cached; client_type: "claude-code")'
+  }
+
+  dynamic view dashboardViewFlow {
+    title 'Viewing the Dashboard'
+
+    viewer -> browser 'opens the dashboard URL'
+    browser -> telemetryServer.fastifyServer 'GET / (downloads SPA bundle)'
+    browser -> telemetryServer.fastifyServer 'GET /api/projects'
+    viewer -> browser 'selects a project'
+    browser -> telemetryServer.fastifyServer 'GET /api/projects/{id}/activity'
   }
 }
