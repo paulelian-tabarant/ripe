@@ -79,7 +79,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
 
   let message: string
 
-  if (result.status === 201) {
+  if (result.created) {
     message = `Project registered: ${result.projectId}`
   } else {
     const useExisting = await promptFn(
