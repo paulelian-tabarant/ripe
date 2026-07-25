@@ -8,11 +8,11 @@ describe('useAsync', () => {
     const firstFetch = (): Promise<string> => new Promise((resolve) => (resolveFirst = resolve))
     const secondFetch = (): Promise<string> => Promise.resolve('second')
 
-    const { result, rerender } = renderHook(({ asyncFn }) => useAsync(asyncFn), {
-      initialProps: { asyncFn: firstFetch },
+    const { result, rerender } = renderHook(({ asyncFn, deps }) => useAsync(asyncFn, deps), {
+      initialProps: { asyncFn: firstFetch, deps: [1] },
     })
 
-    rerender({ asyncFn: secondFetch })
+    rerender({ asyncFn: secondFetch, deps: [2] })
     await vi.waitFor(() => expect(result.current).toEqual({ status: 'success', data: 'second' }))
 
     resolveFirst('first')

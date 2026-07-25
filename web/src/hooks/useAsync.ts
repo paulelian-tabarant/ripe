@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react'
+import { type DependencyList, useEffect, useState } from 'react'
 
 type AsyncState<T> = { status: 'loading' } | { status: 'success'; data: T } | { status: 'error' }
 
-export function useAsync<T>(asyncFn: () => Promise<T>): AsyncState<T> {
+export function useAsync<T>(asyncFn: () => Promise<T>, deps: DependencyList): AsyncState<T> {
   const [state, setState] = useState<AsyncState<T>>({ status: 'loading' })
 
-  // asyncFn must be a stable/memoized reference: this effect runs once on mount,
-  // so an inline closure passed here would refetch on every render.
   useEffect(() => {
     let cancelled = false
 
@@ -28,7 +26,8 @@ export function useAsync<T>(asyncFn: () => Promise<T>): AsyncState<T> {
     return () => {
       cancelled = true
     }
-  }, [asyncFn])
+    // biome-ignore lint/correctness/useExhaustiveDependencies: deps is the caller-controlled trigger list, not asyncFn's identity
+  }, deps)
 
   return state
 }

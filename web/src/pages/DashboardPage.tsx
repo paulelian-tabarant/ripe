@@ -7,7 +7,7 @@ import { useAsync } from '../hooks/useAsync'
 import { fetchProjects } from '../services/projects'
 
 export function DashboardPage(): ReactElement {
-  const projectsState = useAsync(fetchProjects)
+  const projectsState = useAsync(fetchProjects, [])
   const [selectedId, setSelectedId] = useState('')
 
   if (projectsState.status === 'loading') {
