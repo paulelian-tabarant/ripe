@@ -10,20 +10,20 @@ export function useAsync<T>(asyncFn: () => Promise<T>): AsyncState<T> {
   useEffect(() => {
     let cancelled = false
 
-    async function run(): Promise<void> {
+    const makeAsyncCall = async (): Promise<void> => {
       try {
         const data = await asyncFn()
-        if (!cancelled) {
-          setState({ status: 'success', data })
-        }
+        if (cancelled) return
+
+        setState({ status: 'success', data })
       } catch {
-        if (!cancelled) {
-          setState({ status: 'error' })
-        }
+        if (cancelled) return
+
+        setState({ status: 'error' })
       }
     }
 
-    run()
+    void makeAsyncCall()
 
     return () => {
       cancelled = true
