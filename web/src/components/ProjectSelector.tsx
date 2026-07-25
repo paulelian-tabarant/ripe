@@ -1,8 +1,8 @@
-import type { ListProjectsResponseBody } from '@ripe/api/contracts/projects.js'
+import type { ProjectResponseBodyItem } from '@ripe/api/contracts/projects.js'
 import type { ChangeEvent, ReactElement } from 'react'
 
 interface ProjectSelectorProps {
-  projects: ListProjectsResponseBody
+  projects: ProjectResponseBodyItem[]
   selectedProjectId: string
   onChange: (projectId: string) => void
 }

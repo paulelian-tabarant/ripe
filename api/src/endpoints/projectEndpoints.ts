@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifySchema } from 'fastify'
 import type {
-  ListProjectsResponseBody,
   ProjectConflictResponseBody,
+  ProjectResponseBodyItem,
   RegisterProjectRequestBody,
   RegisterProjectResponseBody,
 } from '../contracts/projects.js'
@@ -48,7 +48,7 @@ export const projectEndpoints: FastifyPluginAsync<ProjectEndpointOptions> = asyn
   )
 
   app.get('/projects', async (_request, reply) => {
-    const projects: ListProjectsResponseBody = opts.listProjects.run()
+    const projects: ProjectResponseBodyItem[] = opts.listProjects.run()
 
     return reply.code(200).send(projects)
   })

@@ -1,4 +1,4 @@
-import type { ListProjectsResponseBody } from '@ripe/api/contracts/projects.js'
+import type { ProjectResponseBodyItem } from '@ripe/api/contracts/projects.js'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
@@ -70,6 +70,6 @@ function renderDashboardPage(): void {
   )
 }
 
-function stubListProjects(projects: ListProjectsResponseBody): void {
+function stubListProjects(projects: ProjectResponseBodyItem[]): void {
   server.use(http.get('/api/projects', () => HttpResponse.json(projects)))
 }

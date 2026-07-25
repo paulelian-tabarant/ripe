@@ -11,9 +11,7 @@ export interface ProjectConflictResponseBody {
   message: string
 }
 
-export interface Project {
+export interface ProjectResponseBodyItem {
   id: string
   name: string
 }
-
-export type ListProjectsResponseBody = Project[]
