@@ -1,5 +1,5 @@
 // Skill Usage Tracking — Architecture (C4 Model)
-// Render: npx likec4 start docs/architecture/
+// Render: pnpm docs:c4
 // Export: npx likec4 export png docs/architecture/ -o docs/architecture/export/
 // VS Code: install the LikeC4 extension for live preview
 
@@ -60,11 +60,11 @@ model {
 
     reactSpa = webapp 'React SPA' {
       technology 'React, Vite, TypeScript'
-      description 'Dashboard SPA served by FastAPI at /'
+      description 'Dashboard SPA, downloaded once from Fastify and executed in the developer browser'
     }
 
     fastifyServer -> sqliteDb 'reads/writes'
-    fastifyServer -> reactSpa 'serves at /'
+    fastifyServer -> reactSpa 'serves static SPA bundle'
     reactSpa -> fastifyServer 'GET /api/projects' {
       technology 'HTTP/JSON'
     }
@@ -86,7 +86,7 @@ model {
   ripeCli -> telemetryServer.fastifyServer 'POST /api/events' {
     technology 'HTTP/JSON'
   }
-  developer -> telemetryServer.reactSpa 'views dashboard' {
+  developer -> telemetryServer.reactSpa 'loads and interacts with, in browser' {
     technology 'HTTPS'
   }
 }
