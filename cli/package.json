@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
+    "@ripe/api": "workspace:*",
     "@types/node": "^22.0.0",
     "nock": "^14.0.0",
     "vitest": "^3.0.0"

@@ -1,9 +1,6 @@
-export interface Project {
-  id: string
-  name: string
-}
+import type { ListProjectsResponseBody } from '@ripe/api/contracts/projects.js'
 
-export async function fetchProjects(): Promise<Project[]> {
+export async function fetchProjects(): Promise<ListProjectsResponseBody> {
   const response = await fetch('/api/projects')
 
   if (!response.ok) {

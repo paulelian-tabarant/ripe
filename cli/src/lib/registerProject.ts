@@ -1,16 +1,13 @@
+import type {
+  ProjectConflictResponseBody,
+  RegisterProjectRequestBody,
+  RegisterProjectResponseBody,
+} from '@ripe/api/contracts/projects.js'
+
 export interface ProjectRegistrationResult {
   status: 201 | 409
   projectId: string
   message?: string
-}
-
-export interface RegisterProjectResponseBody {
-  projectId: string
-  message?: string
-}
-
-export interface RegisterProjectRequestBody {
-  name: string
 }
 
 export async function registerProject(
@@ -31,11 +28,11 @@ export async function registerProject(
     throw new Error(`Unexpected response status: ${String(res.status)}`)
   }
 
-  const parsed = (await res.json()) as RegisterProjectResponseBody
+  const parsed = (await res.json()) as RegisterProjectResponseBody | ProjectConflictResponseBody
 
   return {
     status: res.status,
     projectId: parsed.projectId,
-    message: parsed.message,
+    message: 'message' in parsed ? parsed.message : undefined,
   }
 }
