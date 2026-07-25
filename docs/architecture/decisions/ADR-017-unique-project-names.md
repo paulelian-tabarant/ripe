@@ -1,6 +1,6 @@
 # ADR-017: Unique Project Names with User Confirmation
 
-**Status**: Accepted  
+**Status**: Superseded by [ADR-018](ADR-018-remote-derived-project-identity.md)
 **Date**: 2026-06-23  
 **Deciders**: Paul-Elian Tabarant
 

@@ -84,8 +84,10 @@ in a multi-team deployment.
 ### Manual Environment Switching
 
 Switching between local, staging, and production requires manually reconfiguring the client's server
-URL (exact mechanism TBD). The `project_id` (server-assigned on `init`, cached locally) remains
-valid across environments — only the server URL changes. No automated promotion pipeline for v1.
+URL (exact mechanism TBD). Project identity is derived from the git remote and resolved fresh on
+each server call (see [ADR-018](../../architecture/decisions/ADR-018-remote-derived-project-identity.md)) —
+it is not cached locally, so it remains valid across environments regardless of which server URL
+is configured. No automated promotion pipeline for v1.
 
 **Before broader rollout**: automate environment switching and document staging data retention policy.
 
