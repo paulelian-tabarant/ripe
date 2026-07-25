@@ -14,9 +14,7 @@
   "scripts": {
     "dev": "pnpm --filter api run start:local & pnpm --filter web run dev & wait",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
-    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\""
   },
   "packageManager": "pnpm@11.13.1",
   "license": "ISC",
