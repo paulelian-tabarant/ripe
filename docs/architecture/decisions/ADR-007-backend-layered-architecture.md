@@ -76,3 +76,9 @@ No mocking of internal layers. Each test covers a complete behavior.
 - If logic becomes complex, extract ports/adapters from the service layer
 - Tests move from E2E to unit + E2E hybrid
 - No breaking changes to the HTTP API
+
+**Bounded context split (deferred)**: if ingestion (init, session sync) and reporting (viewing past
+sessions/dashboard) grow distinct enough models — e.g. reporting needs read-optimized query shapes
+that don't fit the write-side repositories — split along that write/read axis rather than by actor
+(developer vs. dashboard viewer), which is a weaker boundary since the same actor can touch both
+sides. Not warranted yet; revisit when reporting queries start fighting the current layout.
