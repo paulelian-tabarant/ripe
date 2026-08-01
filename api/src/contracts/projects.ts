@@ -1,14 +1,10 @@
 export interface RegisterProjectRequestBody {
   name: string
+  remoteUrl: string
 }
 
 export interface RegisterProjectResponseBody {
   projectId: string
-}
-
-export interface ProjectConflictResponseBody {
-  projectId: string
-  message: string
 }
 
 export interface ProjectResponseBodyItem {
