@@ -115,3 +115,11 @@ target for team telemetry in the first place.
   accepted, same shape as the existing V1 skill-rename limitation
 - ⚠️ Two unrelated self-hosted git servers reusing the same host/org/repo path (unlikely, but
   possible with internal Git servers) would collide — accepted as a rare edge case
+- ⚠️ Normalization doesn't lowercase the host consistently across remote forms (the
+  `git-url-parse` library used server-side lowercases it for `https://`/`ssh://` via WHATWG
+  `URL`, but not for scp-like SSH, whose host parsing goes through a custom regex) and never
+  lowercases the org/repo path at all (a deliberate choice — that's a server-side identifier that
+  may be case-sensitive on some self-hosted git servers). Two developers whose `origin` remotes
+  differ only in host casing across those two shapes would silently register a second project —
+  accepted as the same shape of rare, silent edge case as the above, given every major git host's
+  UI always emits lowercase clone URLs in practice
