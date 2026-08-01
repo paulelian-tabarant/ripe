@@ -30,6 +30,16 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   anticipated outcome of the operation — bad input, not found, already exists, server
   unreachable — is returned as a typed result, not thrown. Reserve `throw` for failures the
   code isn't designed to handle (bugs, startup misconfiguration).
+- **Typing an expected failure alongside its success shape**: when a function's result has a
+  failure branch worth naming — more than a single boolean flag, or one that carries data (e.g.
+  the invalid input itself) — model it as a union of the success shape and a named class
+  extending `Error` (e.g. `RegisterProjectResult = { created: boolean; projectId: string } |
+  InvalidRemoteUrlError`), narrowed via `instanceof`. The class is returned as a plain value,
+  never thrown — its shape is chosen for `.message`/`instanceof` ergonomics, not as a signal to
+  `throw`/`catch`, so don't let the `Error` suffix imply exception-style control flow at the call
+  site. Reserve a bare boolean/literal flag (e.g. `{ invalid: true }`) for a failure that carries
+  no data worth naming and will never need to distinguish more than one reason; reach for the
+  named-class shape as soon as either of those stops being true.
 - **Shared API contract types live in `api`, not duplicated per client**: request/response wire
   shapes for `api` endpoints are declared once, in `api/src/contracts/<domain>.ts` (types only —
   no Fastify, DB, or other runtime imports), and exposed to `cli`/`web` via a dedicated `exports`
