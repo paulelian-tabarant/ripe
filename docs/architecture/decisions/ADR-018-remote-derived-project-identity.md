@@ -47,11 +47,20 @@ target for team telemetry in the first place.
   team members to share, because every team member's local git remote already produces the same
   `repo_key`, and the server resolves it to the same `project_id` regardless of whether any given
   machine has it cached.
-- `.ripe/config.json` (committed) is retired. All remaining local state — `project_id` cache,
-  skill ID cache, `last_synced_sha` (for future rename detection), and `serverUrl` — is
-  consolidated into a single gitignored `.ripe/cache.json`. Nothing under `.ripe/` is committed to
+- `.ripe/config.json` (committed) is retired. Remaining local state splits into two gitignored
+  files: `.ripe/settings.json`, holding only the interactively-configured `serverUrl`; and
+  `.ripe/cache.json`, holding everything server-resolved or derived — `project_id` cache, skill ID
+  cache, and `last_synced_sha` (for future rename detection). The split matters for recovery: a
+  stale/rejected entry in `.ripe/cache.json` can always be fixed by deleting that file alone,
+  without disturbing `serverUrl` or forcing a re-prompt. Nothing under `.ripe/` is committed to
   git anymore. (No consent flag is stored — [US-2.2](../../spec/user-stories/2026-06-21-us-2.2-event-submission.md)
   prints a consent notice on every `ripe init` instead of gating on a stored flag.)
+- **v1 does not automatically recover** from the server rejecting a cached `project_id`/`skill_id`
+  as unknown (requires server-side existence validation on `POST /api/skills`/`POST /api/events`).
+  `sync` fails, records the issue in the local outcome file, and surfaces on the next `ripe`
+  invocation with the fix: delete `.ripe/cache.json`, run `ripe sync` again. This is a manual
+  stand-in for the same resolve-or-create calls a later slice can trigger automatically on
+  rejection instead of by hand.
 
 **Explicitly out of scope for this decision:**
 
