@@ -76,7 +76,12 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **Coarse-grained tests over fine-grained ones**: test at the command/route scope, decoupled
   from implementation details, rather than writing separate fine-grained unit tests for every
   internal helper. Drop to fine-grained, implementation-coupled tests only when the behavior is
-  critical or complex enough to need them in isolation.
+  critical or complex enough to need them in isolation — concretely, when a helper has enough
+  input combinations that covering them all through the full stack (real DB, real filesystem,
+  `fastify.inject()`, etc.) would meaningfully slow the suite down. A handful of cases (e.g. two
+  or three) doesn't meet that bar — route them through the existing coarse-grained test instead;
+  the isolation only pays for itself once the combination count is large enough that per-case
+  setup/teardown cost actually adds up.
 - **Favor injection for dependencies that need to be varied**: whether for testing purposes
   (swapping in a fake) or other purposes (a genuine alternate implementation), if a dependency
   needs to vary, inject it — including output sinks like `logFn`/`errorFn`, even though
