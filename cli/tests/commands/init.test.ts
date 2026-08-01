@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import type {
-  ProjectConflictResponseBody,
   RegisterProjectRequestBody,
   RegisterProjectResponseBody,
 } from '@ripe/api/contracts/projects.js'
@@ -55,7 +54,11 @@ describe('init', () => {
   it('re-registers when .ripe/config.json is empty', async () => {
     writeExistingConfig('')
 
-    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) })
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: 'unknown' },
+    )
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -73,7 +76,11 @@ describe('init', () => {
   it('re-registers when .ripe/config.json contains malformed JSON', async () => {
     writeExistingConfig('{ not valid json')
 
-    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) })
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: 'unknown' },
+    )
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -91,7 +98,11 @@ describe('init', () => {
   it('re-registers when .ripe/config.json is missing projectId', async () => {
     writeExistingConfig(JSON.stringify({ serverUrl: FAKE_SERVER_URL }))
 
-    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) })
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: 'unknown' },
+    )
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -109,7 +120,11 @@ describe('init', () => {
   it('re-registers when .ripe/config.json is missing serverUrl', async () => {
     writeExistingConfig(JSON.stringify({ projectId: 'proj_existing123' }))
 
-    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) })
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: 'unknown' },
+    )
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -127,7 +142,11 @@ describe('init', () => {
   it('re-registers when .ripe/config.json has an empty projectId', async () => {
     writeExistingConfig(JSON.stringify({ projectId: '', serverUrl: FAKE_SERVER_URL }))
 
-    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) })
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: 'unknown' },
+    )
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -145,7 +164,11 @@ describe('init', () => {
   it('re-registers when .ripe/config.json has an empty serverUrl', async () => {
     writeExistingConfig(JSON.stringify({ projectId: 'proj_existing123', serverUrl: '' }))
 
-    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) })
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: 'unknown' },
+    )
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -161,7 +184,11 @@ describe('init', () => {
   })
 
   it('creates .ripe/config.json with projectId and serverUrl on 201', async () => {
-    stubRegisterProjectApi(201, { projectId: 'proj_abc123' }, { name: basename(tmpDir) })
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: 'unknown' },
+    )
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -253,7 +280,7 @@ describe('init', () => {
 
 function stubRegisterProjectApi(
   status: number,
-  body: RegisterProjectResponseBody | ProjectConflictResponseBody,
+  body: RegisterProjectResponseBody | { projectId: string; message: string },
   requestBody?: RegisterProjectRequestBody,
 ): void {
   nock(FAKE_SERVER_URL)

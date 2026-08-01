@@ -13,7 +13,9 @@ export async function registerProject(
   name: string,
 ): Promise<ProjectRegistrationResult> {
   const url = new URL('/api/projects', serverUrl)
-  const requestBody: RegisterProjectRequestBody = { name }
+  // TODO(US-1.3 CLI slice): forward the real `git remote get-url origin` value instead of this
+  // placeholder — deferred to a later iteration (see docs/architecture/decisions/ADR-018).
+  const requestBody: RegisterProjectRequestBody = { name, remoteUrl: 'unknown' }
   const body = JSON.stringify(requestBody)
 
   const res = await fetch(url, {
