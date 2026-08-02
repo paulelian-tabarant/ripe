@@ -8,10 +8,10 @@ export interface ProjectRegistrationResult {
   projectId: string
 }
 
-export class ServerRejectedRemoteError extends Error {
+export class ServerInvalidRemoteUrlError extends Error {
   constructor(status: number) {
     super(`Server rejected the request: ${String(status)}`)
-    this.name = 'ServerRejectedRemoteError'
+    this.name = 'ServerInvalidRemoteUrlError'
   }
 }
 
@@ -31,7 +31,7 @@ export async function registerProject(
   })
 
   if (res.status === 400) {
-    throw new ServerRejectedRemoteError(res.status)
+    throw new ServerInvalidRemoteUrlError(res.status)
   }
 
   if (res.status !== 200 && res.status !== 201) {

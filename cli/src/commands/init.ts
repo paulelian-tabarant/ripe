@@ -5,7 +5,7 @@ import { readConfig } from '../lib/readConfig.js'
 import {
   type ProjectRegistrationResult,
   registerProject,
-  ServerRejectedRemoteError,
+  ServerInvalidRemoteUrlError,
 } from '../lib/registerProject.js'
 import { writeConfig } from '../lib/writeConfig.js'
 
@@ -18,79 +18,6 @@ export interface InitOptions {
 
 export interface InitResult {
   status: 'success' | 'error'
-}
-
-async function ask(question: string): Promise<string> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  try {
-    return await rl.question(question)
-  } finally {
-    rl.close()
-  }
-}
-
-async function defaultUrlPromptFn(): Promise<string> {
-  return ask('Server URL: ')
-}
-
-async function defaultHttpsRemotePromptFn(remoteUrl: string): Promise<string> {
-  return ask(`Your git remote ("${remoteUrl}") isn't HTTPS. Enter the HTTPS URL for this repo: `)
-}
-
-async function readRemoteUrl(cwd: string): Promise<string | undefined> {
-  try {
-    return await getRemoteUrl(cwd)
-  } catch (err) {
-    console.error('Error: could not determine the git remote URL for this directory')
-
-    if (err instanceof Error) console.error(err.message)
-
-    return undefined
-  }
-}
-
-async function resolveHttpsRemoteUrl(
-  rawRemoteUrl: string,
-  httpsRemotePromptFn: (remoteUrl: string) => Promise<string>,
-): Promise<string> {
-  if (rawRemoteUrl.startsWith('https://')) return rawRemoteUrl
-
-  return httpsRemotePromptFn(rawRemoteUrl)
-}
-
-async function tryRegisterProject(
-  serverUrl: string,
-  name: string,
-  remoteUrl: string,
-): Promise<ProjectRegistrationResult | undefined> {
-  try {
-    return await registerProject(serverUrl, name, remoteUrl)
-  } catch (err) {
-    if (err instanceof ServerRejectedRemoteError) {
-      console.error(`Error: the server rejected this remote URL: "${remoteUrl}"`)
-    } else {
-      console.error(`Error: could not reach server at ${serverUrl}`)
-    }
-
-    if (err instanceof Error) console.error(err.message)
-
-    return undefined
-  }
-}
-
-async function defaultPromptFn(question: string): Promise<boolean> {
-  const answer = await ask(question)
-
-  return answer.toLowerCase() === 'y'
-}
-
-function isValidHttpUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url)
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
-  } catch {
-    return false
-  }
 }
 
 export async function init(options: InitOptions = {}): Promise<InitResult> {
@@ -144,4 +71,77 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
   console.log(message)
 
   return { status: 'success' }
+}
+
+async function readRemoteUrl(cwd: string): Promise<string | undefined> {
+  try {
+    return await getRemoteUrl(cwd)
+  } catch (err) {
+    console.error('Error: could not determine the git remote URL for this directory')
+
+    if (err instanceof Error) console.error(err.message)
+
+    return undefined
+  }
+}
+
+async function resolveHttpsRemoteUrl(
+  rawRemoteUrl: string,
+  httpsRemotePromptFn: (remoteUrl: string) => Promise<string>,
+): Promise<string> {
+  if (rawRemoteUrl.startsWith('https://')) return rawRemoteUrl
+
+  return httpsRemotePromptFn(rawRemoteUrl)
+}
+
+async function tryRegisterProject(
+  serverUrl: string,
+  name: string,
+  remoteUrl: string,
+): Promise<ProjectRegistrationResult | undefined> {
+  try {
+    return await registerProject(serverUrl, name, remoteUrl)
+  } catch (err) {
+    if (err instanceof ServerInvalidRemoteUrlError) {
+      console.error(`Error: the server rejected this remote URL: "${remoteUrl}"`)
+    } else {
+      console.error(`Error: could not reach server at ${serverUrl}`)
+    }
+
+    if (err instanceof Error) console.error(err.message)
+
+    return undefined
+  }
+}
+
+function isValidHttpUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+async function ask(question: string): Promise<string> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  try {
+    return await rl.question(question)
+  } finally {
+    rl.close()
+  }
+}
+
+async function defaultUrlPromptFn(): Promise<string> {
+  return ask('Server URL: ')
+}
+
+async function defaultHttpsRemotePromptFn(remoteUrl: string): Promise<string> {
+  return ask(`Your git remote ("${remoteUrl}") isn't HTTPS. Enter the HTTPS URL for this repo: `)
+}
+
+async function defaultPromptFn(question: string): Promise<boolean> {
+  const answer = await ask(question)
+
+  return answer.toLowerCase() === 'y'
 }
