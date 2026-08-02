@@ -98,6 +98,10 @@ and `UNIQUE`; `remote_url` would carry no uniqueness constraint and is never use
 resolution — only as the source for deriving a connectable host (via `resource`, not `source`) when
 that capability is built.
 
+**Update**: this deferred decision was made concrete in
+[ADR-019](ADR-019-repository-state-synchronization.md), which also restricts registration to
+`https://` remotes only.
+
 ## Rationale
 
 - ✅ `repo_key` collisions are impossible for unrelated projects (in practice), removing the
