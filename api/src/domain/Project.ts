@@ -10,27 +10,34 @@ export class InvalidRemoteUrlError extends Error {
 
 const MANAGED_PROTOCOLS = new Set(['https'])
 
-interface ParsedRemote {
-  repoKey: string
-  remoteUrl: string
-}
+export class RepoIdentity {
+  private constructor(
+    readonly repoKey: string,
+    readonly remoteUrl: string,
+  ) {}
 
-function parseRemote(remoteUrl: string): ParsedRemote | InvalidRemoteUrlError {
-  let parsed: ReturnType<typeof GitUrlParse>
+  static resolve(remoteUrl: string): RepoIdentity | InvalidRemoteUrlError {
+    let parsed: ReturnType<typeof GitUrlParse>
 
-  try {
-    parsed = GitUrlParse(remoteUrl)
-  } catch {
-    return new InvalidRemoteUrlError(remoteUrl)
-  }
+    try {
+      parsed = GitUrlParse(remoteUrl)
+    } catch {
+      return new InvalidRemoteUrlError(remoteUrl)
+    }
 
-  if (!parsed.source || !parsed.owner || !parsed.name || !MANAGED_PROTOCOLS.has(parsed.protocol)) {
-    return new InvalidRemoteUrlError(remoteUrl)
-  }
+    if (
+      !parsed.source ||
+      !parsed.owner ||
+      !parsed.name ||
+      !MANAGED_PROTOCOLS.has(parsed.protocol)
+    ) {
+      return new InvalidRemoteUrlError(remoteUrl)
+    }
 
-  return {
-    repoKey: `${parsed.source}/${parsed.owner}/${parsed.name}`,
-    remoteUrl: `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
+    return new RepoIdentity(
+      `${parsed.source}/${parsed.owner}/${parsed.name}`,
+      `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
+    )
   }
 }
 
@@ -42,18 +49,8 @@ export class Project {
     readonly remoteUrl: string,
   ) {}
 
-  static resolveRepoKey(remoteUrl: string): string | InvalidRemoteUrlError {
-    const parsed = parseRemote(remoteUrl)
-
-    return parsed instanceof InvalidRemoteUrlError ? parsed : parsed.repoKey
-  }
-
-  static create(name: string, remoteUrl: string): Project | InvalidRemoteUrlError {
-    const parsed = parseRemote(remoteUrl)
-
-    if (parsed instanceof InvalidRemoteUrlError) return parsed
-
-    return new Project(`proj_${nanoid()}`, name, parsed.repoKey, parsed.remoteUrl)
+  static create(name: string, identity: RepoIdentity): Project {
+    return new Project(`proj_${nanoid()}`, name, identity.repoKey, identity.remoteUrl)
   }
 
   static reconstitute(data: {
