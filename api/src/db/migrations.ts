@@ -17,9 +17,11 @@ export const migrations: IMigration[] = [
       CREATE TABLE projects_new (
         id         TEXT    PRIMARY KEY,
         name       TEXT    NOT NULL,
-        repo_key   TEXT    NOT NULL UNIQUE
+        repo_key   TEXT    NOT NULL UNIQUE,
+        remote_url TEXT    NOT NULL
       );
-      INSERT INTO projects_new (id, name, repo_key) SELECT id, name, name FROM projects;
+      INSERT INTO projects_new (id, name, repo_key, remote_url)
+        SELECT id, name, name, '' FROM projects;
       DROP TABLE projects;
       ALTER TABLE projects_new RENAME TO projects;
     `,
@@ -29,31 +31,6 @@ export const migrations: IMigration[] = [
         name       TEXT    NOT NULL UNIQUE
       );
       INSERT INTO projects_old (id, name) SELECT id, name FROM projects;
-      DROP TABLE projects;
-      ALTER TABLE projects_old RENAME TO projects;
-    `,
-  },
-  {
-    version: 3,
-    up: `
-      CREATE TABLE projects_new (
-        id         TEXT    PRIMARY KEY,
-        name       TEXT    NOT NULL,
-        repo_key   TEXT    NOT NULL UNIQUE,
-        remote_url TEXT    NOT NULL
-      );
-      INSERT INTO projects_new (id, name, repo_key, remote_url)
-        SELECT id, name, repo_key, '' FROM projects;
-      DROP TABLE projects;
-      ALTER TABLE projects_new RENAME TO projects;
-    `,
-    down: `
-      CREATE TABLE projects_old (
-        id         TEXT    PRIMARY KEY,
-        name       TEXT    NOT NULL,
-        repo_key   TEXT    NOT NULL UNIQUE
-      );
-      INSERT INTO projects_old (id, name, repo_key) SELECT id, name, repo_key FROM projects;
       DROP TABLE projects;
       ALTER TABLE projects_old RENAME TO projects;
     `,

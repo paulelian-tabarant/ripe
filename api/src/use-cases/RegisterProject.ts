@@ -7,16 +7,22 @@ export class RegisterProject {
   constructor(private readonly repository: ProjectRepository) {}
 
   run(name: string, remoteUrl: string): RegisterProjectResult {
+    const repoKey = Project.resolveRepoKey(remoteUrl)
+
+    if (repoKey instanceof InvalidRemoteUrlError) {
+      return repoKey
+    }
+
+    const existing = this.repository.getByRepoKey(repoKey)
+
+    if (existing) {
+      return { created: false, projectId: existing.id }
+    }
+
     const project = Project.create(name, remoteUrl)
 
     if (project instanceof InvalidRemoteUrlError) {
       return project
-    }
-
-    const existing = this.repository.getByRepoKey(project.repoKey)
-
-    if (existing) {
-      return { created: false, projectId: existing.id }
     }
 
     this.repository.addNewProject(project)

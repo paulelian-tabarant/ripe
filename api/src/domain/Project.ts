@@ -10,6 +10,30 @@ export class InvalidRemoteUrlError extends Error {
 
 const MANAGED_PROTOCOLS = new Set(['https'])
 
+interface ParsedRemote {
+  repoKey: string
+  remoteUrl: string
+}
+
+function parseRemote(remoteUrl: string): ParsedRemote | InvalidRemoteUrlError {
+  let parsed: ReturnType<typeof GitUrlParse>
+
+  try {
+    parsed = GitUrlParse(remoteUrl)
+  } catch {
+    return new InvalidRemoteUrlError(remoteUrl)
+  }
+
+  if (!parsed.source || !parsed.owner || !parsed.name || !MANAGED_PROTOCOLS.has(parsed.protocol)) {
+    return new InvalidRemoteUrlError(remoteUrl)
+  }
+
+  return {
+    repoKey: `${parsed.source}/${parsed.owner}/${parsed.name}`,
+    remoteUrl: `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
+  }
+}
+
 export class Project {
   private constructor(
     readonly id: string,
@@ -18,28 +42,18 @@ export class Project {
     readonly remoteUrl: string,
   ) {}
 
+  static resolveRepoKey(remoteUrl: string): string | InvalidRemoteUrlError {
+    const parsed = parseRemote(remoteUrl)
+
+    return parsed instanceof InvalidRemoteUrlError ? parsed : parsed.repoKey
+  }
+
   static create(name: string, remoteUrl: string): Project | InvalidRemoteUrlError {
-    let parsed: ReturnType<typeof GitUrlParse>
+    const parsed = parseRemote(remoteUrl)
 
-    try {
-      parsed = GitUrlParse(remoteUrl)
-    } catch {
-      return new InvalidRemoteUrlError(remoteUrl)
-    }
+    if (parsed instanceof InvalidRemoteUrlError) return parsed
 
-    if (
-      !parsed.source ||
-      !parsed.owner ||
-      !parsed.name ||
-      !MANAGED_PROTOCOLS.has(parsed.protocol)
-    ) {
-      return new InvalidRemoteUrlError(remoteUrl)
-    }
-
-    const repoKey = `${parsed.source}/${parsed.owner}/${parsed.name}`
-    const normalizedRemoteUrl = `https://${parsed.resource}/${parsed.owner}/${parsed.name}`
-
-    return new Project(`proj_${nanoid()}`, name, repoKey, normalizedRemoteUrl)
+    return new Project(`proj_${nanoid()}`, name, parsed.repoKey, parsed.remoteUrl)
   }
 
   static reconstitute(data: {
