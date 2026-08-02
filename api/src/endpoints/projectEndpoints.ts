@@ -4,8 +4,9 @@ import type {
   RegisterProjectRequestBody,
   RegisterProjectResponseBody,
 } from '../contracts/projects.js'
+import { InvalidRemoteUrlError } from '../domain/Project.js'
 import type { ListProjects } from '../use-cases/ListProjects.js'
-import { InvalidRemoteUrlError, type RegisterProject } from '../use-cases/RegisterProject.js'
+import type { RegisterProject } from '../use-cases/RegisterProject.js'
 
 interface ProjectEndpointOptions {
   registerProject: RegisterProject

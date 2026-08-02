@@ -33,4 +33,29 @@ export const migrations: IMigration[] = [
       ALTER TABLE projects_old RENAME TO projects;
     `,
   },
+  {
+    version: 3,
+    up: `
+      CREATE TABLE projects_new (
+        id         TEXT    PRIMARY KEY,
+        name       TEXT    NOT NULL,
+        repo_key   TEXT    NOT NULL UNIQUE,
+        remote_url TEXT    NOT NULL
+      );
+      INSERT INTO projects_new (id, name, repo_key, remote_url)
+        SELECT id, name, repo_key, '' FROM projects;
+      DROP TABLE projects;
+      ALTER TABLE projects_new RENAME TO projects;
+    `,
+    down: `
+      CREATE TABLE projects_old (
+        id         TEXT    PRIMARY KEY,
+        name       TEXT    NOT NULL,
+        repo_key   TEXT    NOT NULL UNIQUE
+      );
+      INSERT INTO projects_old (id, name, repo_key) SELECT id, name, repo_key FROM projects;
+      DROP TABLE projects;
+      ALTER TABLE projects_old RENAME TO projects;
+    `,
+  },
 ]

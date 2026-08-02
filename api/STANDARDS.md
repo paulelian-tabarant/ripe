@@ -24,16 +24,35 @@ Package-specific standards for `api/`. These supplement the general rules in
   never reference raw table/column names.
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
   codes, request/response shapes, headers) — that mapping belongs to endpoints.
-- **Domain object vs. read/write model naming**: don't let one type do double duty across reading
-  and writing an entity if their fields diverge or the write side carries coherence obligations
-  the read side doesn't (e.g. which fields are required to create a row vs. what comes back from
-  a lookup). Reserve the bare domain name (e.g. `Project`) for a type with no such split — used
-  identically for reading and writing. Once a type serves only one side, suffix it accordingly on
-  the same base name instead of reusing the bare name or inventing an unrelated one: `ReadModel`
-  for a type returned by a read operation (e.g. `ProjectReadModel` from `getByRepoKey`),
-  `CreationModel` for the shape a write operation needs to create a new row (e.g.
-  `ProjectCreationModel` for `addNewProject`'s parameter). This keeps each type's role explicit
-  while keeping same-entity types recognizably related.
+- **Repositories return the domain entity itself when one exists**: a repository method whose
+  result corresponds to a real domain entity (e.g. `getByRepoKey`) returns that entity class
+  (`Project`) directly, constructed via the entity's own reconstitution factory — not a separately
+  declared plain-object type mirroring the same fields. Reserve a dedicated `*ReadModel` type for
+  a query shaped for one specific reading need that doesn't correspond to a full entity (e.g.
+  `ProjectReadModel`, the `{id, name}` projection `list()` returns for a list view — no `repoKey`,
+  no behavior, not the same thing as a `Project`). Don't let `*ReadModel` do double duty as "the
+  entity, but plain-object" — that's what returning the entity class itself is for.
+- **Validation is separate from construction, so "does it already exist" can be checked before
+  "create" is ever invoked**: when a use-case must look up an entity by a value derived from its
+  input before deciding whether to create one, don't fold derivation and construction into a
+  single fallible `create` — invoking something named `create` before knowing creation is even
+  warranted reads backwards. Split the entity's static factory in two: a validating derivation
+  step with no side effects (e.g. `Project.deriveIdentity(remoteUrl): ProjectIdentity |
+  InvalidRemoteUrlError`, parsing `remoteUrl` into the `repoKey` used for the lookup plus whatever
+  else construction will need) that a use-case calls first and can fail; and an infallible
+  `create(name, identity)` that only builds the entity (assigning its `id`, here via `nanoid`) —
+  called only in the branch where the lookup came back empty. A repository's `getByRepoKey`-style
+  method never calls either of these — it reconstitutes an already-valid entity read back from
+  storage via a third factory, `reconstitute(data)`, which also can't fail (the data was already
+  validated once, at the `create` call that originally persisted it).
+- **Domain entity classes have a private constructor**, exposing only their static factories
+  (`deriveIdentity`/`create`/`reconstitute` above). Name the class after the bare entity
+  (`Project`); this is distinct from the plain `*ReadModel` DTOs living in `src/repositories/` —
+  the domain class carries behavior and invariants, a `*ReadModel` is a plain data shape for one
+  specific reading need. The repository's write parameter is the entity itself (see
+  `addNewProject(project: Project)`), not a separately-declared write DTO. Reserve a use-case
+  (`src/use-cases/`) for logic that orchestrates repositories or multiple entities rather than an
+  invariant intrinsic to one entity.
 
 ## Testing
 

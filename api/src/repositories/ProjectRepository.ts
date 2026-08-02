@@ -1,18 +1,7 @@
 import type Database from 'better-sqlite3'
+import { Project } from '../domain/Project.js'
 
 export type ProjectReadModel = {
-  id: string
-  name: string
-  repoKey: string
-}
-
-export type ProjectCreationModel = {
-  id: string
-  name: string
-  repoKey: string
-}
-
-export type ProjectListItem = {
   id: string
   name: string
 }
@@ -21,6 +10,7 @@ type ProjectRow = {
   id: string
   name: string
   repo_key: string
+  remote_url: string
 }
 
 export class ProjectRepository {
@@ -30,25 +20,33 @@ export class ProjectRepository {
 
   constructor(private readonly db: Database.Database) {
     this.findByRepoKeyStatement = this.db.prepare<[string], ProjectRow>(
-      'SELECT id, name, repo_key FROM projects WHERE repo_key = ?',
+      'SELECT id, name, repo_key, remote_url FROM projects WHERE repo_key = ?',
     )
-    this.findAllStatement = this.db.prepare<[], ProjectListItem>('SELECT id, name FROM projects')
+    this.findAllStatement = this.db.prepare<[], ProjectReadModel>('SELECT id, name FROM projects')
     this.insertStatement = this.db.prepare(
-      'INSERT INTO projects (id, name, repo_key) VALUES (?, ?, ?)',
+      'INSERT INTO projects (id, name, repo_key, remote_url) VALUES (?, ?, ?, ?)',
     )
   }
 
-  getByRepoKey(repoKey: string): ProjectReadModel | undefined {
+  getByRepoKey(repoKey: string): Project | undefined {
     const row = this.findByRepoKeyStatement.get(repoKey)
 
-    return row && { id: row.id, name: row.name, repoKey: row.repo_key }
+    return (
+      row &&
+      Project.reconstitute({
+        id: row.id,
+        name: row.name,
+        repoKey: row.repo_key,
+        remoteUrl: row.remote_url,
+      })
+    )
   }
 
-  list(): ProjectListItem[] {
+  list(): ProjectReadModel[] {
     return this.findAllStatement.all()
   }
 
-  addNewProject(project: ProjectCreationModel): void {
-    this.insertStatement.run(project.id, project.name, project.repoKey)
+  addNewProject(project: Project): void {
+    this.insertStatement.run(project.id, project.name, project.repoKey, project.remoteUrl)
   }
 }

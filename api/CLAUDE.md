@@ -30,8 +30,9 @@ pnpm --filter api test tests/endpoints/registerProject.test.ts
 
 ## Architecture
 
-Three-layer: **endpoints → use-cases → repositories**. Each layer receives `db`
-(a `better-sqlite3` `Database` instance) explicitly — no singletons, no globals.
+Three-layer: **endpoints → use-cases → repositories**, plus a **domain** layer for entity
+behavior. Each layer receives `db` (a `better-sqlite3` `Database` instance) explicitly — no
+singletons, no globals.
 
 - **Endpoints** (`src/endpoints/`) — Fastify plugin functions, one per API endpoint; validate
   request shape via JSON Schema, delegate to use-cases, map results to HTTP status codes.
@@ -41,6 +42,11 @@ Three-layer: **endpoints → use-cases → repositories**. Each layer receives `
   result objects (e.g. `RegisterProjectResult`).
 - **Repositories** (`src/repositories/`) — raw SQL only; accept and return plain objects
   (`ProjectRow`).
+- **Domain** (`src/domain/`) — entity classes with a private constructor and a validating static
+  factory (e.g. `Project.create(name, remoteUrl)`, which derives `repoKey` and returns either a
+  `Project` instance or an `InvalidRemoteUrlError`) — so an invalid entity can't be constructed
+  in the first place. Reserved for invariants intrinsic to the entity; an application-level
+  workflow step belongs in a use-case instead.
 
 `buildApp(db, opts)` in `src/app.ts` wires all endpoints together and runs migrations.
 `src/index.ts` is the process entry point: loads config, creates the DB, calls `buildApp`,

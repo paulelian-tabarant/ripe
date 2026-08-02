@@ -22,7 +22,7 @@ describe('POST /api/projects', () => {
   it('returns 201 with projectId for a fresh remoteUrl', async () => {
     const response = await postProjects({
       name: 'my-project',
-      remoteUrl: 'git@github.com:org/repo.git',
+      remoteUrl: 'https://github.com/org/repo.git',
     })
 
     expect(response.statusCode).toBe(201)
@@ -32,11 +32,11 @@ describe('POST /api/projects', () => {
   it('returns 200 with the same projectId for a repeat of an equivalent remoteUrl', async () => {
     const first = await postProjects({
       name: 'my-project',
-      remoteUrl: 'git@github.com:org/repo.git',
+      remoteUrl: 'https://github.com/org/repo.git',
     })
     const second = await postProjects({
       name: 'my-project',
-      remoteUrl: 'git@github.com:org/repo.git',
+      remoteUrl: 'https://github.com/org/repo.git',
     })
 
     expect(second.statusCode).toBe(200)
@@ -46,11 +46,11 @@ describe('POST /api/projects', () => {
   it('returns distinct projectIds for two different remoteUrls sharing the same name', async () => {
     const first = await postProjects({
       name: 'my-project',
-      remoteUrl: 'git@github.com:org/repo-one.git',
+      remoteUrl: 'https://github.com/org/repo-one.git',
     })
     const second = await postProjects({
       name: 'my-project',
-      remoteUrl: 'git@github.com:org/repo-two.git',
+      remoteUrl: 'https://github.com/org/repo-two.git',
     })
 
     expect(first.statusCode).toBe(201)
@@ -65,13 +65,13 @@ describe('POST /api/projects', () => {
   })
 
   it('returns 400 for a missing name field', async () => {
-    const response = await postProjects({ remoteUrl: 'git@github.com:org/repo.git' })
+    const response = await postProjects({ remoteUrl: 'https://github.com/org/repo.git' })
 
     expect(response.statusCode).toBe(400)
   })
 
   it('returns 400 for an empty name string', async () => {
-    const response = await postProjects({ name: '', remoteUrl: 'git@github.com:org/repo.git' })
+    const response = await postProjects({ name: '', remoteUrl: 'https://github.com/org/repo.git' })
 
     expect(response.statusCode).toBe(400)
   })
@@ -88,10 +88,10 @@ describe('POST /api/projects', () => {
     expect(response.statusCode).toBe(400)
   })
 
-  it('derives repo_key from a ssh:// remote with a port, nested group, and .git suffix', async () => {
+  it('derives repo_key from an https remote with a port, nested group, and .git suffix', async () => {
     const response = await postProjects({
       name: 'my-project',
-      remoteUrl: 'ssh://git@gitlab.com:2222/group/subgroup/repo.git',
+      remoteUrl: 'https://gitlab.com:2222/group/subgroup/repo.git',
     })
 
     expect(response.statusCode).toBe(201)
@@ -101,5 +101,29 @@ describe('POST /api/projects', () => {
       .get(response.json().projectId) as { repo_key: string }
 
     expect(row.repo_key).toBe('gitlab.com/group/subgroup/repo')
+  })
+
+  it('derives remote_url from an https remote, using the unmangled host and dropping the port', async () => {
+    const response = await postProjects({
+      name: 'my-project',
+      remoteUrl: 'https://gitlab-forge.din.developpement-durable.gouv.fr:2222/org/repo.git',
+    })
+
+    expect(response.statusCode).toBe(201)
+
+    const row = db
+      .prepare('SELECT remote_url FROM projects WHERE id = ?')
+      .get(response.json().projectId) as { remote_url: string }
+
+    expect(row.remote_url).toBe('https://gitlab-forge.din.developpement-durable.gouv.fr/org/repo')
+  })
+
+  it('returns 400 for a non-https remoteUrl', async () => {
+    const response = await postProjects({
+      name: 'my-project',
+      remoteUrl: 'git@github.com:org/repo.git',
+    })
+
+    expect(response.statusCode).toBe(400)
   })
 })

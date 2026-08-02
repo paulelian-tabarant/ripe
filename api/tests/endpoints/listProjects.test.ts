@@ -28,11 +28,11 @@ describe('GET /api/projects', () => {
   it('returns 200 with all registered projects', async () => {
     const first = await postProjects({
       name: 'my-project',
-      remoteUrl: 'git@github.com:org/repo-one.git',
+      remoteUrl: 'https://github.com/org/repo-one.git',
     })
     const second = await postProjects({
       name: 'other-project',
-      remoteUrl: 'git@github.com:org/repo-two.git',
+      remoteUrl: 'https://github.com/org/repo-two.git',
     })
 
     const response = await getProjects()
