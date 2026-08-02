@@ -58,29 +58,45 @@ pass — not to guess at answers to comments that are actually asking the author
    A `(blocking)` decoration always makes a comment actionable regardless of label — the
    reviewer is saying it must be resolved before merge.
 
-4. **Split into two buckets and handle them differently:**
+4. **Split into two buckets — classify only, don't act yet:**
 
    - **Actionable** (`issue`, `suggestion`, `todo`, `chore`, or anything marked `(blocking)`):
-     treat these like ordinary PR feedback. Make the code change. If you judge a suggestion
-     shouldn't be applied as written, don't silently skip it — say why in the output, the same
-     way you'd explain it in a review reply.
+     ordinary PR feedback, fixable without needing the user's input on what to do.
    - **Needs human judgment** (`question`, `thought`, `praise`, `nitpick`): these aren't requests
      for a code change, they're requests for the PR author's actual opinion, or don't need a
      response at all. Don't invent an answer to a question or decide whether a `thought` is worth
      acting on — that's exactly the judgment call this skill exists to route to the user instead
-     of guessing at. Surface each one with enough context to decide quickly, without doing the
-     deciding.
+     of guessing at.
 
-5. **Verify before reporting.** After making the actionable code changes, run lint, typecheck, and
+   Hold off on touching any code for either bucket until the next step is done — a judgment-call
+   answer can change the actionable bucket's scope (defer/expand/drop a `todo`, change *how* a
+   `suggestion` should be applied), and implementing first means redoing that work.
+
+5. **Walk the judgment bucket first, one at a time, before fixing anything.** Don't dump the
+   whole bucket as a single list and wait for one omnibus reply — these need a real back-and-forth,
+   and bundling them invites the user to skim instead of deciding. In file order, for each item:
+   - Quote the comment with its `path:line` and label.
+   - Give a one-line note on what a reasonable response might be, if it helps them decide faster
+     — but don't decide for them.
+   - Wait for the user's answer before moving to the next one. If the answer implies a code
+     change, make it before moving on, so context stays fresh and each item is fully closed out
+     before the next. If the answer changes how an actionable-bucket item should be handled (or
+     whether it should be handled at all), update that item's plan now, before step 6.
+
+   If there are many items, it's fine to ask once whether the user wants them one-by-one or
+   batched — but default to one-by-one unless they say otherwise.
+
+6. **Now fix the actionable bucket**, informed by whatever the judgment-bucket walk surfaced.
+   Make the code change for each. If you judge a suggestion shouldn't be applied as written,
+   don't silently skip it — say why in the output, the same way you'd explain it in a review
+   reply.
+
+7. **Verify before reporting.** After making the actionable code changes, run lint, typecheck, and
    the scoped tests for every package you touched (per the root `CLAUDE.md`) before writing the
    report. A comment isn't actually addressed if it leaves the branch failing checks — fix any
    failures the same way you would for any other coding task, then re-run until clean.
 
-6. **Report the actionable bucket, then walk the judgment bucket one by one.** Don't dump both
-   buckets as a single list and wait for one omnibus reply — the judgment-call items need a
-   real back-and-forth, and bundling them invites the user to skim instead of deciding.
-
-   First, report what's already done:
+8. **Report what's addressed.**
 
    ```markdown
    ## PR #<number>: <title>
@@ -91,22 +107,10 @@ pass — not to guess at answers to comments that are actually asking the author
 
    Omit this section if nothing was actionable. If a comment's label is inferred rather than
    explicit, no need to flag that in the report — the classification should just be right, not
-   narrated.
+   narrated. Any judgment-bucket item already settled in step 5 doesn't need to be repeated here
+   in full — a one-line reference to the decision made is enough.
 
-   Then, for the judgment bucket (`question`, `thought`, `praise`, `nitpick`, or any actionable
-   item you chose not to apply as written), present them **one at a time**, in file order. For
-   each:
-   - Quote the comment with its `path:line` and label.
-   - Give a one-line note on what a reasonable response might be, if it helps them decide faster
-     — but don't decide for them.
-   - Wait for the user's answer before moving to the next one. If the answer implies a code
-     change, make it before moving on, so context stays fresh and each item is fully closed out
-     before the next.
-
-   If there are many items, it's fine to ask once whether the user wants them one-by-one or
-   batched — but default to one-by-one unless they say otherwise.
-
-7. **Confirm, then resolve.** Wait until you and the user are actually aligned on what got
+9. **Confirm, then resolve.** Wait until you and the user are actually aligned on what got
    addressed and what was decided on each judgment-call item before touching GitHub. Once
    aligned (either after the full one-by-one walk, or as you go if the user prefers resolving
    threads immediately after each decision), resolve the corresponding review threads for the
@@ -132,9 +136,9 @@ pass — not to guess at answers to comments that are actually asking the author
   as context for what's already been discussed — don't re-litigate a question the author already
   answered in a reply.
 - **Never auto-reply on GitHub, and never resolve a thread before the user has confirmed it's
-  settled.** The report in step 6 is a proposal, not a done deal — the user might want a change
+  settled.** The report in step 8 is a proposal, not a done deal — the user might want a change
   reverted, a different answer to a question, or to leave something open for the reviewer to see.
-  Only step 7, after that confirmation, touches GitHub, and only to resolve — never to post a
+  Only step 9, after that confirmation, touches GitHub, and only to resolve — never to post a
   comment.
 - **Already-resolved threads**: `resolve_review_threads.sh` checks `isResolved` before mutating
   and just reports "already resolved" rather than erroring — safe to re-run on the same comment
