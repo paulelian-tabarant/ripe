@@ -76,6 +76,28 @@ target for team telemetry in the first place.
   dropdown, with no `repo_key`/org disambiguator shown. Accepted for now — revisit only if this
   causes an actual user-reported mix-up.
 
+## Related, Deferred Decision: `remote_url` for Connectivity
+
+`repo_key` is an **identity key only** — it exists so the server can answer "is this the same
+project," and it is deliberately lossy in ways that don't matter for that purpose (see the
+casing/canonicalization trade-offs under Risks below). It is not, and should not be treated as, a
+connectable address.
+
+This matters because a future capability — server-side fetching of repo state from the git host,
+for [skill rename/delete reconciliation](../../spec/versions/version-2-scope.md) — needs the
+opposite property: a literal, reachable host. `repo_key` fails that job. `git-url-parse`'s `source`
+field (used to build `repo_key`) applies its own heuristic to guess a "provider name," stripping
+subdomains it assumes are vcs-hosting prefixes — e.g. `gitlab-forge.example.gouv.fr` normalizes to
+`example.gouv.fr`, which is not the actual git host. The library's `resource` field holds the
+unmangled literal hostname and is what any future connectivity use case must use instead.
+
+The forward-looking plan (not implemented by this ADR): also persist the raw `remoteUrl` already
+received on every `POST /api/projects` call (currently discarded after being reduced to
+`repo_key`), as a separate nullable column. `repo_key` remains the sole identity lookup, indexed
+and `UNIQUE`; `remote_url` would carry no uniqueness constraint and is never used for project
+resolution — only as the source for deriving a connectable host (via `resource`, not `source`) when
+that capability is built.
+
 ## Rationale
 
 - ✅ `repo_key` collisions are impossible for unrelated projects (in practice), removing the
