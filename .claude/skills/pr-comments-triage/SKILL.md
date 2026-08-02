@@ -72,6 +72,19 @@ pass — not to guess at answers to comments that are actually asking the author
    answer can change the actionable bucket's scope (defer/expand/drop a `todo`, change *how* a
    `suggestion` should be applied), and implementing first means redoing that work.
 
+   **Post the full classification before doing anything else** — one compact list, both buckets,
+   every comment, e.g.:
+
+   ```markdown
+   Actionable: `path:line` [suggestion] gist · `path:line` [todo] gist
+   Needs judgment: `path:line` [thought] gist · `path:line` [question] gist
+   ```
+
+   This gives the user the whole scope up front — how many comments, how big each bucket is —
+   before you start the one-by-one walk or touch a single line of code. Do not jump from step 3
+   straight into the walk (step 5) or into fixing anything: this overview is a required stop in
+   between, even if the mapping from step 3 already feels obvious to you.
+
 5. **Walk the judgment bucket first, one at a time, before fixing anything.** Don't dump the
    whole bucket as a single list and wait for one omnibus reply — these need a real back-and-forth,
    and bundling them invites the user to skim instead of deciding. In file order, for each item:
@@ -110,12 +123,16 @@ pass — not to guess at answers to comments that are actually asking the author
    narrated. Any judgment-bucket item already settled in step 5 doesn't need to be repeated here
    in full — a one-line reference to the decision made is enough.
 
-9. **Confirm, then resolve.** Wait until you and the user are actually aligned on what got
-   addressed and what was decided on each judgment-call item before touching GitHub. Once
-   aligned (either after the full one-by-one walk, or as you go if the user prefers resolving
-   threads immediately after each decision), resolve the corresponding review threads for the
-   comments that were acted on or explicitly settled — not a reply saying "resolved", an actual
-   resolved conversation, since that's what the label means to a reviewer scanning the PR:
+9. **Confirm, then resolve — do not end the task without this step.** Keep a running list of
+   every comment ID that becomes settled as you go (each judgment-call decision from step 5, each
+   actionable fix from step 6) so nothing falls through the cracks by the time you get here — a
+   long triage pass with many comments is exactly when this gets forgotten. Wait until you and the
+   user are actually aligned on what got addressed and what was decided on each judgment-call item
+   before touching GitHub. Once aligned (either after the full one-by-one walk, or as you go if the
+   user prefers resolving threads immediately after each decision), resolve the corresponding
+   review threads for the comments that were acted on or explicitly settled — not a reply saying
+   "resolved", an actual resolved conversation, since that's what the label means to a reviewer
+   scanning the PR:
 
    ```bash
    .claude/skills/pr-comments-triage/scripts/resolve_review_threads.sh <pr-number> <comment-id> [comment-id...]
