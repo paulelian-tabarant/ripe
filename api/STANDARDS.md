@@ -32,27 +32,33 @@ Package-specific standards for `api/`. These supplement the general rules in
   `ProjectReadModel`, the `{id, name}` projection `list()` returns for a list view — no `repoKey`,
   no behavior, not the same thing as a `Project`). Don't let `*ReadModel` do double duty as "the
   entity, but plain-object" — that's what returning the entity class itself is for.
-- **Validation is separate from construction, so "does it already exist" can be checked before
-  "create" is ever invoked**: when a use-case must look up an entity by a value derived from its
-  input before deciding whether to create one, don't fold derivation and construction into a
-  single fallible `create` — invoking something named `create` before knowing creation is even
-  warranted reads backwards. Split the entity's static factory in two: a validating derivation
-  step with no side effects (e.g. `Project.deriveIdentity(remoteUrl): ProjectIdentity |
-  InvalidRemoteUrlError`, parsing `remoteUrl` into the `repoKey` used for the lookup plus whatever
-  else construction will need) that a use-case calls first and can fail; and an infallible
-  `create(name, identity)` that only builds the entity (assigning its `id`, here via `nanoid`) —
-  called only in the branch where the lookup came back empty. A repository's `getByRepoKey`-style
-  method never calls either of these — it reconstitutes an already-valid entity read back from
-  storage via a third factory, `reconstitute(data)`, which also can't fail (the data was already
-  validated once, at the `create` call that originally persisted it).
+- **`create` builds an in-memory candidate value, not a persisted row — call it before checking
+  for an existing entity, not after**: a validating factory (e.g. `Project.create(name,
+  remoteUrl): Project | InvalidRemoteUrlError`) only constructs a value in memory, including
+  deriving whatever lookup key a use-case needs (`repoKey`) and assigning a fresh `id` (here via
+  `nanoid`) — it does not persist anything. Persistence is a separate, explicit step
+  (`repository.addNewProject(project)`), called conditionally by the use-case once it's confirmed
+  no existing entity matches the lookup key. This means a use-case calls `create` once, up front,
+  unconditionally — not only in the "doesn't exist yet" branch — and uses the returned candidate's
+  fields (e.g. `project.repoKey`) for the existence check; a freshly-generated `id` going unused
+  when the entity turns out to already exist is a trivial, side-effect-free cost, not a "created
+  something that shouldn't exist" problem. Don't split derivation and construction into two
+  factories (a fallible "resolve" step plus an infallible "construct" step) to avoid calling
+  `create` before the existence check — that only reads as cleaner in isolation; in practice it
+  either duplicates the parsing logic across both steps or forces an intermediate DTO whose name
+  is prone to conflating a value the entity validates at construction time (e.g. `repoKey`) with
+  actual entity identity (the server-assigned `id`). A repository's `getByRepoKey`-style method
+  never calls `create` — it reconstitutes an already-valid entity read back from storage via a
+  separate factory, `reconstitute(data)`, which can't fail (the data was already validated once,
+  at the `create` call that originally persisted it).
 - **Domain entity classes have a private constructor**, exposing only their static factories
-  (`deriveIdentity`/`create`/`reconstitute` above). Name the class after the bare entity
-  (`Project`); this is distinct from the plain `*ReadModel` DTOs living in `src/repositories/` —
-  the domain class carries behavior and invariants, a `*ReadModel` is a plain data shape for one
-  specific reading need. The repository's write parameter is the entity itself (see
-  `addNewProject(project: Project)`), not a separately-declared write DTO. Reserve a use-case
-  (`src/use-cases/`) for logic that orchestrates repositories or multiple entities rather than an
-  invariant intrinsic to one entity.
+  (`create`/`reconstitute` above). Name the class after the bare entity (`Project`); this is
+  distinct from the plain `*ReadModel` DTOs living in `src/repositories/` — the domain class
+  carries behavior and invariants, a `*ReadModel` is a plain data shape for one specific reading
+  need. The repository's write parameter is the entity itself (see `addNewProject(project:
+  Project)`), not a separately-declared write DTO. Reserve a use-case (`src/use-cases/`) for
+  logic that orchestrates repositories or multiple entities rather than an invariant intrinsic to
+  one entity.
 
 ## Testing
 

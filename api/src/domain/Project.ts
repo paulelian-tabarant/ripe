@@ -8,12 +8,7 @@ export class InvalidRemoteUrlError extends Error {
   }
 }
 
-const MANAGED_PROTOCOLS = ['https']
-
-export type ProjectIdentity = {
-  repoKey: string
-  remoteUrl: string
-}
+const MANAGED_PROTOCOLS = new Set(['https'])
 
 export class Project {
   private constructor(
@@ -23,7 +18,7 @@ export class Project {
     readonly remoteUrl: string,
   ) {}
 
-  static deriveIdentity(remoteUrl: string): ProjectIdentity | InvalidRemoteUrlError {
+  static create(name: string, remoteUrl: string): Project | InvalidRemoteUrlError {
     let parsed: ReturnType<typeof GitUrlParse>
 
     try {
@@ -36,19 +31,15 @@ export class Project {
       !parsed.source ||
       !parsed.owner ||
       !parsed.name ||
-      !MANAGED_PROTOCOLS.includes(parsed.protocol)
+      !MANAGED_PROTOCOLS.has(parsed.protocol)
     ) {
       return new InvalidRemoteUrlError(remoteUrl)
     }
 
-    return {
-      repoKey: `${parsed.source}/${parsed.owner}/${parsed.name}`,
-      remoteUrl: `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
-    }
-  }
+    const repoKey = `${parsed.source}/${parsed.owner}/${parsed.name}`
+    const normalizedRemoteUrl = `https://${parsed.resource}/${parsed.owner}/${parsed.name}`
 
-  static create(name: string, identity: ProjectIdentity): Project {
-    return new Project(`proj_${nanoid()}`, name, identity.repoKey, identity.remoteUrl)
+    return new Project(`proj_${nanoid()}`, name, repoKey, normalizedRemoteUrl)
   }
 
   static reconstitute(data: {
