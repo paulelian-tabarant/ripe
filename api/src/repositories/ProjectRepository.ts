@@ -47,6 +47,11 @@ export class ProjectRepository {
   }
 
   addNewProject(project: Project): void {
-    this.insertStatement.run(project.id, project.name, project.repoKey, project.remoteUrl)
+    this.insertStatement.run(
+      project.id,
+      project.name,
+      project.repoReference.repoKey,
+      project.repoReference.remoteUrl,
+    )
   }
 }

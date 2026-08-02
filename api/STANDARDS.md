@@ -32,25 +32,33 @@ Package-specific standards for `api/`. These supplement the general rules in
   `ProjectReadModel`, the `{id, name}` projection `list()` returns for a list view — no `repoKey`,
   no behavior, not the same thing as a `Project`). Don't let `*ReadModel` do double duty as "the
   entity, but plain-object" — that's what returning the entity class itself is for.
-- **`create` builds an in-memory candidate value, not a persisted row — call it before checking
-  for an existing entity, not after**: a validating factory (e.g. `Project.create(name,
-  remoteUrl): Project | InvalidRemoteUrlError`) only constructs a value in memory, including
-  deriving whatever lookup key a use-case needs (`repoKey`) and assigning a fresh `id` (here via
-  `nanoid`) — it does not persist anything. Persistence is a separate, explicit step
-  (`repository.addNewProject(project)`), called conditionally by the use-case once it's confirmed
-  no existing entity matches the lookup key. This means a use-case calls `create` once, up front,
-  unconditionally — not only in the "doesn't exist yet" branch — and uses the returned candidate's
-  fields (e.g. `project.repoKey`) for the existence check; a freshly-generated `id` going unused
-  when the entity turns out to already exist is a trivial, side-effect-free cost, not a "created
-  something that shouldn't exist" problem. Don't split derivation and construction into two
-  factories (a fallible "resolve" step plus an infallible "construct" step) to avoid calling
-  `create` before the existence check — that only reads as cleaner in isolation; in practice it
-  either duplicates the parsing logic across both steps or forces an intermediate DTO whose name
-  is prone to conflating a value the entity validates at construction time (e.g. `repoKey`) with
-  actual entity identity (the server-assigned `id`). A repository's `getByRepoKey`-style method
-  never calls `create` — it reconstitutes an already-valid entity read back from storage via a
-  separate factory, `reconstitute(data)`, which can't fail (the data was already validated once,
-  at the `create` call that originally persisted it).
+- **Derive and validate external input into a small value object before it ever reaches the
+  entity's own factory — don't have the entity's `create` re-parse a raw external value itself.**
+  e.g. `ProjectRepoReference.resolve(remoteUrl): ProjectRepoReference | InvalidRemoteUrlError` has
+  a private constructor and is the *sole* way to obtain a `ProjectRepoReference`; `Project.create(
+  name, repoReference: ProjectRepoReference): Project` takes that value object, not the raw
+  `remoteUrl` string, and is therefore infallible — an invalid `ProjectRepoReference` is simply
+  unrepresentable by the time `create` runs, so there's no error branch left to duplicate or
+  forget. A use-case resolves the value object first, uses its derived fields (e.g.
+  `repoReference.repoKey`) for the existence check, and only calls `create` in the "doesn't exist
+  yet" branch — `create` is no longer called speculatively before that check, since there's no
+  fallible work left inside it to justify calling it early. (An earlier version of this rule
+  argued for calling `create` unconditionally, up front, specifically to avoid this split — that
+  traded away a real invariant, letting `RegisterProject.run` accept an unvalidated raw string as
+  an implicit precondition for a supposedly-infallible-in-practice `create` call. The value-object
+  split removes that implicit precondition entirely: `create` cannot be called with anything
+  invalid, full stop, not merely "in practice, given how callers currently behave.") Give a value
+  object like this its own file once it carries real behavior/invariants of its own (here
+  `api/src/domain/ProjectRepoReference.ts`, separate from `Project.ts`) rather than nesting it
+  inside the entity that consumes it — and name it for what it actually represents, not a
+  neighboring concept: `ProjectRepoReference` bundles `repoKey` and `remoteUrl` together
+  deliberately (both derived from the same parse, both required before an entity can be
+  constructed), but is not itself "the project's identity" (that's `Project.id`) and is not a
+  `*Repository` in the persistence-layer sense — hence the more specific name over a generic
+  `RepoIdentity`. A repository's `getByRepoKey`-style method never calls `create` — it
+  reconstitutes an already-valid entity read back from storage via a separate factory,
+  `reconstitute(data)`, which can't fail (the data was already validated once, at the `create`
+  call that originally persisted it).
 - **Domain entity classes have a private constructor**, exposing only their static factories
   (`create`/`reconstitute` above). Name the class after the bare entity (`Project`); this is
   distinct from the plain `*ReadModel` DTOs living in `src/repositories/` — the domain class

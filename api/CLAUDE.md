@@ -43,10 +43,14 @@ singletons, no globals.
 - **Repositories** (`src/repositories/`) — raw SQL only; accept and return plain objects
   (`ProjectRow`).
 - **Domain** (`src/domain/`) — entity classes with a private constructor and a validating static
-  factory (e.g. `Project.create(name, remoteUrl)`, which derives `repoKey` and returns either a
-  `Project` instance or an `InvalidRemoteUrlError`) — so an invalid entity can't be constructed
-  in the first place. Reserved for invariants intrinsic to the entity; an application-level
-  workflow step belongs in a use-case instead.
+  factory. External input that needs deriving/validating before it can be used gets its own value
+  object with a private constructor and a `resolve`-style factory (e.g.
+  `ProjectRepoReference.resolve(remoteUrl): ProjectRepoReference | InvalidRemoteUrlError`), kept
+  in its own file; the entity's own factory then takes that already-validated value object instead
+  of a raw external value, so it can't fail (e.g. `Project.create(name, repoReference)` is
+  infallible — an invalid `Project` simply can't be constructed in the first place). Reserved for
+  invariants intrinsic to the entity or its inputs; an application-level workflow step belongs in
+  a use-case instead.
 
 `buildApp(db, opts)` in `src/app.ts` wires all endpoints together and runs migrations.
 `src/index.ts` is the process entry point: loads config, creates the DB, calls `buildApp`,
