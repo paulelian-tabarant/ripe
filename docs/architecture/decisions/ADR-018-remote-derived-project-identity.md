@@ -76,6 +76,32 @@ target for team telemetry in the first place.
   dropdown, with no `repo_key`/org disambiguator shown. Accepted for now — revisit only if this
   causes an actual user-reported mix-up.
 
+## Related, Deferred Decision: `remote_url` for Connectivity
+
+`repo_key` is an **identity key only** — it exists so the server can answer "is this the same
+project," and it is deliberately lossy in ways that don't matter for that purpose (see the
+casing/canonicalization trade-offs under Risks below). It is not, and should not be treated as, a
+connectable address.
+
+This matters because a future capability — server-side fetching of repo state from the git host,
+for [skill rename/delete reconciliation](../../spec/versions/version-2-scope.md) — needs the
+opposite property: a literal, reachable host. `repo_key` fails that job. `git-url-parse`'s `source`
+field (used to build `repo_key`) applies its own heuristic to guess a "provider name," stripping
+subdomains it assumes are vcs-hosting prefixes — e.g. `gitlab-forge.example.gouv.fr` normalizes to
+`example.gouv.fr`, which is not the actual git host. The library's `resource` field holds the
+unmangled literal hostname and is what any future connectivity use case must use instead.
+
+The forward-looking plan (not implemented by this ADR): also persist the raw `remoteUrl` already
+received on every `POST /api/projects` call (currently discarded after being reduced to
+`repo_key`), as a separate nullable column. `repo_key` remains the sole identity lookup, indexed
+and `UNIQUE`; `remote_url` would carry no uniqueness constraint and is never used for project
+resolution — only as the source for deriving a connectable host (via `resource`, not `source`) when
+that capability is built.
+
+**Update**: this deferred decision was made concrete in
+[ADR-019](ADR-019-repository-state-synchronization.md), which also restricts registration to
+`https://` remotes only.
+
 ## Rationale
 
 - ✅ `repo_key` collisions are impossible for unrelated projects (in practice), removing the
@@ -115,3 +141,11 @@ target for team telemetry in the first place.
   accepted, same shape as the existing V1 skill-rename limitation
 - ⚠️ Two unrelated self-hosted git servers reusing the same host/org/repo path (unlikely, but
   possible with internal Git servers) would collide — accepted as a rare edge case
+- ⚠️ Normalization doesn't lowercase the host consistently across remote forms (the
+  `git-url-parse` library used server-side lowercases it for `https://`/`ssh://` via WHATWG
+  `URL`, but not for scp-like SSH, whose host parsing goes through a custom regex) and never
+  lowercases the org/repo path at all (a deliberate choice — that's a server-side identifier that
+  may be case-sensitive on some self-hosted git servers). Two developers whose `origin` remotes
+  differ only in host casing across those two shapes would silently register a second project —
+  accepted as the same shape of rare, silent edge case as the above, given every major git host's
+  UI always emits lowercase clone URLs in practice

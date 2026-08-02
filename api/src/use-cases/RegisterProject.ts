@@ -1,21 +1,29 @@
-import { nanoid } from 'nanoid'
+import { Project } from '../domain/Project.js'
+import { InvalidRemoteUrlError, ProjectRepoReference } from '../domain/ProjectRepoReference.js'
 import type { ProjectRepository } from '../repositories/ProjectRepository.js'
 
-export type RegisterProjectResult = { created: boolean; projectId: string }
+export type RegisterProjectResult = { created: boolean; projectId: string } | InvalidRemoteUrlError
 
 export class RegisterProject {
   constructor(private readonly repository: ProjectRepository) {}
 
-  run(name: string): RegisterProjectResult {
-    const existing = this.repository.getByName(name)
+  run(name: string, remoteUrl: string): RegisterProjectResult {
+    const repoReference = ProjectRepoReference.resolve(remoteUrl)
+
+    if (repoReference instanceof InvalidRemoteUrlError) {
+      return repoReference
+    }
+
+    const existing = this.repository.getByRepoKey(repoReference.repoKey)
 
     if (existing) {
       return { created: false, projectId: existing.id }
     }
 
-    const projectId = `proj_${nanoid()}`
-    this.repository.addNewProject({ id: projectId, name })
+    const project = Project.create(name, repoReference)
 
-    return { created: true, projectId }
+    this.repository.addNewProject(project)
+
+    return { created: true, projectId: project.id }
   }
 }

@@ -1,9 +1,9 @@
-import type { Project, ProjectRepository } from '../repositories/ProjectRepository.js'
+import type { ProjectReadModel, ProjectRepository } from '../repositories/ProjectRepository.js'
 
 export class ListProjects {
   constructor(private readonly repository: ProjectRepository) {}
 
-  run(): Project[] {
+  run(): ProjectReadModel[] {
     return this.repository.list()
   }
 }
