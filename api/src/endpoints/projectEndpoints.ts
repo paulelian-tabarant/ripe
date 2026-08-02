@@ -39,6 +39,7 @@ export const projectEndpoints: FastifyPluginAsync<ProjectEndpointOptions> = asyn
       }
 
       const body: RegisterProjectResponseBody = { projectId: result.projectId }
+
       return reply.code(result.created ? 201 : 200).send(body)
     },
   )

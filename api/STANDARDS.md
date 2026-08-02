@@ -24,6 +24,16 @@ Package-specific standards for `api/`. These supplement the general rules in
   never reference raw table/column names.
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
   codes, request/response shapes, headers) — that mapping belongs to endpoints.
+- **Domain object vs. read/write model naming**: don't let one type do double duty across reading
+  and writing an entity if their fields diverge or the write side carries coherence obligations
+  the read side doesn't (e.g. which fields are required to create a row vs. what comes back from
+  a lookup). Reserve the bare domain name (e.g. `Project`) for a type with no such split — used
+  identically for reading and writing. Once a type serves only one side, suffix it accordingly on
+  the same base name instead of reusing the bare name or inventing an unrelated one: `ReadModel`
+  for a type returned by a read operation (e.g. `ProjectReadModel` from `getByRepoKey`),
+  `CreationModel` for the shape a write operation needs to create a new row (e.g.
+  `ProjectCreationModel` for `addNewProject`'s parameter). This keeps each type's role explicit
+  while keeping same-entity types recognizably related.
 
 ## Testing
 

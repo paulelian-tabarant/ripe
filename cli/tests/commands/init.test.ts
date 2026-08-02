@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -10,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { init } from '@/commands/init.js'
 
 const FAKE_SERVER_URL = 'https://fake-server-url'
+const FAKE_REMOTE_URL = 'git@github.com:acme/widgets.git'
 
 interface WrittenConfig {
   projectId: string
@@ -23,6 +25,8 @@ describe('init', () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), 'ripe-test-'))
+    execFileSync('git', ['init'], { cwd: tmpDir })
+    execFileSync('git', ['remote', 'add', 'origin', FAKE_REMOTE_URL], { cwd: tmpDir })
     nock.cleanAll()
     nock.disableNetConnect()
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -57,7 +61,7 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: 'unknown' },
+      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
     )
 
     const result = await init({
@@ -79,7 +83,7 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: 'unknown' },
+      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
     )
 
     const result = await init({
@@ -101,7 +105,7 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: 'unknown' },
+      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
     )
 
     const result = await init({
@@ -123,7 +127,7 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: 'unknown' },
+      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
     )
 
     const result = await init({
@@ -145,7 +149,7 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: 'unknown' },
+      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
     )
 
     const result = await init({
@@ -167,7 +171,7 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: 'unknown' },
+      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
     )
 
     const result = await init({
@@ -187,7 +191,7 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: 'unknown' },
+      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
     )
 
     const result = await init({
@@ -203,8 +207,8 @@ describe('init', () => {
     expect(config.serverUrl).toBe(FAKE_SERVER_URL)
   })
 
-  it('writes config and exits 0 on 409 when user confirms', async () => {
-    stubRegisterProjectApi(409, { projectId: 'proj_existing', message: 'Project already exists' })
+  it('writes config and exits 0 on 200 when user confirms', async () => {
+    stubRegisterProjectApi(200, { projectId: 'proj_existing' })
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -219,8 +223,8 @@ describe('init', () => {
     expect(config.projectId).toBe('proj_existing')
   })
 
-  it('exits 0 without writing config on 409 when user declines', async () => {
-    stubRegisterProjectApi(409, { projectId: 'proj_existing', message: 'Project already exists' })
+  it('exits 0 without writing config on 200 when user declines', async () => {
+    stubRegisterProjectApi(200, { projectId: 'proj_existing' })
 
     const result = await init({
       currentDirectoryName: tmpDir,
@@ -268,6 +272,20 @@ describe('init', () => {
     expect(errorSpy).toHaveBeenCalled()
   })
 
+  it('exits 1 and prints to stderr when the directory has no git remote', async () => {
+    execFileSync('git', ['remote', 'remove', 'origin'], { cwd: tmpDir })
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+    })
+
+    expect(result.status).toBe('error')
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('could not determine the git remote URL'),
+    )
+  })
+
   function writeExistingConfig(content: string): void {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true })
     writeFileSync(join(tmpDir, '.ripe/config.json'), content)
@@ -280,7 +298,7 @@ describe('init', () => {
 
 function stubRegisterProjectApi(
   status: number,
-  body: RegisterProjectResponseBody | { projectId: string; message: string },
+  body: RegisterProjectResponseBody,
   requestBody?: RegisterProjectRequestBody,
 ): void {
   nock(FAKE_SERVER_URL)

@@ -1,6 +1,12 @@
 import type Database from 'better-sqlite3'
 
-export type Project = {
+export type ProjectReadModel = {
+  id: string
+  name: string
+  repoKey: string
+}
+
+export type ProjectCreationModel = {
   id: string
   name: string
   repoKey: string
@@ -32,7 +38,7 @@ export class ProjectRepository {
     )
   }
 
-  getByRepoKey(repoKey: string): Project | undefined {
+  getByRepoKey(repoKey: string): ProjectReadModel | undefined {
     const row = this.findByRepoKeyStatement.get(repoKey)
 
     return row && { id: row.id, name: row.name, repoKey: row.repo_key }
@@ -42,7 +48,7 @@ export class ProjectRepository {
     return this.findAllStatement.all()
   }
 
-  addNewProject(project: Project): void {
+  addNewProject(project: ProjectCreationModel): void {
     this.insertStatement.run(project.id, project.name, project.repoKey)
   }
 }

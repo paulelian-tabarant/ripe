@@ -1,5 +1,6 @@
 import { basename, join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
+import { getRemoteUrl } from '../lib/getRemoteUrl.js'
 import { readConfig } from '../lib/readConfig.js'
 import { type ProjectRegistrationResult, registerProject } from '../lib/registerProject.js'
 import { writeConfig } from '../lib/writeConfig.js'
@@ -25,6 +26,18 @@ async function ask(question: string): Promise<string> {
 
 async function defaultUrlPromptFn(): Promise<string> {
   return ask('Server URL: ')
+}
+
+async function readRemoteUrl(cwd: string): Promise<string | undefined> {
+  try {
+    return await getRemoteUrl(cwd)
+  } catch (err) {
+    console.error('Error: could not determine the git remote URL for this directory')
+
+    if (err instanceof Error) console.error(err.message)
+
+    return undefined
+  }
 }
 
 async function defaultPromptFn(question: string): Promise<boolean> {
@@ -57,6 +70,9 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     return { status: 'success' }
   }
 
+  const remoteUrl = await readRemoteUrl(currentDirectoryName)
+  if (!remoteUrl) return { status: 'error' }
+
   let serverUrl: string
   while (true) {
     serverUrl = await urlPromptFn()
@@ -68,7 +84,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
 
   let result: ProjectRegistrationResult
   try {
-    result = await registerProject(serverUrl, defaultProjectName)
+    result = await registerProject(serverUrl, defaultProjectName, remoteUrl)
   } catch (err) {
     console.error(`Error: could not reach server at ${serverUrl}`)
 

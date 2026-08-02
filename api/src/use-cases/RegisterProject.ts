@@ -4,7 +4,7 @@ import type { ProjectRepository } from '../repositories/ProjectRepository.js'
 
 export class InvalidRemoteUrlError extends Error {
   constructor(remoteUrl: string) {
-    super(`Could not derive a repo_key from remoteUrl: ${remoteUrl}`)
+    super(`Could not derive a repoKey from remoteUrl: ${remoteUrl}`)
     this.name = 'InvalidRemoteUrlError'
   }
 }
