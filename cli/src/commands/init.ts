@@ -2,13 +2,18 @@ import { basename, join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { getRemoteUrl } from '../lib/getRemoteUrl.js'
 import { readConfig } from '../lib/readConfig.js'
-import { type ProjectRegistrationResult, registerProject } from '../lib/registerProject.js'
+import {
+  type ProjectRegistrationResult,
+  registerProject,
+  ServerRejectedRemoteError,
+} from '../lib/registerProject.js'
 import { writeConfig } from '../lib/writeConfig.js'
 
 export interface InitOptions {
   currentDirectoryName?: string
   urlPromptFn?: () => Promise<string>
   promptFn?: (question: string) => Promise<boolean>
+  httpsRemotePromptFn?: (remoteUrl: string) => Promise<string>
 }
 
 export interface InitResult {
@@ -28,11 +33,44 @@ async function defaultUrlPromptFn(): Promise<string> {
   return ask('Server URL: ')
 }
 
+async function defaultHttpsRemotePromptFn(remoteUrl: string): Promise<string> {
+  return ask(`Your git remote ("${remoteUrl}") isn't HTTPS. Enter the HTTPS URL for this repo: `)
+}
+
 async function readRemoteUrl(cwd: string): Promise<string | undefined> {
   try {
     return await getRemoteUrl(cwd)
   } catch (err) {
     console.error('Error: could not determine the git remote URL for this directory')
+
+    if (err instanceof Error) console.error(err.message)
+
+    return undefined
+  }
+}
+
+async function resolveHttpsRemoteUrl(
+  rawRemoteUrl: string,
+  httpsRemotePromptFn: (remoteUrl: string) => Promise<string>,
+): Promise<string> {
+  if (rawRemoteUrl.startsWith('https://')) return rawRemoteUrl
+
+  return httpsRemotePromptFn(rawRemoteUrl)
+}
+
+async function tryRegisterProject(
+  serverUrl: string,
+  name: string,
+  remoteUrl: string,
+): Promise<ProjectRegistrationResult | undefined> {
+  try {
+    return await registerProject(serverUrl, name, remoteUrl)
+  } catch (err) {
+    if (err instanceof ServerRejectedRemoteError) {
+      console.error(`Error: the server rejected this remote URL: "${remoteUrl}"`)
+    } else {
+      console.error(`Error: could not reach server at ${serverUrl}`)
+    }
 
     if (err instanceof Error) console.error(err.message)
 
@@ -59,6 +97,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
   const currentDirectoryName = options.currentDirectoryName ?? process.cwd()
   const urlPromptFn = options.urlPromptFn ?? defaultUrlPromptFn
   const promptFn = options.promptFn ?? defaultPromptFn
+  const httpsRemotePromptFn = options.httpsRemotePromptFn ?? defaultHttpsRemotePromptFn
   const configPath = join(currentDirectoryName, '.ripe/config.json')
 
   const existing = readConfig(configPath)
@@ -70,8 +109,10 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     return { status: 'success' }
   }
 
-  const remoteUrl = await readRemoteUrl(currentDirectoryName)
-  if (!remoteUrl) return { status: 'error' }
+  const rawRemoteUrl = await readRemoteUrl(currentDirectoryName)
+  if (!rawRemoteUrl) return { status: 'error' }
+
+  const remoteUrl = await resolveHttpsRemoteUrl(rawRemoteUrl, httpsRemotePromptFn)
 
   let serverUrl: string
   while (true) {
@@ -82,16 +123,8 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
 
   const defaultProjectName = basename(currentDirectoryName)
 
-  let result: ProjectRegistrationResult
-  try {
-    result = await registerProject(serverUrl, defaultProjectName, remoteUrl)
-  } catch (err) {
-    console.error(`Error: could not reach server at ${serverUrl}`)
-
-    if (err instanceof Error) console.error(err.message)
-
-    return { status: 'error' }
-  }
+  const result = await tryRegisterProject(serverUrl, defaultProjectName, remoteUrl)
+  if (!result) return { status: 'error' }
 
   let message: string
 

@@ -8,6 +8,13 @@ export interface ProjectRegistrationResult {
   projectId: string
 }
 
+export class ServerRejectedRemoteError extends Error {
+  constructor(status: number) {
+    super(`Server rejected the request: ${String(status)}`)
+    this.name = 'ServerRejectedRemoteError'
+  }
+}
+
 export async function registerProject(
   serverUrl: string,
   name: string,
@@ -22,6 +29,10 @@ export async function registerProject(
     headers: { 'Content-Type': 'application/json' },
     body,
   })
+
+  if (res.status === 400) {
+    throw new ServerRejectedRemoteError(res.status)
+  }
 
   if (res.status !== 200 && res.status !== 201) {
     throw new Error(`Unexpected response status: ${String(res.status)}`)

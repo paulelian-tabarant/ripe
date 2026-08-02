@@ -12,6 +12,7 @@ import { init } from '@/commands/init.js'
 
 const FAKE_SERVER_URL = 'https://fake-server-url'
 const FAKE_REMOTE_URL = 'git@github.com:acme/widgets.git'
+const FAKE_HTTPS_REMOTE_URL = 'https://github.com/acme/widgets'
 
 interface WrittenConfig {
   projectId: string
@@ -61,12 +62,13 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
 
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
     })
 
     expect(result.status).toBe('success')
@@ -83,12 +85,13 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
 
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
     })
 
     expect(result.status).toBe('success')
@@ -105,12 +108,13 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
 
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
     })
 
     expect(result.status).toBe('success')
@@ -127,12 +131,13 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
 
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
     })
 
     expect(result.status).toBe('success')
@@ -149,12 +154,13 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
 
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
     })
 
     expect(result.status).toBe('success')
@@ -171,12 +177,13 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
 
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
     })
 
     expect(result.status).toBe('success')
@@ -191,12 +198,13 @@ describe('init', () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_REMOTE_URL },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
 
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
     })
 
     expect(result.status).toBe('success')
@@ -213,6 +221,7 @@ describe('init', () => {
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
       promptFn: async () => true,
     })
 
@@ -229,6 +238,7 @@ describe('init', () => {
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
       promptFn: async () => false,
     })
 
@@ -244,6 +254,7 @@ describe('init', () => {
 
     const result = await init({
       currentDirectoryName: tmpDir,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
       // biome-ignore lint/style/noNonNullAssertion: this is safe because the last URL is valid
       urlPromptFn: async () => urls[call++]!,
     })
@@ -266,24 +277,109 @@ describe('init', () => {
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
     })
 
     expect(result.status).toBe('error')
-    expect(errorSpy).toHaveBeenCalled()
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(`could not reach server at ${FAKE_SERVER_URL}`),
+    )
   })
 
-  it('exits 1 and prints to stderr when the directory has no git remote', async () => {
-    execFileSync('git', ['remote', 'remove', 'origin'], { cwd: tmpDir })
+  it('exits 1 and prints a rejected-remote message (not "unreachable") on a 400', async () => {
+    stubRegisterProjectApi(400, {} as RegisterProjectResponseBody)
 
     const result = await init({
       currentDirectoryName: tmpDir,
       urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
+    })
+
+    expect(result.status).toBe('error')
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('rejected this remote URL'))
+    expect(errorSpy).not.toHaveBeenCalledWith(expect.stringContaining('could not reach server'))
+  })
+
+  it('exits 1 and prints to stderr when the directory has no git remote, without prompting for the server URL', async () => {
+    execFileSync('git', ['remote', 'remove', 'origin'], { cwd: tmpDir })
+
+    const urlPromptFn = vi.fn(async () => FAKE_SERVER_URL)
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn,
     })
 
     expect(result.status).toBe('error')
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('could not determine the git remote URL'),
     )
+    expect(urlPromptFn).not.toHaveBeenCalled()
+  })
+
+  it('uses the HTTPS-prompt answer as-is with no client-side re-validation, even if not HTTPS', async () => {
+    const nonHttpsAnswer = 'still-not-https'
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: nonHttpsAnswer },
+    )
+
+    const httpsRemotePromptFn = vi.fn(async () => nonHttpsAnswer)
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn,
+    })
+
+    expect(result.status).toBe('success')
+    expect(httpsRemotePromptFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('prompts for an HTTPS equivalent when the git remote is not HTTPS', async () => {
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
+    )
+
+    const httpsRemotePromptFn = vi.fn(async () => FAKE_HTTPS_REMOTE_URL)
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn,
+    })
+
+    expect(result.status).toBe('success')
+    expect(httpsRemotePromptFn).toHaveBeenCalledWith(FAKE_REMOTE_URL)
+
+    const config = readWrittenConfig()
+    expect(config.projectId).toBe('proj_abc123')
+  })
+
+  it('does not prompt for an HTTPS equivalent when the git remote is already HTTPS', async () => {
+    execFileSync('git', ['remote', 'set-url', 'origin', FAKE_HTTPS_REMOTE_URL], { cwd: tmpDir })
+
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
+    )
+
+    const httpsRemotePromptFn = vi.fn(async () => {
+      throw new Error('should not be called')
+    })
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn,
+    })
+
+    expect(result.status).toBe('success')
+    expect(httpsRemotePromptFn).not.toHaveBeenCalled()
   })
 
   function writeExistingConfig(content: string): void {
