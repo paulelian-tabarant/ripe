@@ -56,19 +56,14 @@ describe('static frontend serving', () => {
     expect(response.body).toContain('<title>fixture</title>')
   })
 
-  it('throws on startup when staticDir does not exist', () => {
-    const missingDir = join(tmpdir(), 'ripe-test-does-not-exist')
+  it.each([
+    ['does not exist', (): string => join(tmpdir(), 'ripe-test-does-not-exist')],
+    ['is empty', (): string => (tmpDir = mkdtempSync(join(tmpdir(), 'ripe-test-')))],
+  ])('throws on startup when staticDir %s', (_description, makeStaticDir) => {
+    const staticDir = makeStaticDir()
 
     expect(() =>
-      buildApp(db, { logger: false, shouldServeBuiltFrontend: true, staticDir: missingDir }),
-    ).toThrow()
-  })
-
-  it('throws on startup when staticDir is empty', () => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'ripe-test-'))
-
-    expect(() =>
-      buildApp(db, { logger: false, shouldServeBuiltFrontend: true, staticDir: tmpDir }),
+      buildApp(db, { logger: false, shouldServeBuiltFrontend: true, staticDir }),
     ).toThrow()
   })
 

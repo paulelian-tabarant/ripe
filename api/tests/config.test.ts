@@ -27,27 +27,14 @@ describe('loadConfig', () => {
     expect(loadConfig().shouldServeBuiltFrontend).toBe(true)
   })
 
-  it('throws when PORT is not set', () => {
-    process.env.DATABASE_PATH = '/tmp/test.db'
+  it.each([
+    ['PORT is not set', { DATABASE_PATH: '/tmp/test.db' }, 'PORT'],
+    ['DATABASE_PATH is missing', {}, 'DATABASE_PATH'],
+    ['PORT is not a number', { DATABASE_PATH: '/tmp/test.db', PORT: 'not-a-number' }, 'PORT'],
+    ['PORT is out of range', { DATABASE_PATH: '/tmp/test.db', PORT: '99999' }, 'PORT'],
+  ])('throws when %s', (_description, envOverrides, expectedMessage) => {
+    Object.assign(process.env, envOverrides)
 
-    expect(() => loadConfig()).toThrow('PORT')
-  })
-
-  it('throws when DATABASE_PATH is missing', () => {
-    expect(() => loadConfig()).toThrow('DATABASE_PATH')
-  })
-
-  it('throws when PORT is not a number', () => {
-    process.env.DATABASE_PATH = '/tmp/test.db'
-    process.env.PORT = 'not-a-number'
-
-    expect(() => loadConfig()).toThrow('PORT')
-  })
-
-  it('throws when PORT is out of range', () => {
-    process.env.DATABASE_PATH = '/tmp/test.db'
-    process.env.PORT = '99999'
-
-    expect(() => loadConfig()).toThrow('PORT')
+    expect(() => loadConfig()).toThrow(expectedMessage)
   })
 })
