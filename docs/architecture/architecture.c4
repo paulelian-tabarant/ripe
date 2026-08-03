@@ -2,8 +2,15 @@
 // Render: pnpm docs:c4
 // Export: npx likec4 export png docs/architecture/ -o docs/architecture/export/
 // VS Code: install the LikeC4 extension for live preview
+//
+// "Current" views show what is actually shipped in code today.
+// "Target" views additionally show specced-but-unimplemented pieces (dashed, gray),
+// tagged #planned. When a #planned piece ships, drop the tag/its exclude and it
+// becomes part of "current" for free.
 
 specification {
+  tag planned
+
   element actor {
     style {
       shape person
@@ -46,11 +53,11 @@ model {
   }
 
   ripeCli = script 'ripe CLI' {
-    description '`ripe init` registers the project; `ripe sync`, invoked by the SessionEnd hook, syncs skills and submits invocation events.'
+    description '`ripe init` registers the project (shipped). `ripe sync`, invoked by the SessionEnd hook, syncing skills and submitting invocation events, is specced but not yet implemented.'
   }
 
   localCache = database 'Local Cache' {
-    description 'Local gitignored .ripe/cache.json: serverUrl, cached project_id, skill name -> ID cache, last_synced_sha.'
+    description 'Local gitignored .ripe/config.json: { projectId, serverUrl }. Spec (US-1.3) calls for splitting this into settings.json (serverUrl) and cache.json (project_id, skill name -> ID cache, last_synced_sha) - not yet implemented.'
   }
 
   telemetryServer = system 'Telemetry Server' {
@@ -77,15 +84,19 @@ model {
 
   developer -> claudeCode 'uses'
   developer -> ripeCli 'runs `ripe init` once per project'
-  claudeCode -> ripeCli 'SessionEnd hook invokes `ripe sync`'
+  claudeCode -> ripeCli 'SessionEnd hook invokes `ripe sync`' {
+    #planned
+  }
   ripeCli -> localCache 'reads/writes cached state'
-  ripeCli -> telemetryServer.fastifyServer 'POST /api/projects (find-or-create by repo_key)' {
+  ripeCli -> telemetryServer.fastifyServer 'POST /api/projects { name, remoteUrl } (find-or-create; repo_key derived server-side from remoteUrl)' {
     technology 'HTTP/JSON'
   }
   ripeCli -> telemetryServer.fastifyServer 'POST /api/skills' {
+    #planned
     technology 'HTTP/JSON'
   }
   ripeCli -> telemetryServer.fastifyServer 'POST /api/events' {
+    #planned
     technology 'HTTP/JSON'
   }
   viewer -> browser 'opens the dashboard URL'
@@ -96,32 +107,53 @@ model {
     technology 'HTTP/JSON'
   }
   browser -> telemetryServer.fastifyServer 'GET /api/projects/{id}/activity' {
+    #planned
     technology 'HTTP/JSON'
   }
 }
 
 views {
-  view context {
-    title 'System Context (C4 Level 1)'
+  view contextCurrent {
+    title 'System Context — Current (C4 Level 1)'
     include developer, viewer, browser, claudeCode, ripeCli, localCache, telemetryServer
+    exclude * -> * where tag is #planned
   }
 
-  view containers of telemetryServer {
-    title 'Container View (C4 Level 2)'
+  view contextTarget {
+    title 'System Context — Target (C4 Level 1)'
+    include developer, viewer, browser, claudeCode, ripeCli, localCache, telemetryServer
+    include * -> * where tag is #planned with {
+      line dashed
+      color gray
+    }
+  }
+
+  view containersCurrent of telemetryServer {
+    title 'Container View — Current (C4 Level 2)'
     include developer, viewer, browser, claudeCode, ripeCli, localCache, *
+    exclude * -> * where tag is #planned
+  }
+
+  view containersTarget of telemetryServer {
+    title 'Container View — Target (C4 Level 2)'
+    include developer, viewer, browser, claudeCode, ripeCli, localCache, *
+    include * -> * where tag is #planned with {
+      line dashed
+      color gray
+    }
   }
 
   dynamic view initFlow {
-    title '`ripe init` — Project Registration'
+    title '`ripe init` — Project Registration (shipped)'
 
-    developer -> ripeCli 'runs `ripe init` (prints consent notice, derives repo_key from `git remote get-url origin`)'
-    ripeCli -> telemetryServer.fastifyServer 'POST /api/projects { name, repo_key }'
-    ripeCli <- telemetryServer.fastifyServer 'returns project_id (idempotent find-or-create)'
-    ripeCli -> localCache 'writes serverUrl + project_id'
+    developer -> ripeCli 'runs `ripe init` (prints consent notice, derives remote URL from `git remote get-url origin`)'
+    ripeCli -> telemetryServer.fastifyServer 'POST /api/projects { name, remoteUrl }'
+    ripeCli <- telemetryServer.fastifyServer 'returns project_id (idempotent find-or-create; repo_key derived server-side)'
+    ripeCli -> localCache 'writes .ripe/config.json { projectId, serverUrl }'
   }
 
   dynamic view sessionEndFlow {
-    title '`ripe sync` (SessionEnd Hook) — Two-Phase Flow'
+    title '`ripe sync` (SessionEnd Hook) — Two-Phase Flow (planned, not yet implemented)'
 
     claudeCode -> ripeCli 'SessionEnd: invokes `ripe sync`'
     ripeCli -> localCache 'reads cached project_id (or re-resolves via repo_key if missing)'
@@ -137,12 +169,12 @@ views {
   }
 
   dynamic view dashboardViewFlow {
-    title 'Viewing the Dashboard'
+    title 'Viewing the Dashboard (project list shipped; activity drill-down planned)'
 
     viewer -> browser 'opens the dashboard URL'
     browser -> telemetryServer.fastifyServer 'GET / (downloads SPA bundle)'
     browser -> telemetryServer.fastifyServer 'GET /api/projects'
     viewer -> browser 'selects a project'
-    browser -> telemetryServer.fastifyServer 'GET /api/projects/{id}/activity'
+    browser -> telemetryServer.fastifyServer 'GET /api/projects/{id}/activity (planned)'
   }
 }
