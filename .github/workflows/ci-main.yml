@@ -12,6 +12,7 @@ jobs:
       api: ${{ steps.classify-changes.outputs.api }}
       web: ${{ steps.classify-changes.outputs.web }}
       shared: ${{ steps.classify-changes.outputs.shared }}
+      docs: ${{ steps.classify-changes.outputs.docs }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/classify-changes
@@ -22,3 +23,12 @@ jobs:
     if: needs.changes.outputs.api == 'true' || needs.changes.outputs.web == 'true' || needs.changes.outputs.shared == 'true'
     uses: ./.github/workflows/deploy-staging.yml
     secrets: inherit
+
+  deploy-docs:
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy-docs.yml

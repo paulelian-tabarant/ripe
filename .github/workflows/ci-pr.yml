@@ -12,6 +12,7 @@ jobs:
       run-cli: ${{ steps.classify-changes.outputs.cli == 'true' || steps.classify-changes.outputs.shared == 'true' }}
       run-web: ${{ steps.classify-changes.outputs.web == 'true' || steps.classify-changes.outputs.shared == 'true' }}
       run-md: ${{ steps.classify-changes.outputs.md == 'true' || steps.classify-changes.outputs.shared == 'true' }}
+      run-docs: ${{ steps.classify-changes.outputs.docs == 'true' }}
       run-workflows: ${{ steps.classify-changes.outputs.workflows == 'true' }}
     steps:
       - uses: actions/checkout@v7
@@ -109,6 +110,16 @@ jobs:
       - name: Test web
         run: pnpm --filter web test
 
+  static-checks-docs:
+    needs: changes
+    if: needs.changes.outputs.run-docs == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-node-env
+      - name: Build architecture docs
+        run: pnpm docs:c4:build
+
   deploy-staging:
     needs: [actionlint, static-checks-api, static-checks-cli, static-checks-web, test-api, test-cli, test-web]
     if: |
@@ -118,3 +129,16 @@ jobs:
       !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/deploy-staging.yml
     secrets: inherit
+
+  deploy-docs:
+    needs: [actionlint, static-checks-docs]
+    if: |
+      always() &&
+      contains(github.event.pull_request.labels.*.name, 'deploy-docs') &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy-docs.yml

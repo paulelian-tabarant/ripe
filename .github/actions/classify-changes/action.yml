@@ -20,6 +20,9 @@ outputs:
   md:
     description: any *.md changed
     value: ${{ steps.filter.outputs.md }}
+  docs:
+    description: docs/architecture/** changed
+    value: ${{ steps.filter.outputs.docs }}
   workflows:
     description: .github/** changed
     value: ${{ steps.filter.outputs.workflows }}
@@ -53,5 +56,7 @@ runs:
             - 'web/**'
           md:
             - '**/*.md'
+          docs:
+            - 'docs/architecture/**'
           workflows:
             - '.github/**'

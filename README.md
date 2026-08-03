@@ -92,3 +92,22 @@ flowchart LR
 
 Adding the `deploy-staging` label to an open PR deploys that branch to staging once all checks
 pass — useful for testing a change before merging.
+
+### Architecture Docs
+
+The [C4 architecture diagrams](docs/architecture/architecture.c4) are built with
+[LikeC4](https://likec4.dev) and published to GitHub Pages:
+**<https://paulelian-tabarant.github.io/ripe/>**.
+
+```mermaid
+flowchart LR
+    PR[PR merged into main] --> CI["ci-main.yml (push to main)"]
+    Label["'deploy-docs' label<br/>added to a PR"] --> CIPR["ci-pr.yml (checks pass)"]
+    CI --> Pages["GitHub Pages"]
+    CIPR --> Pages
+```
+
+Adding the `deploy-docs` label to an open PR that touches `docs/architecture/**` publishes that
+branch's diagrams to the same URL — useful for previewing changes before merging. There's a single
+Pages destination (no separate staging/production split), so the most recent deploy — whether from
+a labeled PR or a `main` merge — is what's live.
