@@ -119,6 +119,14 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   assertion for a detail that's a documented contract but genuinely unobservable through the
   entry point (e.g. reading back an internal DB column's exact normalized value when nothing in
   the API response exposes it).
+- **Behavioral test names**: name a test after the observable behavior it verifies — the
+  user-facing outcome, output, exit code, or files written — not an internal function, parameter,
+  or other implementation detail used to produce it. A reader (or a future refactor) shouldn't
+  need to know an implementation's internals to understand what the test is pinning down; if the
+  internal name changes but the behavior doesn't, the title shouldn't need to change either. E.g.
+  prefer `'never asks the user to reuse an existing server URL when no .ripe/settings.json exists
+  yet'` over `'never calls confirmServerUrlPromptFn when no .ripe/settings.json exists yet'` (see
+  `cli/tests/commands/init.test.ts`).
 
 Package-specific testing strategy (directory layout, what's unit vs. integration) lives in each
 package's own `STANDARDS.md`.

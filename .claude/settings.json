@@ -5,6 +5,7 @@
       "Bash(pnpm lint:md*)",
       "Bash(pnpm --filter api ci:checks*)",
       "Bash(pnpm --filter ./cli ci:checks*)",
+      "Bash(pnpm --filter ./cli build*)",
       "Bash(pnpm --filter api lint*)",
       "Bash(pnpm --filter ./cli lint*)",
       "Bash(pnpm --filter ./cli test*)",
