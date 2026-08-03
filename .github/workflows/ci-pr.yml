@@ -137,4 +137,8 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'deploy-docs') &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/deploy-docs.yml
