@@ -108,25 +108,29 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **Given/when/then structure in tests**: separate a test's setup, the action under test, and its
   assertions with a blank line each, in that order — no need to label the sections, the blank
   lines are enough to make the structure legible.
-- **Behavioral over implementation-detail assertions**: prefer tests that exercise and assert on
-  observable behavior through the real entry point (HTTP response, CLI output/exit code, rendered
-  UI) over asserting on an internal implementation detail (schema shape, an internal constraint
-  checked in isolation, a specific function having been called) that isn't itself observable
-  behavior. If a behavioral test already forces the detail to hold — e.g. a DB `UNIQUE` constraint
-  proven by two requests for the same key resolving to the same result, and two requests for
-  different keys both succeeding — don't add a separate test asserting the detail directly; it's
-  redundant with what the behavior already proves. Reserve a direct implementation-detail
-  assertion for a detail that's a documented contract but genuinely unobservable through the
-  entry point (e.g. reading back an internal DB column's exact normalized value when nothing in
-  the API response exposes it).
-- **Behavioral test names**: name a test after the observable behavior it verifies — the
-  user-facing outcome, output, exit code, or files written — not an internal function, parameter,
-  or other implementation detail used to produce it. A reader (or a future refactor) shouldn't
-  need to know an implementation's internals to understand what the test is pinning down; if the
-  internal name changes but the behavior doesn't, the title shouldn't need to change either. E.g.
-  prefer `'never asks the user to reuse an existing server URL when no .ripe/settings.json exists
-  yet'` over `'never calls confirmServerUrlPromptFn when no .ripe/settings.json exists yet'` (see
-  `cli/tests/commands/init.test.ts`).
+- **Write and name tests around observable behavior**: "behavioral" in this repo means observable
+  through the real entry point — an HTTP response, CLI output/exit code, files written, rendered
+  UI — as opposed to an internal implementation detail (schema shape, an internal constraint
+  checked in isolation, a specific function/parameter having been invoked) that isn't itself
+  observable. This applies to both what a test exercises/asserts on and what its title says —
+  a title naming an internal detail leaks implementation into the test just as much as an
+  assertion on one would:
+  - **Assertions**: prefer tests that exercise and assert on observable behavior over an internal
+    implementation detail. If a behavioral test already forces the detail to hold — e.g. a DB
+    `UNIQUE` constraint proven by two requests for the same key resolving to the same result, and
+    two requests for different keys both succeeding — don't add a separate test asserting the
+    detail directly; it's redundant with what the behavior already proves. Reserve a direct
+    implementation-detail assertion for a detail that's a documented contract but genuinely
+    unobservable through the entry point (e.g. reading back an internal DB column's exact
+    normalized value when nothing in the API response exposes it).
+  - **Names**: name a test after the observable behavior it verifies — the user-facing outcome,
+    output, exit code, or files written — not an internal function, parameter, or other
+    implementation detail used to produce it. A reader (or a future refactor) shouldn't need to
+    know an implementation's internals to understand what the test is pinning down; if the
+    internal name changes but the behavior doesn't, the title shouldn't need to change either.
+    E.g. prefer `'never asks the user to reuse an existing server URL when no .ripe/settings.json
+    exists yet'` over `'never calls confirmServerUrlPromptFn when no .ripe/settings.json exists
+    yet'` (see `cli/tests/commands/init.test.ts`).
 
 Package-specific testing strategy (directory layout, what's unit vs. integration) lives in each
 package's own `STANDARDS.md`.
