@@ -7,4 +7,5 @@ node_modules
 dist/
 *.db
 .ripe/cache.json
+.ripe/settings.json
 .claude/worktrees

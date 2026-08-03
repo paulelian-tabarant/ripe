@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import type {
@@ -14,14 +14,17 @@ const FAKE_SERVER_URL = 'https://fake-server-url'
 const FAKE_REMOTE_URL = 'git@github.com:acme/widgets.git'
 const FAKE_HTTPS_REMOTE_URL = 'https://github.com/acme/widgets'
 
-interface WrittenConfig {
-  projectId: string
+interface WrittenSettings {
   serverUrl: string
+}
+
+interface WrittenCache {
+  projectId: string
 }
 
 describe('init', () => {
   let tmpDir: string
-  let warnSpy: ReturnType<typeof vi.spyOn>
+  let logSpy: ReturnType<typeof vi.spyOn>
   let errorSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
@@ -30,7 +33,7 @@ describe('init', () => {
     execFileSync('git', ['remote', 'add', 'origin', FAKE_REMOTE_URL], { cwd: tmpDir })
     nock.cleanAll()
     nock.disableNetConnect()
-    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
@@ -38,34 +41,11 @@ describe('init', () => {
     rmSync(tmpDir, { recursive: true, force: true })
     nock.cleanAll()
     nock.enableNetConnect()
-    warnSpy.mockRestore()
+    logSpy.mockRestore()
     errorSpy.mockRestore()
   })
 
-  it('exits 0 with warning when .ripe/config.json already exists', async () => {
-    writeExistingConfig(
-      JSON.stringify({ projectId: 'proj_existing123', serverUrl: FAKE_SERVER_URL }),
-    )
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-    })
-
-    expect(result.status).toBe('success')
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('proj_existing123'))
-  })
-
-  it.each([
-    ['is empty', ''],
-    ['contains malformed JSON', '{ not valid json'],
-    ['is missing projectId', JSON.stringify({ serverUrl: FAKE_SERVER_URL })],
-    ['is missing serverUrl', JSON.stringify({ projectId: 'proj_existing123' })],
-    ['has an empty projectId', JSON.stringify({ projectId: '', serverUrl: FAKE_SERVER_URL })],
-    ['has an empty serverUrl', JSON.stringify({ projectId: 'proj_existing123', serverUrl: '' })],
-  ])('re-registers when .ripe/config.json %s', async (_description, existingConfigContent) => {
-    writeExistingConfig(existingConfigContent)
-
+  it('creates .ripe/settings.json and .ripe/cache.json with serverUrl and projectId on 201', async () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
@@ -79,63 +59,26 @@ describe('init', () => {
     })
 
     expect(result.status).toBe('success')
-
-    const config = readWrittenConfig()
-
-    expect(config.projectId).toBe('proj_abc123')
-    expect(config.serverUrl).toBe(FAKE_SERVER_URL)
+    expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
+    expect(readWrittenCache().projectId).toBe('proj_abc123')
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Project registered: proj_abc123'))
   })
 
-  it('creates .ripe/config.json with projectId and serverUrl on 201', async () => {
-    stubRegisterProjectApi(
-      201,
-      { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
+  it('writes settings and cache on 200 (existing project) with no confirmation prompt', async () => {
+    stubRegisterProjectApi(200, { projectId: 'proj_existing' })
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
+    })
+
+    expect(result.status).toBe('success')
+    expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
+    expect(readWrittenCache().projectId).toBe('proj_existing')
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Using existing project ID: proj_existing'),
     )
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
-    })
-
-    expect(result.status).toBe('success')
-
-    const config = readWrittenConfig()
-
-    expect(config.projectId).toBe('proj_abc123')
-    expect(config.serverUrl).toBe(FAKE_SERVER_URL)
-  })
-
-  it('writes config and exits 0 on 200 when user confirms', async () => {
-    stubRegisterProjectApi(200, { projectId: 'proj_existing' })
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
-      promptFn: async () => true,
-    })
-
-    expect(result.status).toBe('success')
-
-    const config = readWrittenConfig()
-
-    expect(config.projectId).toBe('proj_existing')
-  })
-
-  it('exits 0 without writing config on 200 when user declines', async () => {
-    stubRegisterProjectApi(200, { projectId: 'proj_existing' })
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
-      promptFn: async () => false,
-    })
-
-    expect(result.status).toBe('success')
-    expect(existsSync(join(tmpDir, '.ripe/config.json'))).toBe(false)
   })
 
   it('re-prompts on invalid URL until a valid one is provided', async () => {
@@ -246,9 +189,7 @@ describe('init', () => {
 
     expect(result.status).toBe('success')
     expect(httpsRemotePromptFn).toHaveBeenCalledWith(FAKE_REMOTE_URL)
-
-    const config = readWrittenConfig()
-    expect(config.projectId).toBe('proj_abc123')
+    expect(readWrittenCache().projectId).toBe('proj_abc123')
   })
 
   it('does not prompt for an HTTPS equivalent when the git remote is already HTTPS', async () => {
@@ -274,13 +215,83 @@ describe('init', () => {
     expect(httpsRemotePromptFn).not.toHaveBeenCalled()
   })
 
-  function writeExistingConfig(content: string): void {
+  it('reuses an existing serverUrl from .ripe/settings.json without prompting when the user confirms keeping it', async () => {
+    writeExistingSettings(JSON.stringify({ serverUrl: FAKE_SERVER_URL }))
+
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
+    )
+
+    const urlPromptFn = vi.fn(async () => 'https://should-not-be-used')
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
+      confirmServerUrlPromptFn: async () => true,
+    })
+
+    expect(result.status).toBe('success')
+    expect(urlPromptFn).not.toHaveBeenCalled()
+    expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
+    expect(readWrittenCache().projectId).toBe('proj_abc123')
+  })
+
+  it('falls through to the serverUrl prompt loop when the user declines the existing serverUrl', async () => {
+    writeExistingSettings(JSON.stringify({ serverUrl: FAKE_SERVER_URL }))
+
+    const newServerUrl = 'https://a-new-server-url'
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
+    )
+    nock(newServerUrl).post('/api/projects').reply(201, { projectId: 'proj_abc123' })
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => newServerUrl,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
+      confirmServerUrlPromptFn: async () => false,
+    })
+
+    expect(result.status).toBe('success')
+    expect(readWrittenSettings().serverUrl).toBe(newServerUrl)
+  })
+
+  it('never calls confirmServerUrlPromptFn when no .ripe/settings.json exists yet', async () => {
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
+    )
+
+    const confirmServerUrlPromptFn = vi.fn(async () => true)
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
+      confirmServerUrlPromptFn,
+    })
+
+    expect(result.status).toBe('success')
+    expect(confirmServerUrlPromptFn).not.toHaveBeenCalled()
+  })
+
+  function writeExistingSettings(content: string): void {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true })
-    writeFileSync(join(tmpDir, '.ripe/config.json'), content)
+    writeFileSync(join(tmpDir, '.ripe/settings.json'), content)
   }
 
-  function readWrittenConfig(): WrittenConfig {
-    return JSON.parse(readFileSync(join(tmpDir, '.ripe/config.json'), 'utf-8')) as WrittenConfig
+  function readWrittenSettings(): WrittenSettings {
+    return JSON.parse(readFileSync(join(tmpDir, '.ripe/settings.json'), 'utf-8')) as WrittenSettings
+  }
+
+  function readWrittenCache(): WrittenCache {
+    return JSON.parse(readFileSync(join(tmpDir, '.ripe/cache.json'), 'utf-8')) as WrittenCache
   }
 })
 
