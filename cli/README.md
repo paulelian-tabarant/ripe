@@ -23,12 +23,14 @@ token first:
 ripe init
 ```
 
-Prompts for the server URL and writes `.ripe/cache.json`.
+Prompts for the server URL and writes `.ripe/settings.json` (`serverUrl`) and `.ripe/cache.json`
+(`projectId`).
 
 ### Changing the server URL
 
-The server URL is cached locally in `.ripe/cache.json`, not read from an env var. To point at a
-different server (e.g. a throwaway test instance, or a team switching servers), delete
-`.ripe/cache.json` and run `ripe init` again. If the new server has empty state (not just a new
-URL for the same backend), treat it as a fresh registration — everything cached locally
-(project ID, skill IDs) is tied to the old server and won't resolve against the new one.
+The server URL is cached locally in `.ripe/settings.json`, not read from an env var. Re-running
+`ripe init` shows the existing `serverUrl` and asks whether to keep it or enter a new one — to
+point at a different server (e.g. a throwaway test instance, or a team switching servers), decline
+and enter the new URL. If the new server has empty state (not just a new URL for the same
+backend), treat it as a fresh registration — everything cached locally (project ID, skill IDs) is
+tied to the old server and won't resolve against the new one.

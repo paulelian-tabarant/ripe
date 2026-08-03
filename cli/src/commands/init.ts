@@ -1,18 +1,19 @@
 import { basename, join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { getRemoteUrl } from '../lib/getRemoteUrl.js'
-import { readConfig } from '../lib/readConfig.js'
+import { readSettings } from '../lib/readSettings.js'
 import {
   type ProjectRegistrationResult,
   registerProject,
   ServerInvalidRemoteUrlError,
 } from '../lib/registerProject.js'
-import { writeConfig } from '../lib/writeConfig.js'
+import { writeCache } from '../lib/writeCache.js'
+import { writeSettings } from '../lib/writeSettings.js'
 
 export interface InitOptions {
   currentDirectoryName?: string
   urlPromptFn?: () => Promise<string>
-  promptFn?: (question: string) => Promise<boolean>
+  confirmServerUrlPromptFn?: (existingUrl: string) => Promise<boolean>
   httpsRemotePromptFn?: (remoteUrl: string) => Promise<string>
 }
 
@@ -23,23 +24,68 @@ export interface InitResult {
 export async function init(options: InitOptions = {}): Promise<InitResult> {
   const currentDirectoryName = options.currentDirectoryName ?? process.cwd()
   const urlPromptFn = options.urlPromptFn ?? defaultUrlPromptFn
-  const promptFn = options.promptFn ?? defaultPromptFn
+  const confirmServerUrlPromptFn =
+    options.confirmServerUrlPromptFn ?? defaultConfirmServerUrlPromptFn
   const httpsRemotePromptFn = options.httpsRemotePromptFn ?? defaultHttpsRemotePromptFn
-  const configPath = join(currentDirectoryName, '.ripe/config.json')
-
-  const existing = readConfig(configPath)
-  if (existing) {
-    console.warn(
-      `.ripe/config.json already exists — project already registered as ${existing.projectId}.`,
-    )
-
-    return { status: 'success' }
-  }
+  const settingsPath = join(currentDirectoryName, '.ripe/settings.json')
+  const cachePath = join(currentDirectoryName, '.ripe/cache.json')
 
   const rawRemoteUrl = await readRemoteUrl(currentDirectoryName)
   if (!rawRemoteUrl) return { status: 'error' }
 
   const remoteUrl = await resolveHttpsRemoteUrl(rawRemoteUrl, httpsRemotePromptFn)
+
+  const serverUrl = await resolveServerUrl(settingsPath, urlPromptFn, confirmServerUrlPromptFn)
+
+  const defaultProjectName = basename(currentDirectoryName)
+
+  const result = await tryRegisterProject(serverUrl, defaultProjectName, remoteUrl)
+  if (!result) return { status: 'error' }
+
+  const message = result.created
+    ? `Project registered: ${result.projectId}`
+    : `Using existing project ID: ${result.projectId}`
+
+  if (!tryWriteLocalState(settingsPath, cachePath, serverUrl, result.projectId)) {
+    return { status: 'error' }
+  }
+
+  console.log(message)
+
+  return { status: 'success' }
+}
+
+function tryWriteLocalState(
+  settingsPath: string,
+  cachePath: string,
+  serverUrl: string,
+  projectId: string,
+): boolean {
+  try {
+    writeSettings(settingsPath, { serverUrl })
+    writeCache(cachePath, { projectId })
+
+    return true
+  } catch (err) {
+    console.error(
+      'Error: registered successfully, but failed to save local state — run ripe init again to retry.',
+    )
+
+    if (err instanceof Error) console.error(err.message)
+
+    return false
+  }
+}
+
+async function resolveServerUrl(
+  settingsPath: string,
+  urlPromptFn: () => Promise<string>,
+  confirmServerUrlPromptFn: (existingUrl: string) => Promise<boolean>,
+): Promise<string> {
+  const existingSettings = readSettings(settingsPath)
+  if (existingSettings && (await confirmServerUrlPromptFn(existingSettings.serverUrl))) {
+    return existingSettings.serverUrl
+  }
 
   let serverUrl: string
   while (true) {
@@ -48,29 +94,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     console.error(`Invalid server URL: "${serverUrl}". Must be a valid http or https URL.`)
   }
 
-  const defaultProjectName = basename(currentDirectoryName)
-
-  const result = await tryRegisterProject(serverUrl, defaultProjectName, remoteUrl)
-  if (!result) return { status: 'error' }
-
-  let message: string
-
-  if (result.created) {
-    message = `Project registered: ${result.projectId}`
-  } else {
-    const useExisting = await promptFn(
-      `A project named '${defaultProjectName}' is already registered on this server. Attach to it? (y/n) `,
-    )
-
-    if (!useExisting) return { status: 'success' }
-
-    message = `Using existing project ID: ${result.projectId}`
-  }
-
-  writeConfig(configPath, { projectId: result.projectId, serverUrl })
-  console.log(message)
-
-  return { status: 'success' }
+  return serverUrl
 }
 
 async function readRemoteUrl(cwd: string): Promise<string | undefined> {
@@ -140,8 +164,8 @@ async function defaultHttpsRemotePromptFn(remoteUrl: string): Promise<string> {
   return ask(`Your git remote ("${remoteUrl}") isn't HTTPS. Enter the HTTPS URL for this repo: `)
 }
 
-async function defaultPromptFn(question: string): Promise<boolean> {
-  const answer = await ask(question)
+async function defaultConfirmServerUrlPromptFn(existingUrl: string): Promise<boolean> {
+  const answer = await ask(`Found existing server URL: "${existingUrl}". Keep it? (y/n) `)
 
   return answer.toLowerCase() === 'y'
 }

@@ -8,4 +8,5 @@ dist/
 dist-docs/
 *.db
 .ripe/cache.json
+.ripe/settings.json
 .claude/worktrees

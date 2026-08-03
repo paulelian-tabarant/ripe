@@ -73,9 +73,7 @@ pnpm --filter ./cli test
 
 The instructions below cover testing the `init` command against a locally running API. To test
 it, pass `http://localhost:<PORT>` when prompted for the server URL, using the `PORT` value from
-`api/.env.local`. The API must already be running (`pnpm --filter api start:local`), and
-`cli/.ripe/config.json` must not already exist — delete it first (`rm cli/.ripe/config.json`) to
-re-run `init` from a clean state.
+`api/.env.local`. The API must already be running (`pnpm --filter api start:local`).
 
 ## Deployment
 
