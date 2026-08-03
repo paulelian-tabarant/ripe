@@ -46,11 +46,35 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     ? `Project registered: ${result.projectId}`
     : `Using existing project ID: ${result.projectId}`
 
-  writeSettings(settingsPath, { serverUrl })
-  writeCache(cachePath, { projectId: result.projectId })
+  if (!tryWriteLocalState(settingsPath, cachePath, serverUrl, result.projectId)) {
+    return { status: 'error' }
+  }
+
   console.log(message)
 
   return { status: 'success' }
+}
+
+function tryWriteLocalState(
+  settingsPath: string,
+  cachePath: string,
+  serverUrl: string,
+  projectId: string,
+): boolean {
+  try {
+    writeSettings(settingsPath, { serverUrl })
+    writeCache(cachePath, { projectId })
+
+    return true
+  } catch (err) {
+    console.error(
+      'Error: registered successfully, but failed to save local state — run ripe init again to retry.',
+    )
+
+    if (err instanceof Error) console.error(err.message)
+
+    return false
+  }
 }
 
 async function resolveServerUrl(

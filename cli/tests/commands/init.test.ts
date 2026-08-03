@@ -10,6 +10,7 @@ import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { init } from '@/commands/init.js'
 import type { RipeCache } from '@/lib/writeCache.js'
+import * as writeCacheModule from '@/lib/writeCache.js'
 import type { RipeSettings } from '@/lib/writeSettings.js'
 
 const FAKE_SERVER_URL = 'https://fake-server-url'
@@ -56,6 +57,29 @@ describe('init', () => {
     expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
     expect(readWrittenCache().projectId).toBe('proj_abc123')
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Project registered: proj_abc123'))
+  })
+
+  it('reports a retryable error, without crashing, when saving local state fails after a successful registration', async () => {
+    stubRegisterProjectApi(
+      201,
+      { projectId: 'proj_abc123' },
+      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
+    )
+
+    const writeCacheSpy = vi.spyOn(writeCacheModule, 'writeCache').mockImplementation(() => {
+      throw new Error('ENOSPC: no space left on device')
+    })
+
+    const result = await init({
+      currentDirectoryName: tmpDir,
+      urlPromptFn: async () => FAKE_SERVER_URL,
+      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
+    })
+
+    expect(result.status).toBe('error')
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('run ripe init again'))
+
+    writeCacheSpy.mockRestore()
   })
 
   it('writes settings and cache on 200 (existing project) with no confirmation prompt', async () => {
@@ -233,7 +257,7 @@ describe('init', () => {
     expect(readWrittenCache().projectId).toBe('proj_abc123')
   })
 
-  it('falls through to the serverUrl prompt loop when the user declines the existing serverUrl', async () => {
+  it('prompts for and uses a new server URL when the user declines to reuse the existing one', async () => {
     writeExistingSettings(JSON.stringify({ serverUrl: FAKE_SERVER_URL }))
 
     const newServerUrl = 'https://a-new-server-url'
@@ -250,7 +274,7 @@ describe('init', () => {
     expect(readWrittenSettings().serverUrl).toBe(newServerUrl)
   })
 
-  it('never calls confirmServerUrlPromptFn when no .ripe/settings.json exists yet', async () => {
+  it('never asks the user to reuse an existing server URL when no .ripe/settings.json exists yet', async () => {
     stubRegisterProjectApi(
       201,
       { projectId: 'proj_abc123' },
