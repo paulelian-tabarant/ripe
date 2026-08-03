@@ -15,6 +15,7 @@
     "dev": "pnpm --filter api run start:local & pnpm --filter web run dev & wait",
     "docs:c4": "likec4 start docs/architecture/",
     "docs:c4:validate": "likec4 validate docs/architecture/",
+    "docs:c4:build": "likec4 build docs/architecture/ -o dist-docs --base /ripe/ -t 'ripe — Architecture'",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
     "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\""
   },
