@@ -58,32 +58,15 @@ describe('POST /api/projects', () => {
     expect(second.json().projectId).not.toBe(first.json().projectId)
   })
 
-  it('returns 400 for a missing remoteUrl field', async () => {
-    const response = await postProjects({ name: 'my-project' })
-
-    expect(response.statusCode).toBe(400)
-  })
-
-  it('returns 400 for a missing name field', async () => {
-    const response = await postProjects({ remoteUrl: 'https://github.com/org/repo.git' })
-
-    expect(response.statusCode).toBe(400)
-  })
-
-  it('returns 400 for an empty name string', async () => {
-    const response = await postProjects({ name: '', remoteUrl: 'https://github.com/org/repo.git' })
-
-    expect(response.statusCode).toBe(400)
-  })
-
-  it('returns 400 for an unparseable remoteUrl', async () => {
-    const response = await postProjects({ name: 'my-project', remoteUrl: 'not a url' })
-
-    expect(response.statusCode).toBe(400)
-  })
-
-  it('returns 400 for an empty remoteUrl', async () => {
-    const response = await postProjects({ name: 'my-project', remoteUrl: '' })
+  it.each([
+    ['a missing remoteUrl field', { name: 'my-project' }],
+    ['a missing name field', { remoteUrl: 'https://github.com/org/repo.git' }],
+    ['an empty name string', { name: '', remoteUrl: 'https://github.com/org/repo.git' }],
+    ['an unparseable remoteUrl', { name: 'my-project', remoteUrl: 'not a url' }],
+    ['an empty remoteUrl', { name: 'my-project', remoteUrl: '' }],
+    ['a non-https remoteUrl', { name: 'my-project', remoteUrl: 'git@github.com:org/repo.git' }],
+  ])('returns 400 for %s', async (_description, body) => {
+    const response = await postProjects(body)
 
     expect(response.statusCode).toBe(400)
   })
@@ -116,14 +99,5 @@ describe('POST /api/projects', () => {
       .get(response.json().projectId) as { remote_url: string }
 
     expect(row.remote_url).toBe('https://gitlab-forge.din.developpement-durable.gouv.fr/org/repo')
-  })
-
-  it('returns 400 for a non-https remoteUrl', async () => {
-    const response = await postProjects({
-      name: 'my-project',
-      remoteUrl: 'git@github.com:org/repo.git',
-    })
-
-    expect(response.statusCode).toBe(400)
   })
 })

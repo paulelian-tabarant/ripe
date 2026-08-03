@@ -60,9 +60,13 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   `.ripe/config.json` instead of every test doing its own `JSON.parse(readFileSync(...))`). When
   several `it()` blocks repeat a whole arrange-and-act sequence (write a fixture, call the
   command, assert the same shape of outcome) and only the fixture and expectation vary, don't
-  stop at deduping the smallest repeated statement inside them — extract one parameterized test
-  preparation helper for the whole sequence, defined below the `describe` block per the
-  step-down rule.
+  stop at deduping the smallest repeated statement inside them — collapse them into a single
+  `it.each`/`test.each` (Vitest), with one row per case and the varying fixture/expectation as
+  row fields, rather than a separate `it()` per case (e.g. the six `re-registers when
+  .ripe/config.json ...` cases in `cli/tests/commands/init.test.ts`, collapsed into one
+  `it.each` over the malformed-config variants). Reach for a parameterized test preparation
+  helper instead only when the cases can't be reduced to plain data rows — e.g. each case needs
+  distinct spy/mock wiring beyond what a data row can express.
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
 - **`async`/`await` over chained promises**: write asynchronous code with `async`/`await`; reserve
