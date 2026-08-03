@@ -9,18 +9,12 @@ import type {
 import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { init } from '@/commands/init.js'
+import type { RipeCache } from '@/lib/writeCache.js'
+import type { RipeSettings } from '@/lib/writeSettings.js'
 
 const FAKE_SERVER_URL = 'https://fake-server-url'
 const FAKE_REMOTE_URL = 'git@github.com:acme/widgets.git'
 const FAKE_HTTPS_REMOTE_URL = 'https://github.com/acme/widgets'
-
-interface WrittenSettings {
-  serverUrl: string
-}
-
-interface WrittenCache {
-  projectId: string
-}
 
 describe('init', () => {
   let tmpDir: string
@@ -243,11 +237,6 @@ describe('init', () => {
     writeExistingSettings(JSON.stringify({ serverUrl: FAKE_SERVER_URL }))
 
     const newServerUrl = 'https://a-new-server-url'
-    stubRegisterProjectApi(
-      201,
-      { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
-    )
     nock(newServerUrl).post('/api/projects').reply(201, { projectId: 'proj_abc123' })
 
     const result = await init({
@@ -286,12 +275,12 @@ describe('init', () => {
     writeFileSync(join(tmpDir, '.ripe/settings.json'), content)
   }
 
-  function readWrittenSettings(): WrittenSettings {
-    return JSON.parse(readFileSync(join(tmpDir, '.ripe/settings.json'), 'utf-8')) as WrittenSettings
+  function readWrittenSettings(): RipeSettings {
+    return JSON.parse(readFileSync(join(tmpDir, '.ripe/settings.json'), 'utf-8')) as RipeSettings
   }
 
-  function readWrittenCache(): WrittenCache {
-    return JSON.parse(readFileSync(join(tmpDir, '.ripe/cache.json'), 'utf-8')) as WrittenCache
+  function readWrittenCache(): RipeCache {
+    return JSON.parse(readFileSync(join(tmpDir, '.ripe/cache.json'), 'utf-8')) as RipeCache
   }
 })
 
