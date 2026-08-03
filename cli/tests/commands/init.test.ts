@@ -56,123 +56,15 @@ describe('init', () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('proj_existing123'))
   })
 
-  it('re-registers when .ripe/config.json is empty', async () => {
-    writeExistingConfig('')
-
-    stubRegisterProjectApi(
-      201,
-      { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
-    )
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
-    })
-
-    expect(result.status).toBe('success')
-
-    const config = readWrittenConfig()
-
-    expect(config.projectId).toBe('proj_abc123')
-    expect(config.serverUrl).toBe(FAKE_SERVER_URL)
-  })
-
-  it('re-registers when .ripe/config.json contains malformed JSON', async () => {
-    writeExistingConfig('{ not valid json')
-
-    stubRegisterProjectApi(
-      201,
-      { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
-    )
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
-    })
-
-    expect(result.status).toBe('success')
-
-    const config = readWrittenConfig()
-
-    expect(config.projectId).toBe('proj_abc123')
-    expect(config.serverUrl).toBe(FAKE_SERVER_URL)
-  })
-
-  it('re-registers when .ripe/config.json is missing projectId', async () => {
-    writeExistingConfig(JSON.stringify({ serverUrl: FAKE_SERVER_URL }))
-
-    stubRegisterProjectApi(
-      201,
-      { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
-    )
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
-    })
-
-    expect(result.status).toBe('success')
-
-    const config = readWrittenConfig()
-
-    expect(config.projectId).toBe('proj_abc123')
-    expect(config.serverUrl).toBe(FAKE_SERVER_URL)
-  })
-
-  it('re-registers when .ripe/config.json is missing serverUrl', async () => {
-    writeExistingConfig(JSON.stringify({ projectId: 'proj_existing123' }))
-
-    stubRegisterProjectApi(
-      201,
-      { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
-    )
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
-    })
-
-    expect(result.status).toBe('success')
-
-    const config = readWrittenConfig()
-
-    expect(config.projectId).toBe('proj_abc123')
-    expect(config.serverUrl).toBe(FAKE_SERVER_URL)
-  })
-
-  it('re-registers when .ripe/config.json has an empty projectId', async () => {
-    writeExistingConfig(JSON.stringify({ projectId: '', serverUrl: FAKE_SERVER_URL }))
-
-    stubRegisterProjectApi(
-      201,
-      { projectId: 'proj_abc123' },
-      { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
-    )
-
-    const result = await init({
-      currentDirectoryName: tmpDir,
-      urlPromptFn: async () => FAKE_SERVER_URL,
-      httpsRemotePromptFn: async () => FAKE_HTTPS_REMOTE_URL,
-    })
-
-    expect(result.status).toBe('success')
-
-    const config = readWrittenConfig()
-
-    expect(config.projectId).toBe('proj_abc123')
-    expect(config.serverUrl).toBe(FAKE_SERVER_URL)
-  })
-
-  it('re-registers when .ripe/config.json has an empty serverUrl', async () => {
-    writeExistingConfig(JSON.stringify({ projectId: 'proj_existing123', serverUrl: '' }))
+  it.each([
+    ['is empty', ''],
+    ['contains malformed JSON', '{ not valid json'],
+    ['is missing projectId', JSON.stringify({ serverUrl: FAKE_SERVER_URL })],
+    ['is missing serverUrl', JSON.stringify({ projectId: 'proj_existing123' })],
+    ['has an empty projectId', JSON.stringify({ projectId: '', serverUrl: FAKE_SERVER_URL })],
+    ['has an empty serverUrl', JSON.stringify({ projectId: 'proj_existing123', serverUrl: '' })],
+  ])('re-registers when .ripe/config.json %s', async (_description, existingConfigContent) => {
+    writeExistingConfig(existingConfigContent)
 
     stubRegisterProjectApi(
       201,
