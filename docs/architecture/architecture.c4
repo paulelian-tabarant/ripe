@@ -114,13 +114,13 @@ model {
 
 views {
   view contextCurrent {
-    title 'System Context — Current (C4 Level 1)'
+    title 'Current / System Context (C4 Level 1)'
     include developer, viewer, browser, claudeCode, ripeCli, localCache, telemetryServer
     exclude * -> * where tag is #planned
   }
 
   view contextTarget {
-    title 'System Context — Target (C4 Level 1)'
+    title 'Target / System Context (C4 Level 1)'
     include developer, viewer, browser, claudeCode, ripeCli, localCache, telemetryServer
     include * -> * where tag is #planned with {
       line dashed
@@ -129,13 +129,13 @@ views {
   }
 
   view containersCurrent of telemetryServer {
-    title 'Container View — Current (C4 Level 2)'
+    title 'Current / Container View (C4 Level 2)'
     include developer, viewer, browser, claudeCode, ripeCli, localCache, *
     exclude * -> * where tag is #planned
   }
 
   view containersTarget of telemetryServer {
-    title 'Container View — Target (C4 Level 2)'
+    title 'Target / Container View (C4 Level 2)'
     include developer, viewer, browser, claudeCode, ripeCli, localCache, *
     include * -> * where tag is #planned with {
       line dashed
@@ -144,7 +144,7 @@ views {
   }
 
   dynamic view initFlow {
-    title '`ripe init` — Project Registration (shipped)'
+    title 'Current / `ripe init` — Project Registration'
 
     developer -> ripeCli 'runs `ripe init` (prints consent notice, derives remote URL from `git remote get-url origin`)'
     ripeCli -> telemetryServer.fastifyServer 'POST /api/projects { name, remoteUrl }'
@@ -153,7 +153,7 @@ views {
   }
 
   dynamic view sessionEndFlow {
-    title '`ripe sync` (SessionEnd Hook) — Two-Phase Flow (planned, not yet implemented)'
+    title 'Target / `ripe sync` (SessionEnd Hook) — Two-Phase Flow (planned, not yet implemented)'
 
     claudeCode -> ripeCli 'SessionEnd: invokes `ripe sync`'
     ripeCli -> localCache 'reads cached project_id (or re-resolves via repo_key if missing)'
@@ -169,7 +169,7 @@ views {
   }
 
   dynamic view dashboardViewFlow {
-    title 'Viewing the Dashboard (project list shipped; activity drill-down planned)'
+    title 'Target / Viewing the Dashboard (project list shipped; activity drill-down planned)'
 
     viewer -> browser 'opens the dashboard URL'
     browser -> telemetryServer.fastifyServer 'GET / (downloads SPA bundle)'
