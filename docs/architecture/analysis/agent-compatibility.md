@@ -73,6 +73,16 @@ interface SkillInvocationEvent {
 
 Any agent adapter producing this payload works with the existing server and dashboard.
 
+**Adapter contract for `session_id` / `tool_use_id`**: the server dedups on `(project_id,
+session_id, tool_use_id)`, so it's the adapter's responsibility — not the coding agent's, and not
+guaranteed for free by the unified API shape — to make both fields stable and unique across
+re-parses of the same source log: re-submitting the same session must yield the same IDs, and two
+distinct invocations must never produce the same pair. For agents with native per-session and
+per-invocation IDs (Claude Code, OpenCode, likely Copilot CLI/Gemini CLI/Cursor), the adapter can
+just pass those through. For agents without one (Aider's markdown transcript, Windsurf,
+Continue.dev), the adapter must synthesize an ID itself — e.g. a hash of transcript position +
+content — and own making that synthesis deterministic and collision-resistant.
+
 ---
 
 ## Agent Compatibility Matrix
