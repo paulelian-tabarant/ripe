@@ -23,6 +23,15 @@ Package-specific standards for `api/`. These supplement the general rules in
   into the use-case layer — repository functions return domain-shaped objects, so use-cases
   never reference raw table/column names.
 
+  ```ts
+  // ❌ raw column name leaks into the use-case
+  const row = repo.getRow(id)
+  const isActive = row.is_active === 1
+
+  // ✅ repository translates the row into a domain-shaped object
+  const project = repo.getByRepoKey(repoKey) // returns Project, not ProjectRow
+  ```
+
   **Rule**: if a use-case needs to know a column name to read a value, that translation belongs
   in the repository, not the use-case.
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
@@ -30,19 +39,33 @@ Package-specific standards for `api/`. These supplement the general rules in
 - **Repositories return the domain entity itself when one exists**: a repository method whose
   result corresponds to a real domain entity (e.g. `getByRepoKey`) returns that entity class
   (`Project`) directly, constructed via the entity's own reconstitution factory — not a separately
-  declared plain-object type mirroring the same fields. Reserve a dedicated `*ReadModel` type for
-  a query shaped for one specific reading need that doesn't correspond to a full entity (e.g.
-  `ProjectReadModel`, the `{id, name}` projection `list()` returns for a list view — no `repoKey`,
-  no behavior, not the same thing as a `Project`). Don't let `*ReadModel` do double duty as "the
-  entity, but plain-object" — that's what returning the entity class itself is for.
+  declared plain-object type mirroring the same fields.
+
+  ```ts
+  // ✅ full entity, reconstituted
+  getByRepoKey(repoKey: string): Project | undefined
+
+  // ✅ projection for one specific reading need — not a stand-in for Project
+  list(): ProjectReadModel[] // { id, name } — no repoKey, no behavior
+  ```
+
+  Reserve a dedicated `*ReadModel` type for a query shaped for one specific reading need that
+  doesn't correspond to a full entity. Don't let `*ReadModel` do double duty as "the entity, but
+  plain-object" — that's what returning the entity class itself is for.
 - **Derive and validate external input into a small value object before it ever reaches the
   entity's own factory** — don't have the entity's `create` re-parse a raw external value itself.
-  - e.g. `ProjectRepoReference.resolve(remoteUrl): ProjectRepoReference | InvalidRemoteUrlError`
-    has a private constructor and is the *sole* way to obtain a `ProjectRepoReference`;
-    `Project.create(name, repoReference: ProjectRepoReference): Project` takes that value object,
-    not the raw `remoteUrl` string, and is therefore infallible — an invalid
-    `ProjectRepoReference` is simply unrepresentable by the time `create` runs, so there's no
-    error branch left to duplicate or forget.
+
+  ```ts
+  // ProjectRepoReference: private constructor, sole entry point is `resolve`
+  ProjectRepoReference.resolve(remoteUrl: string): ProjectRepoReference | InvalidRemoteUrlError
+
+  // Project.create takes the already-validated value object, not the raw string —
+  // an invalid ProjectRepoReference can't reach it, so create is infallible
+  Project.create(name: string, repoReference: ProjectRepoReference): Project
+  ```
+
+  - There's no error branch left to duplicate or forget inside `create` — an invalid
+    `ProjectRepoReference` is simply unrepresentable by the time it runs.
   - A use-case resolves the value object first, uses its derived fields (e.g.
     `repoReference.repoKey`) for the existence check, and only calls `create` in the "doesn't
     exist yet" branch — `create` is no longer called speculatively before that check, since
@@ -71,6 +94,16 @@ Package-specific standards for `api/`. These supplement the general rules in
   distinct from the plain `*ReadModel` DTOs living in `src/repositories/`: the domain class
   carries behavior and invariants, a `*ReadModel` is a plain data shape for one specific reading
   need.
+
+  ```ts
+  class Project {
+    private constructor(/* ... */) {}
+
+    static create(name: string, repoReference: ProjectRepoReference): Project { /* ... */ }
+    static reconstitute(data: ProjectRow): Project { /* ... */ }
+  }
+  ```
+
   - The repository's write parameter is the entity itself (see `addNewProject(project:
     Project)`), not a separately-declared write DTO.
   - Reserve a use-case (`src/use-cases/`) for logic that orchestrates repositories or multiple

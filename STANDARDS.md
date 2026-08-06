@@ -26,14 +26,47 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **Name a type used more than once**: don't repeat an inline object type/shape at more than one
   call site — declare it as a standalone `interface`, or a `type` built off another declaration
   (e.g. `Pick`/`Omit`) when that's a better fit, and reuse it.
+
+  ```ts
+  // ❌ the same shape repeated at each call site
+  function render(user: { id: string; name: string }) { ... }
+  function log(user: { id: string; name: string }) { ... }
+
+  // ✅ named once, reused
+  interface User { id: string; name: string }
+  function render(user: User) { ... }
+  function log(user: User) { ... }
+  ```
+
 - **Result objects over thrown errors for expected failures**: any failure that's a normal,
   anticipated outcome of the operation — bad input, not found, already exists, server
   unreachable — is returned as a typed result, not thrown. Reserve `throw` for failures the
   code isn't designed to handle (bugs, startup misconfiguration).
+
+  ```ts
+  // ❌ an anticipated outcome (not found) treated as exceptional
+  function getProject(id: string): Project {
+    const project = repo.find(id)
+    if (!project) throw new Error('not found')
+    return project
+  }
+
+  // ✅ the same outcome typed as part of the normal result
+  function getProject(id: string): Project | ProjectNotFoundError {
+    return repo.find(id) ?? new ProjectNotFoundError(id)
+  }
+  ```
+
 - **Typing an expected failure alongside its success shape**: when a function's result has a
   failure branch worth naming, model it as a union of the success shape and a named class
-  extending `Error` (e.g. `RegisterProjectResult = { created: boolean; projectId: string } |
-  InvalidRemoteUrlError`), narrowed via `instanceof`.
+  extending `Error`, narrowed via `instanceof`.
+
+  ```ts
+  type RegisterProjectResult =
+    | { created: boolean; projectId: string }
+    | InvalidRemoteUrlError
+  ```
+
   - The class is returned as a plain value, never thrown — its shape is chosen for
     `.message`/`instanceof` ergonomics, not as a signal to `throw`/`catch`, so don't let the
     `Error` suffix imply exception-style control flow at the call site.
@@ -71,17 +104,69 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **`async`/`await` over chained promises**: write asynchronous code with `async`/`await`; reserve
   `.then`/`.catch` chains for the rare case `async`/`await` can't express (e.g. `Promise.all`
   combinators feeding straight into further chaining).
+
+  ```ts
+  // ❌
+  function loadProject(id: string) {
+    return repo.findById(id).then((project) => project ?? null)
+  }
+
+  // ✅
+  async function loadProject(id: string) {
+    const project = await repo.findById(id)
+    return project ?? null
+  }
+  ```
+
 - **Early returns over nested conditionals**: guard against the exceptional/short-circuit case
   first and return, instead of wrapping the main logic in an `if`. Prefer flat, sequential code
   over deep nesting.
+
+  ```ts
+  // ❌ main logic nested inside the happy-path check
+  function getDisplayName(user: User | undefined) {
+    if (user) {
+      return user.name.trim()
+    } else {
+      return 'Anonymous'
+    }
+  }
+
+  // ✅ guard first, then flat logic
+  function getDisplayName(user: User | undefined) {
+    if (!user) return 'Anonymous'
+
+    return user.name.trim()
+  }
+  ```
+
 - **Blank line before a trailing `return`**: when a function/block ends with `return` after one or
   more preceding statements, separate it with a blank line so the "what's being returned" reads
   as its own step. Biome has no rule to enforce this — it's a manual convention, not lint-checked.
+
+  ```ts
+  function getDisplayName(user: User) {
+    const trimmed = user.name.trim()
+
+    return trimmed.length > 0 ? trimmed : 'Anonymous'
+  }
+  ```
+
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving
   from high-level intent to low-level detail (see `api/tests/endpoints/registerProject.test.ts`: the
   `it` blocks read first, the `postProjects` helper they call is defined last).
 - **No comments unless the implementation is non-trivial**: don't restate what the code already
   says; only comment a hidden constraint, invariant, or otherwise surprising behavior.
+
+  ```ts
+  // ❌ restates the code
+  // increment the counter by 1
+  counter += 1
+
+  // ✅ explains a non-obvious constraint
+  // Retried once: the upstream API occasionally 500s on cold start.
+  const response = await fetchWithRetry(url, { retries: 1 })
+  ```
 
 ### Testing
 
@@ -108,6 +193,17 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **Given/when/then structure in tests**: separate a test's setup, the action under test, and its
   assertions with a blank line each, in that order — no need to label the sections, the blank
   lines are enough to make the structure legible.
+
+  ```ts
+  it('returns the trimmed name', () => {
+    const user = buildUser({ name: '  Ada  ' })
+
+    const result = getDisplayName(user)
+
+    expect(result).toBe('Ada')
+  })
+  ```
+
 - **Write and name tests around observable behavior**: "behavioral" in this repo means observable
   through the real entry point — an HTTP response, CLI output/exit code, files written, rendered
   UI — as opposed to an internal implementation detail (schema shape, an internal constraint
