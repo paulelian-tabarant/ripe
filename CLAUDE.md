@@ -57,6 +57,12 @@ All of the above must pass with zero errors — there is no "skip tests" excepti
   Claude skill for the same purpose (e.g. review, PR triage, PR recap). Use the project skill.
 - **Commands run from repo root** via `pnpm --filter <package> <script>` (e.g.
   `pnpm --filter ./cli ci:checks`). Never `cd` into a workspace and run `npm`/`pnpm` directly there.
+- **Prefer project-defined commands over one-off invocations**: use the `pnpm` scripts declared
+  in this file/package.json (e.g. `pnpm lint:md`) rather than reaching for an ad hoc equivalent
+  (`npx <tool>`, a global install) — unless a check directive explicitly says otherwise, or the
+  project command itself is broken and a one-off call is the only way to unblock the same check.
+  If no project command covers what's needed, don't just default to a one-off call silently —
+  suggest adding a script for it (`package.json`) instead.
 - **Subagents are read-only by default**: when dispatching a subagent for exploration or review,
   it must only report findings — never edit code — unless explicitly instructed to make changes.
 
