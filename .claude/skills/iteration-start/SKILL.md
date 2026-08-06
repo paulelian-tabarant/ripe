@@ -68,60 +68,39 @@ except where explicitly gated below.
    - If only one subtask exists, dispatch a single implementer — parallelism is
      a means, not a requirement.
 
-4. **Run checks.** Run this project's checks yourself, directly via Bash — do
-   not delegate this to a subagent. Use `pnpm --filter <package> ci:checks` for
-   each touched package (`api`, `./cli`, `web`), per this repo's CLAUDE.md.
-
-5. **Review.** Dispatch one subagent to review the diff from the recorded base
+4. **Review.** Dispatch one subagent to review the diff from the recorded base
    to `HEAD`, instructing it to use this repo's `iteration-code-review` skill.
    Give it the base SHA and the working branch — don't make it guess the diff
    range. Instruct it to favor dedicated code navigation tools over raw
    file reads when available, falling back to raw reads otherwise.
 
-6. **Fix.** Dispatch exactly one subagent with both: any failing check output
-   from step 4, and the full findings list from step 5. Instruct it to:
-   - Fix every clear-cut finding (a concrete bug, standards violation, or
-     failing check with an obvious correct fix) without asking anyone.
-   - NOT guess on findings that are genuinely ambiguous or that conflict with
-     an explicit decision from Specify (step 1) — instead return those,
-     unfixed, as a separate "needs a decision" list alongside what it did fix.
-   - Commit its fixes when done.
-   - Favor dedicated code navigation/editing tools over raw file reads/writes
-     when available, falling back to raw reads/writes otherwise. If such
-     tools are available, do a quick test read+write early on and confirm
-     the change actually appears on the working branch (e.g. via `git status`)
-     — if it doesn't, stop and report that back as a blocker instead of
-     continuing to edit blind.
+5. **Verify and fix.** Invoke this repo's `iteration-verify-and-fix` skill,
+   passing it the packages touched and the full findings list from step 4. It
+   owns its own check/fix/gate/re-check cycle — don't re-derive that logic
+   here. If it comes back with a "needs a decision" list, that's your gate:
+   stop and present those to the user and do not continue to step 6 until
+   they're resolved.
 
-7. **Gate on ambiguity.** If the fixer returned any "needs a decision" items,
-   stop and present them to the user — do not resolve them yourself and do not
-   continue to step 8 until they're resolved. Otherwise, continue.
-
-8. **Re-run checks.** Run the project checks again yourself (same as step 4).
-   If they still fail, dispatch one more fix subagent with the new failure
-   output, then re-run. There is no second review pass — review happens once,
-   in step 5.
-
-9. **Recap and open the PR.** Generate a recap using this repo's `iteration-recap`
+6. **Recap and open the PR.** Generate a recap using this repo's `iteration-recap`
    skill for the working branch against its base. This step is not done once
    the recap text exists — immediately continue in the same turn to push the
    branch and run `gh pr create` using that recap verbatim as the `--body`.
    Printing the recap to the user and stopping there is an incomplete step
-   9, not a handoff point. Do this without asking for confirmation first —
+   6, not a handoff point. Do this without asking for confirmation first —
    invoking this skill is the standing authorization for the PR it produces.
 
-10. **Mark the user story done.** If this iteration is driven by a spec under
-    `docs/spec/user-stories/`, update that doc's `**Status**` line to `Done`
-    (this repo's existing convention, e.g. commit `4f9643a`), commit it, and
-    push — updating the PR just opened in step 9 rather than opening a
-    second one.
+7. **Mark the user story done.** If this iteration is driven by a spec under
+   `docs/spec/user-stories/`, update that doc's `**Status**` line to `Done`
+   (this repo's existing convention, e.g. commit `4f9643a`), commit it, and
+   push — updating the PR just opened in step 6 rather than opening a
+   second one.
 
-11. **Suggest process improvements.** Invoke this repo's `iteration-retro` skill,
-    pointing it at this iteration's transcript, the plan doc (if any), and the
-    PR/diff just opened. It covers auto-allow candidates, underused tools,
-    missing STANDARDS.md/CLAUDE.md coverage, and tooling gaps — don't
-    re-derive that checklist here. Present its output to the user; don't apply
-    any of it yourself unless asked.
+8. **Suggest process improvements.** Invoke this repo's `iteration-retro` skill,
+   pointing it at this iteration's transcript, the plan doc (if any), and the
+   PR/diff just opened. It covers auto-allow candidates, underused tools,
+   missing STANDARDS.md/CLAUDE.md coverage, and tooling gaps — don't
+   re-derive that checklist here. Present its output to the user; don't apply
+   any of it yourself unless asked.
 
 ## Edge cases
 
@@ -132,13 +111,7 @@ except where explicitly gated below.
 - **An implementer subagent asks a question mid-task:** answer it yourself from
   the plan/clarified intent; don't silently guess and don't forward it to the
   user unless it reveals a genuine gap the Specify step (1) missed — in that
-  case, treat it like step 7's gate.
-- **Checks fail before review can even run** (step 4, first pass): don't
-  dispatch a fixer yet — that only happens once, bundled with review findings
-  in step 6. Note the failures and carry them into step 6's fixer dispatch.
-- **No PR-worthy findings from review:** step 6's fixer still runs (to catch
-  any check failures) but may have nothing to fix from review; that's fine,
-  it just reports nothing to fix on that front.
+  case, treat it like step 5's gate.
 - **`gh` not installed/authenticated:** the `iteration-recap` skill already handles
   this by falling back to git history for the recap; `gh pr create` itself has
   no fallback — report the failure to the user rather than silently stopping
