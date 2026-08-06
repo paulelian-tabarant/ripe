@@ -38,7 +38,9 @@ Package-specific standards for `api/`. These supplement the general rules in
 
 - **No `console.*` in `src/`**: application code communicates via Fastify's request/reply and
   return values, not console output; logging belongs to Fastify's own logger, not ad hoc
-  `console` calls.
+  `console` calls — the strictest form of the general injectable-output-sink rule in
+  [`../STANDARDS.md`](../STANDARDS.md) (`cli/` allows direct user-facing output, but only through
+  an injected dependency — see [`../cli/STANDARDS.md`](../cli/STANDARDS.md)).
 - **Migrations**: schema changes go in `src/db/migrations.ts` as versioned entries with `up`/
   `down` SQL, applied via `migrateDatabase(db)`. Never hand-edit the schema outside a migration.
 

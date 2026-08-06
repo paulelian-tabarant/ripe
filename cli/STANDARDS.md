@@ -14,8 +14,8 @@ Package-specific standards for `cli/`. These supplement the general rules in
 ### Command Boundaries
 
 - **Dependency injection for testability**: side-effecting inputs (current working directory,
-  interactive prompts) are passed in as optional parameters with real defaults, so tests can
-  inject fakes instead of touching the real filesystem or stdin.
+  interactive prompts) are passed in as optional parameters with real defaults — `init`'s
+  instance of the general injection rule in [`../STANDARDS.md`](../STANDARDS.md).
 
   ```ts
   interface InitOptions {
@@ -41,8 +41,11 @@ Package-specific standards for `cli/`. These supplement the general rules in
   result object (e.g. `ProjectRegistrationResult`) rather than a bare `Response` or `unknown`.
 - **No `node:process` details in commands**: commands don't read `process.argv`/`process.env` or
   touch stdin/stdout directly — those are read in `src/index.ts` and passed in as parameters.
-- **No logging details in commands**: commands don't call `console.*` or any logger directly —
-  they return a typed result/message, and `src/index.ts` is responsible for printing it.
+- **No direct `console.*` calls in command logic**: unlike `api/` (which forbids console output
+  outright — see [`../api/STANDARDS.md`](../api/STANDARDS.md)), a command's user-facing output is
+  legitimate, but it goes through an injected output dependency, not a bare `console.log`/
+  `console.error` call inside the command — the same injection rule as above, applied to output
+  sinks (see the general rule in [`../STANDARDS.md`](../STANDARDS.md)).
 
   ```ts
   // ❌ command logs directly
@@ -50,9 +53,14 @@ Package-specific standards for `cli/`. These supplement the general rules in
     console.log('Project registered')
   }
 
-  // ✅ command returns a message, src/index.ts prints it
-  async function init(options: InitOptions): Promise<{ status: 'success'; message: string }> {
-    return { status: 'success', message: 'Project registered' }
+  // ✅ command calls an injected output dependency
+  interface InitOptions {
+    logFn?: (message: string) => void // defaults to console.log
+  }
+
+  async function init(options: InitOptions) {
+    const logFn = options.logFn ?? console.log
+    logFn('Project registered')
   }
   ```
 
