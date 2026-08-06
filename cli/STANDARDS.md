@@ -5,9 +5,14 @@ Package-specific standards for `cli/`. These supplement the general rules in
 
 ## Architecture
 
+### Layering
+
 - **Layer split**: `src/commands/` holds orchestration logic; `src/lib/` holds single-purpose
   helpers (HTTP calls, config file I/O). Don't mix the two — a command function should read as a
   sequence of calls into `lib/`, not inline `fs`/`fetch` logic.
+
+### Command Boundaries
+
 - **Dependency injection for testability**: side-effecting inputs (current working directory,
   interactive prompts) are passed in as optional parameters with real defaults, so tests can
   inject fakes instead of touching the real filesystem or stdin.

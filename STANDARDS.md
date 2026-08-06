@@ -85,7 +85,7 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
     '@ripe/api/contracts/<domain>.js'` (type-only, so bundlers elide it at build time) — never
     redeclare the same shape locally.
 
-### Structure & Simplicity
+### Simplicity & Duplication
 
 - **No unused exports**: keep modules' public surface limited to what's actually consumed;
   Biome's recommended rule set flags unused variables/imports — treat unused exports the same
@@ -101,6 +101,9 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
     for the pattern and its threshold for stepping back to a shared preparation helper instead.
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
+
+### Code Style
+
 - **`async`/`await` over chained promises**: write asynchronous code with `async`/`await`; reserve
   `.then`/`.catch` chains for the rare case `async`/`await` can't express (e.g. `Promise.all`
   combinators feeding straight into further chaining).

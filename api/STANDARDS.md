@@ -5,6 +5,8 @@ Package-specific standards for `api/`. These supplement the general rules in
 
 ## Architecture
 
+### Layering
+
 - **Three-layer split**: endpoints → use-cases → repositories. Endpoints validate the request
   shape (JSON Schema) and translate results to HTTP status codes; use-cases hold business logic,
   one class per use case with `run()` as the single public method; repositories hold raw SQL
@@ -14,11 +16,6 @@ Package-specific standards for `api/`. These supplement the general rules in
   general result-objects-over-throwing rule in [`../STANDARDS.md`](../STANDARDS.md);
   `loadConfig()` throwing on missing env vars is the kind of startup condition that's genuinely
   exceptional instead).
-- **No `console.*` in `src/`**: application code communicates via Fastify's request/reply and
-  return values, not console output; logging belongs to Fastify's own logger, not ad hoc
-  `console` calls.
-- **Migrations**: schema changes go in `src/db/migrations.ts` as versioned entries with `up`/
-  `down` SQL, applied via `migrateDatabase(db)`. Never hand-edit the schema outside a migration.
 - **No DB details leaking into use-cases**: repositories don't leak row shapes or column naming
   into the use-case layer — repository functions return domain-shaped objects, so use-cases
   never reference raw table/column names.
@@ -36,6 +33,17 @@ Package-specific standards for `api/`. These supplement the general rules in
   in the repository, not the use-case.
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
   codes, request/response shapes, headers) — that mapping belongs to endpoints.
+
+### Persistence & Infra
+
+- **No `console.*` in `src/`**: application code communicates via Fastify's request/reply and
+  return values, not console output; logging belongs to Fastify's own logger, not ad hoc
+  `console` calls.
+- **Migrations**: schema changes go in `src/db/migrations.ts` as versioned entries with `up`/
+  `down` SQL, applied via `migrateDatabase(db)`. Never hand-edit the schema outside a migration.
+
+### Domain Modeling
+
 - **Repositories return the domain entity itself when one exists**: a repository method whose
   result corresponds to a real domain entity (e.g. `getByRepoKey`) returns that entity class
   (`Project`) directly, constructed via the entity's own reconstitution factory — not a separately
