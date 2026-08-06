@@ -40,31 +40,39 @@ Package-specific standards for `web/`. These supplement the general rules in
 General testing principles live in [`../STANDARDS.md`](../STANDARDS.md). This section covers
 only the `web/`-specific test conventions.
 
+- **Test layers**: default to testing UI-to-network, not hooks in isolation.
+  - `src/pages/*.test.tsx` render a full page with MSW stubbing its API calls, exercising real
+    hooks/components underneath — the default for anything reachable that way.
+  - `src/App.test.tsx` covers routing — which page renders for which path — with MSW responses
+    left minimal (e.g. a never-resolving promise) since the page content itself isn't under test
+    there.
+  - `src/hooks/*.test.tsx` unit tests are the exception, not the default: reach for a bare
+    `renderHook` test only when the behavior can't be reliably driven from a page — e.g.
+    `useAsync.test.tsx` covers a stale-response race (an older fetch resolving after a newer one)
+    that would require orchestrating two overlapping in-flight requests through a full page
+    render to reproduce. If a page-level test can trigger the same behavior, prefer that instead.
 - **MSW at the network boundary**: `msw` (`src/mocks/server.ts`) intercepts HTTP instead of mocking
-  `fetch` — same "boundary, not internals" philosophy `cli/` applies with `nock`. `server` starts
-  with no handlers; each test registers what it needs via `server.use(...)`, kept local to that
-  test rather than a shared default-handlers module.
-- **Unhandled requests fail the test**: `onUnhandledRequest: 'error'` (`vitest.setup.ts`) means
-  every request needs a matching handler — including ones that intentionally never resolve
-  (`new Promise(() => {})`) to assert a permanent loading state.
-- **Page-level tests with React Testing Library**: assert on what a user would see
-  (`screen.getByText`/`findByText`), not implementation details or internal state.
-- **`MemoryRouter` for router-dependent tests**: renders inside `<MemoryRouter>` (optionally with
-  `initialEntries`) instead of a real URL, so multiple routes can be exercised in one test file —
-  see `src/App.test.tsx`.
-- **`@testing-library/user-event`** for interaction-driven tests (e.g. dropdown selection in
-  `DashboardPage.test.tsx`).
-- **RTL cleanup is manual**: `vitest.config.ts` doesn't set `globals: true`, so
-  `@testing-library/react`'s auto-cleanup never registers. `vitest.setup.ts` calls `cleanup()`
-  explicitly — don't remove it, or DOM from prior tests leaks into the next `render()`.
-- **Test split by layer**: `src/hooks/*.test.tsx` are pure unit tests (`renderHook`, no network,
-  no router). `src/pages/*.test.tsx` render a single page with MSW stubbing its API calls.
-  `src/App.test.tsx` covers routing — which page renders for which path — with MSW responses left
-  minimal (e.g. a never-resolving promise) since the page content itself isn't under test there.
+  `fetch` — same "boundary, not internals" philosophy `cli/` applies with `nock`.
+  - `server` starts with no handlers; each test registers what it needs via `server.use(...)`,
+    kept local to that test rather than a shared default-handlers module.
+  - Unhandled requests fail the test: `onUnhandledRequest: 'error'` (`vitest.setup.ts`) means
+    every request needs a matching handler — including ones that intentionally never resolve
+    (`new Promise(() => {})`) to assert a permanent loading state.
+- **React Testing Library conventions**:
+  - Assert on what a user would see (`screen.getByText`/`findByText`), not implementation
+    details or internal state.
+  - `MemoryRouter` for router-dependent tests: renders inside `<MemoryRouter>` (optionally with
+    `initialEntries`) instead of a real URL, so multiple routes can be exercised in one test
+    file — see `src/App.test.tsx`.
+  - `@testing-library/user-event` for interaction-driven tests (e.g. dropdown selection in
+    `DashboardPage.test.tsx`).
+  - Cleanup is manual: `vitest.config.ts` doesn't set `globals: true`, so
+    `@testing-library/react`'s auto-cleanup never registers. `vitest.setup.ts` calls `cleanup()`
+    explicitly — don't remove it, or DOM from prior tests leaks into the next `render()`.
 
 ```mermaid
 flowchart TD
-    A[src/hooks/*.test.tsx] -->|renderHook, no network| B[Hook behavior in isolation]
-    C[src/pages/*.test.tsx] -->|render + MSW stubs API| D[Page behavior: loading, data, interaction]
-    E[src/App.test.tsx] -->|render + MemoryRouter| F[Routing: path -> page]
+    A[src/pages/*.test.tsx] -->|render + MSW stubs API| B[Page behavior: loading, data, interaction, hooks underneath]
+    C[src/App.test.tsx] -->|render + MemoryRouter| D[Routing: path -> page]
+    E[src/hooks/*.test.tsx exception] -->|renderHook, no network| F[Behavior too hard to drive from a page]
 ```
