@@ -37,6 +37,11 @@ After every coding task, before considering it done:
 
 - [ ] `pnpm --filter <package> ci:checks` passes for every package touched (`api`, `./cli`, `web`).
 
+**Exception**: if a change only touches documentation/context files (`STANDARDS.md`,
+`CLAUDE.md`, `.claude/skills/`, `.claude/rules/`, `docs/`) with no code under `api/src`,
+`cli/src`, or `web/src` changed, skip `ci:checks` — run `pnpm lint:md` instead if any `.md` file
+changed.
+
 At the end of every feature branch, before considering it ready:
 
 - [ ] `pnpm lint:md`
