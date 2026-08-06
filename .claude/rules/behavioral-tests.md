@@ -39,3 +39,11 @@ shouldn't need to know an implementation's internals to understand what the test
   inspect an internal schema shape, when the same guarantee is already provable by asserting the
   observable output/response/exit-code instead.
 - See `cli/tests/commands/init.test.ts` for the naming examples already applied in this repo.
+
+```ts
+// ❌ names an internal function/parameter — goes stale if formatPayload is renamed
+it('calls formatPayload before sending the request', () => { ... })
+
+// ✅ names the observable outcome — still true no matter how it's implemented
+it('sends the request with field names normalized to camelCase', () => { ... })
+```
