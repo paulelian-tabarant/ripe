@@ -30,28 +30,6 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   anticipated outcome of the operation — bad input, not found, already exists, server
   unreachable — is returned as a typed result, not thrown. Reserve `throw` for failures the
   code isn't designed to handle (bugs, startup misconfiguration).
-
-  ❌ **Bad** — an anticipated outcome (not found) treated as exceptional:
-
-  ```ts
-  function getProject(id: string): Project {
-    const project = repo.find(id)
-    if (!project) throw new Error('not found')
-    return project
-  }
-  ```
-
-  ✅ **Good** — the same outcome typed as part of the normal result:
-
-  ```ts
-  function getProject(id: string): Project | ProjectNotFoundError {
-    return repo.find(id) ?? new ProjectNotFoundError(id)
-  }
-  ```
-
-  **Rule**: if a caller is expected to handle the failure as one of the normal outcomes of calling
-  this function, type it into the return value; reserve `throw` for what a caller has no
-  reasonable way to plan for.
 - **Typing an expected failure alongside its success shape**: when a function's result has a
   failure branch worth naming — more than a single boolean flag, or one that carries data (e.g.
   the invalid input itself) — model it as a union of the success shape and a named class

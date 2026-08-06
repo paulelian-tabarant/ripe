@@ -23,20 +23,6 @@ Package-specific standards for `api/`. These supplement the general rules in
   into the use-case layer — repository functions return domain-shaped objects, so use-cases
   never reference raw table/column names.
 
-  ❌ **Bad** — use-case reads the repository's raw row shape:
-
-  ```ts
-  const row = repo.findRow(id) // { proj_id, proj_name, created_at }
-  if (row.proj_name === name) { ... }
-  ```
-
-  ✅ **Good** — repository translates to a domain shape before returning:
-
-  ```ts
-  const project = repo.getById(id) // Project { id, name }
-  if (project.name === name) { ... }
-  ```
-
   **Rule**: if a use-case needs to know a column name to read a value, that translation belongs
   in the repository, not the use-case.
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
