@@ -31,23 +31,26 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   unreachable — is returned as a typed result, not thrown. Reserve `throw` for failures the
   code isn't designed to handle (bugs, startup misconfiguration).
 - **Typing an expected failure alongside its success shape**: when a function's result has a
-  failure branch worth naming — more than a single boolean flag, or one that carries data (e.g.
-  the invalid input itself) — model it as a union of the success shape and a named class
+  failure branch worth naming, model it as a union of the success shape and a named class
   extending `Error` (e.g. `RegisterProjectResult = { created: boolean; projectId: string } |
-  InvalidRemoteUrlError`), narrowed via `instanceof`. The class is returned as a plain value,
-  never thrown — its shape is chosen for `.message`/`instanceof` ergonomics, not as a signal to
-  `throw`/`catch`, so don't let the `Error` suffix imply exception-style control flow at the call
-  site. Reserve a bare boolean/literal flag (e.g. `{ invalid: true }`) for a failure that carries
-  no data worth naming and will never need to distinguish more than one reason; reach for the
-  named-class shape as soon as either of those stops being true.
+  InvalidRemoteUrlError`), narrowed via `instanceof`.
+  - The class is returned as a plain value, never thrown — its shape is chosen for
+    `.message`/`instanceof` ergonomics, not as a signal to `throw`/`catch`, so don't let the
+    `Error` suffix imply exception-style control flow at the call site.
+  - Reserve this named-class shape for a failure branch that's more than a single boolean flag,
+    or one that carries data (e.g. the invalid input itself). A bare boolean/literal flag (e.g.
+    `{ invalid: true }`) is enough for a failure that carries no data worth naming and will never
+    need to distinguish more than one reason — reach for the named-class shape as soon as either
+    of those stops being true.
 - **Shared API contract types live in `api`, not duplicated per client**: request/response wire
   shapes for `api` endpoints are declared once, in `api/src/contracts/<domain>.ts` (types only —
   no Fastify, DB, or other runtime imports), and exposed to `cli`/`web` via a dedicated `exports`
-  subpath in `api/package.json` (`./contracts/*.js`). Response bodies get their own dedicated
-  interface, not a reuse of the internal use-case/domain result type — the wire shape and the
-  internal shape are allowed to diverge. Consumers add `"@ripe/api": "workspace:*"` and import
-  with `import type { ... } from '@ripe/api/contracts/<domain>.js'` (type-only, so bundlers elide
-  it at build time) — never redeclare the same shape locally.
+  subpath in `api/package.json` (`./contracts/*.js`).
+  - Response bodies get their own dedicated interface, not a reuse of the internal use-case/domain
+    result type — the wire shape and the internal shape are allowed to diverge.
+  - Consumers add `"@ripe/api": "workspace:*"` and import with `import type { ... } from
+    '@ripe/api/contracts/<domain>.js'` (type-only, so bundlers elide it at build time) — never
+    redeclare the same shape locally.
 
 ### Structure & Simplicity
 
@@ -57,16 +60,12 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **No duplicated code, in tests or implementation**: extract a shared helper instead of
   repeating the same block across test cases or across a command and its lib (e.g.
   `readWrittenConfig()` in `cli/tests/commands/init.test.ts` — one helper reads and casts
-  `.ripe/config.json` instead of every test doing its own `JSON.parse(readFileSync(...))`). When
-  several `it()` blocks repeat a whole arrange-and-act sequence (write a fixture, call the
-  command, assert the same shape of outcome) and only the fixture and expectation vary, don't
-  stop at deduping the smallest repeated statement inside them — collapse them into a single
-  `it.each`/`test.each` (Vitest), with one row per case and the varying fixture/expectation as
-  row fields, rather than a separate `it()` per case (e.g. the six `re-registers when
-  .ripe/config.json ...` cases in `cli/tests/commands/init.test.ts`, collapsed into one
-  `it.each` over the malformed-config variants). Reach for a parameterized test preparation
-  helper instead only when the cases can't be reduced to plain data rows — e.g. each case needs
-  distinct spy/mock wiring beyond what a data row can express.
+  `.ripe/config.json` instead of every test doing its own `JSON.parse(readFileSync(...))`).
+  - When several `it()` blocks repeat a whole arrange-and-act sequence and only the fixture and
+    expectation vary, don't stop at deduping the smallest repeated statement inside them —
+    collapse them into a single `it.each`/`test.each` instead of a separate `it()` per case. See
+    [`.claude/rules/parameterize-similar-tests.md`](.claude/rules/parameterize-similar-tests.md)
+    for the pattern and its threshold for stepping back to a shared preparation helper instead.
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
 - **`async`/`await` over chained promises**: write asynchronous code with `async`/`await`; reserve
@@ -92,13 +91,14 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   practical way to exercise the real dependency in a unit test.
 - **Coarse-grained tests over fine-grained ones**: test at the command/route scope, decoupled
   from implementation details, rather than writing separate fine-grained unit tests for every
-  internal helper. Drop to fine-grained, implementation-coupled tests only when the behavior is
-  critical or complex enough to need them in isolation — concretely, when a helper has enough
-  input combinations that covering them all through the full stack (real DB, real filesystem,
-  `fastify.inject()`, etc.) would meaningfully slow the suite down. A handful of cases (e.g. two
-  or three) doesn't meet that bar — route them through the existing coarse-grained test instead;
-  the isolation only pays for itself once the combination count is large enough that per-case
-  setup/teardown cost actually adds up.
+  internal helper.
+  - Drop to fine-grained, implementation-coupled tests only when the behavior is critical or
+    complex enough to need them in isolation — concretely, when a helper has enough input
+    combinations that covering them all through the full stack (real DB, real filesystem,
+    `fastify.inject()`, etc.) would meaningfully slow the suite down.
+  - A handful of cases (e.g. two or three) doesn't meet that bar — route them through the
+    existing coarse-grained test instead; the isolation only pays for itself once the combination
+    count is large enough that per-case setup/teardown cost actually adds up.
 - **Favor injection for dependencies that need to be varied**: whether for testing purposes
   (swapping in a fake) or other purposes (a genuine alternate implementation), if a dependency
   needs to vary, inject it — including output sinks like `logFn`/`errorFn`, even though

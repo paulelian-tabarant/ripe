@@ -36,40 +36,45 @@ Package-specific standards for `api/`. These supplement the general rules in
   no behavior, not the same thing as a `Project`). Don't let `*ReadModel` do double duty as "the
   entity, but plain-object" — that's what returning the entity class itself is for.
 - **Derive and validate external input into a small value object before it ever reaches the
-  entity's own factory — don't have the entity's `create` re-parse a raw external value itself.**
-  e.g. `ProjectRepoReference.resolve(remoteUrl): ProjectRepoReference | InvalidRemoteUrlError` has
-  a private constructor and is the *sole* way to obtain a `ProjectRepoReference`; `Project.create(
-  name, repoReference: ProjectRepoReference): Project` takes that value object, not the raw
-  `remoteUrl` string, and is therefore infallible — an invalid `ProjectRepoReference` is simply
-  unrepresentable by the time `create` runs, so there's no error branch left to duplicate or
-  forget. A use-case resolves the value object first, uses its derived fields (e.g.
-  `repoReference.repoKey`) for the existence check, and only calls `create` in the "doesn't exist
-  yet" branch — `create` is no longer called speculatively before that check, since there's no
-  fallible work left inside it to justify calling it early. (An earlier version of this rule
-  argued for calling `create` unconditionally, up front, specifically to avoid this split — that
-  traded away a real invariant, letting `RegisterProject.run` accept an unvalidated raw string as
-  an implicit precondition for a supposedly-infallible-in-practice `create` call. The value-object
-  split removes that implicit precondition entirely: `create` cannot be called with anything
-  invalid, full stop, not merely "in practice, given how callers currently behave.") Give a value
-  object like this its own file once it carries real behavior/invariants of its own (here
-  `api/src/domain/ProjectRepoReference.ts`, separate from `Project.ts`) rather than nesting it
-  inside the entity that consumes it — and name it for what it actually represents, not a
-  neighboring concept: `ProjectRepoReference` bundles `repoKey` and `remoteUrl` together
-  deliberately (both derived from the same parse, both required before an entity can be
-  constructed), but is not itself "the project's identity" (that's `Project.id`) and is not a
-  `*Repository` in the persistence-layer sense — hence the more specific name over a generic
-  `RepoIdentity`. A repository's `getByRepoKey`-style method never calls `create` — it
-  reconstitutes an already-valid entity read back from storage via a separate factory,
-  `reconstitute(data)`, which can't fail (the data was already validated once, at the `create`
-  call that originally persisted it).
+  entity's own factory** — don't have the entity's `create` re-parse a raw external value itself.
+  - e.g. `ProjectRepoReference.resolve(remoteUrl): ProjectRepoReference | InvalidRemoteUrlError`
+    has a private constructor and is the *sole* way to obtain a `ProjectRepoReference`;
+    `Project.create(name, repoReference: ProjectRepoReference): Project` takes that value object,
+    not the raw `remoteUrl` string, and is therefore infallible — an invalid
+    `ProjectRepoReference` is simply unrepresentable by the time `create` runs, so there's no
+    error branch left to duplicate or forget.
+  - A use-case resolves the value object first, uses its derived fields (e.g.
+    `repoReference.repoKey`) for the existence check, and only calls `create` in the "doesn't
+    exist yet" branch — `create` is no longer called speculatively before that check, since
+    there's no fallible work left inside it to justify calling it early.
+  - Give a value object like this its own file once it carries real behavior/invariants of its
+    own (here `api/src/domain/ProjectRepoReference.ts`, separate from `Project.ts`) rather than
+    nesting it inside the entity that consumes it — and name it for what it actually represents,
+    not a neighboring concept: `ProjectRepoReference` bundles `repoKey` and `remoteUrl` together
+    deliberately (both derived from the same parse, both required before an entity can be
+    constructed), but is not itself "the project's identity" (that's `Project.id`) and is not a
+    `*Repository` in the persistence-layer sense — hence the more specific name over a generic
+    `RepoIdentity`.
+  - A repository's `getByRepoKey`-style method never calls `create` — it reconstitutes an
+    already-valid entity read back from storage via a separate factory, `reconstitute(data)`,
+    which can't fail (the data was already validated once, at the `create` call that originally
+    persisted it).
+
+  **Design history**: an earlier version of this rule argued for calling `create` unconditionally,
+  up front, specifically to avoid the value-object split above — that traded away a real
+  invariant, letting `RegisterProject.run` accept an unvalidated raw string as an implicit
+  precondition for a supposedly-infallible-in-practice `create` call. The value-object split
+  removes that implicit precondition entirely: `create` cannot be called with anything invalid,
+  full stop, not merely "in practice, given how callers currently behave."
 - **Domain entity classes have a private constructor**, exposing only their static factories
-  (`create`/`reconstitute` above). Name the class after the bare entity (`Project`); this is
-  distinct from the plain `*ReadModel` DTOs living in `src/repositories/` — the domain class
+  (`create`/`reconstitute` above). Name the class after the bare entity (`Project`) — this is
+  distinct from the plain `*ReadModel` DTOs living in `src/repositories/`: the domain class
   carries behavior and invariants, a `*ReadModel` is a plain data shape for one specific reading
-  need. The repository's write parameter is the entity itself (see `addNewProject(project:
-  Project)`), not a separately-declared write DTO. Reserve a use-case (`src/use-cases/`) for
-  logic that orchestrates repositories or multiple entities rather than an invariant intrinsic to
-  one entity.
+  need.
+  - The repository's write parameter is the entity itself (see `addNewProject(project:
+    Project)`), not a separately-declared write DTO.
+  - Reserve a use-case (`src/use-cases/`) for logic that orchestrates repositories or multiple
+    entities, rather than an invariant intrinsic to one entity.
 
 ## Testing
 
