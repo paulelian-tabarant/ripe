@@ -26,30 +26,66 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **Name a type used more than once**: don't repeat an inline object type/shape at more than one
   call site — declare it as a standalone `interface`, or a `type` built off another declaration
   (e.g. `Pick`/`Omit`) when that's a better fit, and reuse it.
+
+  ```ts
+  // ❌ the same shape repeated at each call site
+  function render(user: { id: string; name: string }) { ... }
+  function log(user: { id: string; name: string }) { ... }
+
+  // ✅ named once, reused
+  interface User { id: string; name: string }
+  function render(user: User) { ... }
+  function log(user: User) { ... }
+  ```
+
 - **Result objects over thrown errors for expected failures**: any failure that's a normal,
   anticipated outcome of the operation — bad input, not found, already exists, server
   unreachable — is returned as a typed result, not thrown. Reserve `throw` for failures the
   code isn't designed to handle (bugs, startup misconfiguration).
+
+  ```ts
+  // ❌ an anticipated outcome (not found) treated as exceptional
+  function getProject(id: string): Project {
+    const project = repo.find(id)
+    if (!project) throw new Error('not found')
+    return project
+  }
+
+  // ✅ the same outcome typed as part of the normal result
+  function getProject(id: string): Project | ProjectNotFoundError {
+    return repo.find(id) ?? new ProjectNotFoundError(id)
+  }
+  ```
+
 - **Typing an expected failure alongside its success shape**: when a function's result has a
-  failure branch worth naming — more than a single boolean flag, or one that carries data (e.g.
-  the invalid input itself) — model it as a union of the success shape and a named class
-  extending `Error` (e.g. `RegisterProjectResult = { created: boolean; projectId: string } |
-  InvalidRemoteUrlError`), narrowed via `instanceof`. The class is returned as a plain value,
-  never thrown — its shape is chosen for `.message`/`instanceof` ergonomics, not as a signal to
-  `throw`/`catch`, so don't let the `Error` suffix imply exception-style control flow at the call
-  site. Reserve a bare boolean/literal flag (e.g. `{ invalid: true }`) for a failure that carries
-  no data worth naming and will never need to distinguish more than one reason; reach for the
-  named-class shape as soon as either of those stops being true.
+  failure branch worth naming, model it as a union of the success shape and a named class
+  extending `Error`, narrowed via `instanceof`.
+
+  ```ts
+  type RegisterProjectResult =
+    | { created: boolean; projectId: string }
+    | InvalidRemoteUrlError
+  ```
+
+  - The class is returned as a plain value, never thrown — its shape is chosen for
+    `.message`/`instanceof` ergonomics, not as a signal to `throw`/`catch`, so don't let the
+    `Error` suffix imply exception-style control flow at the call site.
+  - Reserve this named-class shape for a failure branch that's more than a single boolean flag,
+    or one that carries data (e.g. the invalid input itself). A bare boolean/literal flag (e.g.
+    `{ invalid: true }`) is enough for a failure that carries no data worth naming and will never
+    need to distinguish more than one reason — reach for the named-class shape as soon as either
+    of those stops being true.
 - **Shared API contract types live in `api`, not duplicated per client**: request/response wire
   shapes for `api` endpoints are declared once, in `api/src/contracts/<domain>.ts` (types only —
   no Fastify, DB, or other runtime imports), and exposed to `cli`/`web` via a dedicated `exports`
-  subpath in `api/package.json` (`./contracts/*.js`). Response bodies get their own dedicated
-  interface, not a reuse of the internal use-case/domain result type — the wire shape and the
-  internal shape are allowed to diverge. Consumers add `"@ripe/api": "workspace:*"` and import
-  with `import type { ... } from '@ripe/api/contracts/<domain>.js'` (type-only, so bundlers elide
-  it at build time) — never redeclare the same shape locally.
+  subpath in `api/package.json` (`./contracts/*.js`).
+  - Response bodies get their own dedicated interface, not a reuse of the internal use-case/domain
+    result type — the wire shape and the internal shape are allowed to diverge.
+  - Consumers add `"@ripe/api": "workspace:*"` and import with `import type { ... } from
+    '@ripe/api/contracts/<domain>.js'` (type-only, so bundlers elide it at build time) — never
+    redeclare the same shape locally.
 
-### Structure & Simplicity
+### Simplicity & Duplication
 
 - **No unused exports**: keep modules' public surface limited to what's actually consumed;
   Biome's recommended rule set flags unused variables/imports — treat unused exports the same
@@ -57,32 +93,83 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **No duplicated code, in tests or implementation**: extract a shared helper instead of
   repeating the same block across test cases or across a command and its lib (e.g.
   `readWrittenConfig()` in `cli/tests/commands/init.test.ts` — one helper reads and casts
-  `.ripe/config.json` instead of every test doing its own `JSON.parse(readFileSync(...))`). When
-  several `it()` blocks repeat a whole arrange-and-act sequence (write a fixture, call the
-  command, assert the same shape of outcome) and only the fixture and expectation vary, don't
-  stop at deduping the smallest repeated statement inside them — collapse them into a single
-  `it.each`/`test.each` (Vitest), with one row per case and the varying fixture/expectation as
-  row fields, rather than a separate `it()` per case (e.g. the six `re-registers when
-  .ripe/config.json ...` cases in `cli/tests/commands/init.test.ts`, collapsed into one
-  `it.each` over the malformed-config variants). Reach for a parameterized test preparation
-  helper instead only when the cases can't be reduced to plain data rows — e.g. each case needs
-  distinct spy/mock wiring beyond what a data row can express.
+  `.ripe/config.json` instead of every test doing its own `JSON.parse(readFileSync(...))`).
+  - When several `it()` blocks repeat a whole arrange-and-act sequence and only the fixture and
+    expectation vary, don't stop at deduping the smallest repeated statement inside them —
+    collapse them into a single `it.each`/`test.each` instead of a separate `it()` per case. See
+    [`.claude/rules/parameterize-similar-tests.md`](.claude/rules/parameterize-similar-tests.md)
+    for the pattern and its threshold for stepping back to a shared preparation helper instead.
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
+
+### Code Style
+
 - **`async`/`await` over chained promises**: write asynchronous code with `async`/`await`; reserve
   `.then`/`.catch` chains for the rare case `async`/`await` can't express (e.g. `Promise.all`
   combinators feeding straight into further chaining).
+
+  ```ts
+  // ❌
+  function loadProject(id: string) {
+    return repo.findById(id).then((project) => project ?? null)
+  }
+
+  // ✅
+  async function loadProject(id: string) {
+    const project = await repo.findById(id)
+    return project ?? null
+  }
+  ```
+
 - **Early returns over nested conditionals**: guard against the exceptional/short-circuit case
   first and return, instead of wrapping the main logic in an `if`. Prefer flat, sequential code
   over deep nesting.
+
+  ```ts
+  // ❌ main logic nested inside the happy-path check
+  function getDisplayName(user: User | undefined) {
+    if (user) {
+      return user.name.trim()
+    } else {
+      return 'Anonymous'
+    }
+  }
+
+  // ✅ guard first, then flat logic
+  function getDisplayName(user: User | undefined) {
+    if (!user) return 'Anonymous'
+
+    return user.name.trim()
+  }
+  ```
+
 - **Blank line before a trailing `return`**: when a function/block ends with `return` after one or
   more preceding statements, separate it with a blank line so the "what's being returned" reads
   as its own step. Biome has no rule to enforce this — it's a manual convention, not lint-checked.
+
+  ```ts
+  function getDisplayName(user: User) {
+    const trimmed = user.name.trim()
+
+    return trimmed.length > 0 ? trimmed : 'Anonymous'
+  }
+  ```
+
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving
   from high-level intent to low-level detail (see `api/tests/endpoints/registerProject.test.ts`: the
   `it` blocks read first, the `postProjects` helper they call is defined last).
 - **No comments unless the implementation is non-trivial**: don't restate what the code already
   says; only comment a hidden constraint, invariant, or otherwise surprising behavior.
+
+  ```ts
+  // ❌ restates the code
+  // increment the counter by 1
+  counter += 1
+
+  // ✅ explains a non-obvious constraint
+  // Retried once: the upstream API occasionally 500s on cold start.
+  const response = await fetchWithRetry(url, { retries: 1 })
+  ```
 
 ### Testing
 
@@ -92,13 +179,14 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   practical way to exercise the real dependency in a unit test.
 - **Coarse-grained tests over fine-grained ones**: test at the command/route scope, decoupled
   from implementation details, rather than writing separate fine-grained unit tests for every
-  internal helper. Drop to fine-grained, implementation-coupled tests only when the behavior is
-  critical or complex enough to need them in isolation — concretely, when a helper has enough
-  input combinations that covering them all through the full stack (real DB, real filesystem,
-  `fastify.inject()`, etc.) would meaningfully slow the suite down. A handful of cases (e.g. two
-  or three) doesn't meet that bar — route them through the existing coarse-grained test instead;
-  the isolation only pays for itself once the combination count is large enough that per-case
-  setup/teardown cost actually adds up.
+  internal helper.
+  - Drop to fine-grained, implementation-coupled tests only when the behavior is critical or
+    complex enough to need them in isolation — concretely, when a helper has enough input
+    combinations that covering them all through the full stack (real DB, real filesystem,
+    `fastify.inject()`, etc.) would meaningfully slow the suite down.
+  - A handful of cases (e.g. two or three) doesn't meet that bar — route them through the
+    existing coarse-grained test instead; the isolation only pays for itself once the combination
+    count is large enough that per-case setup/teardown cost actually adds up.
 - **Favor injection for dependencies that need to be varied**: whether for testing purposes
   (swapping in a fake) or other purposes (a genuine alternate implementation), if a dependency
   needs to vary, inject it — including output sinks like `logFn`/`errorFn`, even though
@@ -108,6 +196,17 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
 - **Given/when/then structure in tests**: separate a test's setup, the action under test, and its
   assertions with a blank line each, in that order — no need to label the sections, the blank
   lines are enough to make the structure legible.
+
+  ```ts
+  it('returns the trimmed name', () => {
+    const user = buildUser({ name: '  Ada  ' })
+
+    const result = getDisplayName(user)
+
+    expect(result).toBe('Ada')
+  })
+  ```
+
 - **Write and name tests around observable behavior**: "behavioral" in this repo means observable
   through the real entry point — an HTTP response, CLI output/exit code, files written, rendered
   UI — as opposed to an internal implementation detail (schema shape, an internal constraint
