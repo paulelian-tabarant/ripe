@@ -10,6 +10,13 @@ split the work: fix what's fixable yourself, and hand back only what genuinely n
 decision. The point is to save the tedious "read every comment, figure out what it's asking for"
 pass — not to guess at answers to comments that are actually asking the author to think, not act.
 
+## Prerequisites
+
+- `gh` CLI installed and authenticated (`gh auth login`). Unlike `iteration-recap`, there's no
+  local-git fallback here — inline review comments only exist on GitHub, so both bundled scripts
+  fail fast with a clear `ERROR:` message if `gh` is missing or unauthenticated instead of
+  degrading silently.
+
 ## Workflow
 
 1. **Identify the target PR.** If the user named a PR number, URL, or branch, use it. If they
