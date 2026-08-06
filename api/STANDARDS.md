@@ -22,6 +22,9 @@ Package-specific standards for `api/`. These supplement the general rules in
 - **No DB details leaking into use-cases**: repositories don't leak row shapes or column naming
   into the use-case layer — repository functions return domain-shaped objects, so use-cases
   never reference raw table/column names.
+
+  **Rule**: if a use-case needs to know a column name to read a value, that translation belongs
+  in the repository, not the use-case.
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
   codes, request/response shapes, headers) — that mapping belongs to endpoints.
 - **Repositories return the domain entity itself when one exists**: a repository method whose

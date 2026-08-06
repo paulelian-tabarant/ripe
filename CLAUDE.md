@@ -31,18 +31,25 @@ pnpm lint:md           # Markdown lint
 Each package has its own `npm run test` (Vitest), `npm run typecheck`, and `npm run ci:checks`
 (lint + typecheck + test in one shot).
 
-After every coding task, favor `pnpm --filter <package> ci:checks` (`api`, `./cli`, or `web`) for
-the package(s) you touched before considering the task done.
+## Verification Checklist
 
-At the end of every feature branch, run the full pipeline before considering it ready:
+After every coding task, before considering it done:
 
-```bash
-pnpm lint:md
-pnpm --filter api ci:checks
-pnpm --filter ./cli ci:checks
-```
+- [ ] `pnpm --filter <package> ci:checks` passes for every package touched (`api`, `./cli`, `web`).
 
-All checks must pass with zero errors before marking the feature complete.
+**Exception**: if a change only touches documentation/context files (`STANDARDS.md`,
+`CLAUDE.md`, `.claude/skills/`, `.claude/rules/`, `docs/`) with no code under `api/src`,
+`cli/src`, or `web/src` changed, skip `ci:checks` — run `pnpm lint:md` instead if any `.md` file
+changed.
+
+At the end of every feature branch, before considering it ready:
+
+- [ ] `pnpm lint:md`
+- [ ] `pnpm --filter api ci:checks`
+- [ ] `pnpm --filter ./cli ci:checks`
+- [ ] `pnpm --filter web ci:checks`
+
+All of the above must pass with zero errors — there is no "skip tests" exception in this project.
 
 ## Tool Usage
 
@@ -50,6 +57,12 @@ All checks must pass with zero errors before marking the feature complete.
   Claude skill for the same purpose (e.g. review, PR triage, PR recap). Use the project skill.
 - **Commands run from repo root** via `pnpm --filter <package> <script>` (e.g.
   `pnpm --filter ./cli ci:checks`). Never `cd` into a workspace and run `npm`/`pnpm` directly there.
+- **Prefer project-defined commands over one-off invocations**: use the `pnpm` scripts declared
+  in this file/package.json (e.g. `pnpm lint:md`) rather than reaching for an ad hoc equivalent
+  (`npx <tool>`, a global install) — unless a check directive explicitly says otherwise, or the
+  project command itself is broken and a one-off call is the only way to unblock the same check.
+  If no project command covers what's needed, don't just default to a one-off call silently —
+  suggest adding a script for it (`package.json`) instead.
 - **Subagents are read-only by default**: when dispatching a subagent for exploration or review,
   it must only report findings — never edit code — unless explicitly instructed to make changes.
 

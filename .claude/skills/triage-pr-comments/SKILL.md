@@ -1,5 +1,5 @@
 ---
-name: pr-comments-triage
+name: triage-pr-comments
 description: Triage inline review comments on an open PR using the Conventional Comments format (conventionalcomments.org — praise, nitpick, suggestion, issue, todo, question, thought, chore). Classifies each comment, fixes the actionable ones (issue, suggestion, todo, chore) directly in code, and surfaces judgment-call ones (question, thought, praise, nitpick) as a decision list instead of guessing at a reply. Once aligned with the user on what's addressed, resolves the corresponding GitHub review threads for real — never before that, and never a reply comment. Use whenever the user wants to address, work through, or triage PR review feedback — "address the comments on #42", "go through the PR feedback", "what should I do about this reviewer's comments". Distinct from iteration-recap (summarizes a PR's changes) and iteration-code-review (reviews your own diff before posting) — this is about feedback already left on an open PR.
 ---
 
@@ -10,6 +10,13 @@ split the work: fix what's fixable yourself, and hand back only what genuinely n
 decision. The point is to save the tedious "read every comment, figure out what it's asking for"
 pass — not to guess at answers to comments that are actually asking the author to think, not act.
 
+## Prerequisites
+
+- `gh` CLI installed and authenticated (`gh auth login`). Unlike `iteration-recap`, there's no
+  local-git fallback here — inline review comments only exist on GitHub, so both bundled scripts
+  fail fast with a clear `ERROR:` message if `gh` is missing or unauthenticated instead of
+  degrading silently.
+
 ## Workflow
 
 1. **Identify the target PR.** If the user named a PR number, URL, or branch, use it. If they
@@ -19,7 +26,7 @@ pass — not to guess at answers to comments that are actually asking the author
    already handles auto-detection and pagination:
 
    ```bash
-   .claude/skills/pr-comments-triage/scripts/gather_pr_comments.sh [ref]
+   .claude/skills/triage-pr-comments/scripts/gather_pr_comments.sh [ref]
    ```
 
    This pulls **inline, unresolved** review comments only — the ones attached to a specific
@@ -135,7 +142,7 @@ pass — not to guess at answers to comments that are actually asking the author
    scanning the PR:
 
    ```bash
-   .claude/skills/pr-comments-triage/scripts/resolve_review_threads.sh <pr-number> <comment-id> [comment-id...]
+   .claude/skills/triage-pr-comments/scripts/resolve_review_threads.sh <pr-number> <comment-id> [comment-id...]
    ```
 
    `pr-number` and each `comment-id` come straight from `gather_pr_comments.sh`'s output (the
