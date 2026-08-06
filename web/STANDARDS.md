@@ -57,3 +57,14 @@ only the `web/`-specific test conventions.
 - **RTL cleanup is manual**: `vitest.config.ts` doesn't set `globals: true`, so
   `@testing-library/react`'s auto-cleanup never registers. `vitest.setup.ts` calls `cleanup()`
   explicitly — don't remove it, or DOM from prior tests leaks into the next `render()`.
+- **Test split by layer**: `src/hooks/*.test.tsx` are pure unit tests (`renderHook`, no network,
+  no router). `src/pages/*.test.tsx` render a single page with MSW stubbing its API calls.
+  `src/App.test.tsx` covers routing — which page renders for which path — with MSW responses left
+  minimal (e.g. a never-resolving promise) since the page content itself isn't under test there.
+
+```mermaid
+flowchart TD
+    A[src/hooks/*.test.tsx] -->|renderHook, no network| B[Hook behavior in isolation]
+    C[src/pages/*.test.tsx] -->|render + MSW stubs API| D[Page behavior: loading, data, interaction]
+    E[src/App.test.tsx] -->|render + MemoryRouter| F[Routing: path -> page]
+```
