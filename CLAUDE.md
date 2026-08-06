@@ -31,18 +31,20 @@ pnpm lint:md           # Markdown lint
 Each package has its own `npm run test` (Vitest), `npm run typecheck`, and `npm run ci:checks`
 (lint + typecheck + test in one shot).
 
-After every coding task, favor `pnpm --filter <package> ci:checks` (`api`, `./cli`, or `web`) for
-the package(s) you touched before considering the task done.
+## Verification Checklist
 
-At the end of every feature branch, run the full pipeline before considering it ready:
+After every coding task, before considering it done:
 
-```bash
-pnpm lint:md
-pnpm --filter api ci:checks
-pnpm --filter ./cli ci:checks
-```
+- [ ] `pnpm --filter <package> ci:checks` passes for every package touched (`api`, `./cli`, `web`).
 
-All checks must pass with zero errors before marking the feature complete.
+At the end of every feature branch, before considering it ready:
+
+- [ ] `pnpm lint:md`
+- [ ] `pnpm --filter api ci:checks`
+- [ ] `pnpm --filter ./cli ci:checks`
+- [ ] `pnpm --filter web ci:checks`
+
+All of the above must pass with zero errors — there is no "skip tests" exception in this project.
 
 ## Tool Usage
 
