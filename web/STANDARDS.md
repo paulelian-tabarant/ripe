@@ -24,6 +24,19 @@ Package-specific standards for `web/`. These supplement the general rules in
   not arbitrary values (`mt-[13px]`, hex literals). Encapsulate color/variant choices inside shared
   components (e.g. `Message`'s `variant` prop) instead of repeating raw classes at each call site.
 
+  ❌ **Bad** — arbitrary value, repeated per call site:
+  ```tsx
+  <div className="mt-[13px] text-[#3f3f46]">...</div>
+  ```
+
+  ✅ **Good** — default scale, encapsulated in a shared component:
+  ```tsx
+  <Message variant="muted">...</Message>
+  ```
+
+  **Rule**: if you're reaching for a bracketed arbitrary value or a hex literal, that's a sign the
+  choice belongs in a shared component's variant, not at the call site.
+
 ## Testing
 
 General testing principles live in [`../STANDARDS.md`](../STANDARDS.md). This section covers
