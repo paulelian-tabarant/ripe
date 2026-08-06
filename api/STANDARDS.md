@@ -24,12 +24,14 @@ Package-specific standards for `api/`. These supplement the general rules in
   never reference raw table/column names.
 
   ❌ **Bad** — use-case reads the repository's raw row shape:
+
   ```ts
   const row = repo.findRow(id) // { proj_id, proj_name, created_at }
   if (row.proj_name === name) { ... }
   ```
 
   ✅ **Good** — repository translates to a domain shape before returning:
+
   ```ts
   const project = repo.getById(id) // Project { id, name }
   if (project.name === name) { ... }

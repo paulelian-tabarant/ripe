@@ -25,11 +25,13 @@ Package-specific standards for `web/`. These supplement the general rules in
   components (e.g. `Message`'s `variant` prop) instead of repeating raw classes at each call site.
 
   ❌ **Bad** — arbitrary value, repeated per call site:
+
   ```tsx
   <div className="mt-[13px] text-[#3f3f46]">...</div>
   ```
 
   ✅ **Good** — default scale, encapsulated in a shared component:
+
   ```tsx
   <Message variant="muted">...</Message>
   ```

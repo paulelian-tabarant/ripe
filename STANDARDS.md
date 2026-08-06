@@ -32,6 +32,7 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   code isn't designed to handle (bugs, startup misconfiguration).
 
   ❌ **Bad** — an anticipated outcome (not found) treated as exceptional:
+
   ```ts
   function getProject(id: string): Project {
     const project = repo.find(id)
@@ -41,6 +42,7 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   ```
 
   ✅ **Good** — the same outcome typed as part of the normal result:
+
   ```ts
   function getProject(id: string): Project | ProjectNotFoundError {
     return repo.find(id) ?? new ProjectNotFoundError(id)
