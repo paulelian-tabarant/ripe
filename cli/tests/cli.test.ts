@@ -2,22 +2,20 @@ import { describe, expect, it, vi } from 'vitest'
 import { runCli } from '@/cli.js'
 
 describe('runCli', () => {
-  it.each([
-    [['-h']],
-    [['--help']],
-    [['init', '-h']],
-    [['init', '--help']],
-  ])('prints help and exits 0 for %j without dispatching to a command', async (argv) => {
-    const logFn = vi.fn()
-    const initFn = vi.fn()
+  it.each([[['-h']], [['--help']], [['init', '-h']], [['init', '--help']]])(
+    'prints help and exits 0 for %j without dispatching to a command',
+    async (argv) => {
+      const logFn = vi.fn()
+      const initFn = vi.fn()
 
-    const result = await runCli(argv, { logFn, initFn })
+      const result = await runCli(argv, { logFn, initFn })
 
-    expect(result.exitCode).toBe(0)
-    expect(logFn).toHaveBeenCalledWith(expect.stringContaining('Usage'))
-    expect(logFn).toHaveBeenCalledWith(expect.stringContaining('init'))
-    expect(initFn).not.toHaveBeenCalled()
-  })
+      expect(result.exitCode).toBe(0)
+      expect(logFn).toHaveBeenCalledWith(expect.stringContaining('Usage'))
+      expect(logFn).toHaveBeenCalledWith(expect.stringContaining('init'))
+      expect(initFn).not.toHaveBeenCalled()
+    },
+  )
 
   it('dispatches to init for the "init" command', async () => {
     const initFn = vi.fn().mockResolvedValue({ status: 'success' })
