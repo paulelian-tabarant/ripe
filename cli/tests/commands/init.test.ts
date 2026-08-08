@@ -10,13 +10,10 @@ import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { InitOptions, InitPresenter, InitPrompter } from '@/commands/init.js'
 import { init } from '@/commands/init.js'
-import { createCacheStore } from '@/lib/cacheStore.js'
+import { createCacheStore, type RipeCache } from '@/lib/cacheStore.js'
 import { createGitRepository } from '@/lib/gitRepository.js'
 import { createProjectDirectory } from '@/lib/projectDirectory.js'
-import { createSettingsStore } from '@/lib/settingsStore.js'
-import type { RipeCache } from '@/lib/writeCache.js'
-import * as writeCacheModule from '@/lib/writeCache.js'
-import type { RipeSettings } from '@/lib/writeSettings.js'
+import { createSettingsStore, type RipeSettings } from '@/lib/settingsStore.js'
 
 const FAKE_SERVER_URL = 'https://fake-server-url'
 const FAKE_REMOTE_URL = 'git@github.com:acme/widgets.git'
@@ -70,28 +67,25 @@ describe('init', () => {
       { projectId: 'proj_abc123' },
       { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
-    const writeCacheSpy = vi.spyOn(writeCacheModule, 'writeCache').mockImplementation(() => {
+    const onLocalStateWriteFailed = vi.fn()
+    const options = fakeInitOptions({
+      getCurrentDirectoryName: () => tmpDir,
+      prompts: {
+        promptForServerUrl: async () => FAKE_SERVER_URL,
+        promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+      },
+      presenter: { onProjectRegistered: vi.fn(), onLocalStateWriteFailed },
+    })
+    vi.spyOn(options.cacheStore, 'write').mockImplementation(() => {
       throw new Error('ENOSPC: no space left on device')
     })
-    const onLocalStateWriteFailed = vi.fn()
 
-    const result = await init(
-      fakeInitOptions({
-        getCurrentDirectoryName: () => tmpDir,
-        prompts: {
-          promptForServerUrl: async () => FAKE_SERVER_URL,
-          promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
-        },
-        presenter: { onProjectRegistered: vi.fn(), onLocalStateWriteFailed },
-      }),
-    )
+    const result = await init(options)
 
     expect(result).toBe('error')
     expect(onLocalStateWriteFailed).toHaveBeenCalledWith(
       expect.stringContaining('ENOSPC: no space left on device'),
     )
-
-    writeCacheSpy.mockRestore()
   })
 
   it('writes settings and cache on 200 (existing project) with no confirmation prompt', async () => {
