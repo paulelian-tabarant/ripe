@@ -102,7 +102,11 @@ which update types are allowed, so there's only one clock to reason about:
   custom regex manager in `renovate.json` keeps `devEngines.runtime.version` bumped alongside
   `engines.node` whenever Renovate proposes a Node update.
 
-Validate `renovate.json` after editing it: `pnpm renovate:validate`.
+Validate `renovate.json` after editing it: `pnpm renovate:validate`. To dry-run either config from
+an open PR (e.g. after changing `renovate.json`) without waiting for its cron, add the
+`test-renovate-weekly` or `test-renovate-monthly` label — same pattern as the `deploy-staging`/
+`deploy-docs` labels below. Both always run in Renovate's `dryRun: full` mode, so neither can open
+real PRs or push branches.
 
 ### API (`api/`)
 
