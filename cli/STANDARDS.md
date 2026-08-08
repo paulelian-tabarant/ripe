@@ -7,16 +7,32 @@ Package-specific standards for `cli/`. These supplement the general rules in
 
 ### Layering
 
-- **Layer split**: `src/commands/` holds orchestration logic; `src/lib/` holds single-purpose
+- **Layer split**: `src/commands/` holds orchestration logic; `src/infrastructure/` holds single-purpose
   helpers (HTTP calls, config file I/O). Don't mix the two — a command function should read as a
-  sequence of calls into `lib/`, not inline `fs`/`fetch` logic.
+  sequence of calls into `infrastructure/`, not inline `fs`/`fetch` logic.
 - **External dependencies as typed factories**: a command's non-prompt/presenter dependencies
   (filesystem paths, HTTP clients, git) are each a small named interface built via a `createX()`
-  factory in `src/lib/`, injected through the command's `*Options` type — not raw functions or
+  factory in `src/infrastructure/`, injected through the command's `*Options` type — not raw functions or
   bare paths threaded through. See `GitRepository`/`SettingsStore`/`CacheStore`/`ProjectDirectory`/
-  `ApiClient` in `src/lib/`. `ProjectDirectory` in particular wraps `getCurrentDirectoryName` so
+  `ApiClient` in `src/infrastructure/`. `ProjectDirectory` in particular wraps `getCurrentDirectoryName` so
   every other dependency takes `ProjectDirectory`, not a raw `() => string`, and resolves its own
   path convention (e.g. `.ripe/settings.json`) internally.
+
+### File Naming
+
+- **Everything is kebab-case.**
+- **A dot-suffix (`.role.ts`) marks a file as an already-established, named architectural
+  role** (see the same rule in [`../api/STANDARDS.md`](../api/STANDARDS.md)). In `cli/`, the
+  established roles are all under `src/commands/`: `.factory.ts` (composition root for one
+  command, e.g. `init.factory.ts`), `.prompter.ts`, `.presenter.ts`.
+- **`src/infrastructure/` dependencies are hyphenated, not dot-suffixed** (`git-repository.ts`,
+  `settings-store.ts`, `cache-store.ts`, `api-client.ts`, `project-directory.ts`) — these are
+  typed factories for one specific external dependency, not instances of a documented,
+  repeated pattern the way `.factory`/`.prompter`/`.presenter` are. `GitRepository` in particular
+  is not the same concept as `api/`'s `*.repository.ts` (a raw-SQL data-access layer) — it just
+  happens to share the English word "repository" for a git repo, so it doesn't get promoted to
+  `.repository.ts`. Don't rename one of these to a dot-suffix just for consistency; do it only
+  once that specific role is written up as its own recurring pattern here or in `CLAUDE.md`.
 
 ### Command Boundaries
 
@@ -110,12 +126,12 @@ only the `cli/`-specific test layout.
 - **Test split mirrors the layer split**: `tests/cli.test.ts` covers command routing — help
   flags, unknown-command handling, dispatch — with each command mocked (e.g. `initFn: vi.fn()`),
   never exercising real command logic. `tests/commands/<command>.test.ts` covers that command in
-  isolation, running through every real layer underneath it (`lib/`, filesystem) except the
+  isolation, running through every real layer underneath it (`infrastructure/`, filesystem) except the
   network, which is intercepted with `nock`.
 
 ```mermaid
 flowchart TD
     A[tests/cli.test.ts] -->|mocked command fns| B[Routing: help, unknown command, dispatch]
-    C[tests/commands/init.test.ts] -->|real command + lib/ + filesystem| D[Command behavior]
+    C[tests/commands/init.test.ts] -->|real command + infrastructure/ + filesystem| D[Command behavior]
     C -->|nock intercepts network only| E[HTTP boundary]
 ```

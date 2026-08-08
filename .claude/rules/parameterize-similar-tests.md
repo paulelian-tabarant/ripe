@@ -28,8 +28,9 @@ adding one row.
   case, not just different data), a shared data row can't express that — leave them as separate
   `it()` blocks, or extract a shared preparation helper instead (see `STANDARDS.md`).
 - See `cli/tests/commands/init.test.ts` (`re-registers when .ripe/config.json %s`),
-  `api/tests/config.test.ts` (`throws when %s`), and `api/tests/endpoints/postProjects.test.ts`
-  (`returns 400 for %s`) for the pattern already applied in this repo.
+  `api/tests/config.test.ts` (`throws when %s`), and
+  `api/tests/endpoints/project.endpoints.test.ts` (`returns 400 for %s`) for the pattern already
+  applied in this repo.
 
 ```ts
 // Before — same arrange-act-assert, only the input/expectation differs

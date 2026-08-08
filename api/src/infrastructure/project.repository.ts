@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import { Project } from '../domain/project.js'
+import { Project } from '../core/domain/project.js'
 
 export type ProjectReadModel = {
   id: string
@@ -50,8 +50,8 @@ export class ProjectRepository {
     this.insertStatement.run(
       project.id,
       project.name,
-      project.repoReference.repoKey,
-      project.repoReference.remoteUrl,
+      project.gitRepository.repoKey,
+      project.gitRepository.remoteUrl,
     )
   }
 }

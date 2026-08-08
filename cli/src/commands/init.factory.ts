@@ -2,10 +2,10 @@ import type { Logger } from '@/cli.js'
 import { type CommandResult, init } from '@/commands/init.js'
 import { buildInitPresenter } from '@/commands/init.presenter.js'
 import { buildInitPrompter } from '@/commands/init.prompter.js'
-import { createCacheStore } from '@/lib/cache-store.js'
-import { createGitRepository } from '@/lib/git-repository.js'
-import { createProjectDirectory } from '@/lib/project-directory.js'
-import { createSettingsStore } from '@/lib/settings-store.js'
+import { createCacheStore } from '@/infrastructure/cache-store.js'
+import { createGitRepository } from '@/infrastructure/git-repository.js'
+import { createProjectDirectory } from '@/infrastructure/project-directory.js'
+import { createSettingsStore } from '@/infrastructure/settings-store.js'
 
 export function buildInitFn(
   ask: (question: string) => Promise<string>,

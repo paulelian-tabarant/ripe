@@ -1,10 +1,11 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import Database from 'better-sqlite3'
+import type Database from 'better-sqlite3'
 import type { FastifyInstance } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../../src/app.js'
+import { createTestDb } from '../helpers/create-test-db.js'
 
 describe('static frontend serving', () => {
   let app: FastifyInstance
@@ -12,7 +13,7 @@ describe('static frontend serving', () => {
   let tmpDir: string
 
   beforeEach(() => {
-    db = new Database(':memory:')
+    db = createTestDb()
   })
 
   afterEach(async () => {
