@@ -16,11 +16,13 @@ export class ServerInvalidRemoteUrlError extends Error {
 }
 
 export interface Server {
+  getUrl(): string
   registerProject(name: string, remoteUrl: string): Promise<ProjectRegistrationResult>
 }
 
 export function createServer(serverUrl: string): Server {
   return {
+    getUrl: (): string => serverUrl,
     registerProject: (name: string, remoteUrl: string): Promise<ProjectRegistrationResult> =>
       registerProject(serverUrl, name, remoteUrl),
   }

@@ -47,18 +47,12 @@ export async function init(options: InitOptions): Promise<CommandResult> {
   const defaultProjectName = projectDirectory.getName()
   const server = createServer(serverUrl)
 
-  const result = await tryRegisterProject(
-    server,
-    serverUrl,
-    defaultProjectName,
-    remoteUrl,
-    presenter,
-  )
+  const result = await tryRegisterProject(server, defaultProjectName, remoteUrl, presenter)
   if (!result) return 'error'
 
   presenter.onProjectRegistered(result)
 
-  if (!tryPersistProjectData(settingsStore, cacheStore, serverUrl, result.projectId, presenter)) {
+  if (!tryPersistProjectData(settingsStore, cacheStore, server, result.projectId, presenter)) {
     return 'error'
   }
 
@@ -105,7 +99,6 @@ async function resolveServerUrl(
 
 async function tryRegisterProject(
   server: Server,
-  serverUrl: string,
   name: string,
   remoteUrl: string,
   presenter: InitPresenter,
@@ -118,7 +111,7 @@ async function tryRegisterProject(
     if (err instanceof ServerInvalidRemoteUrlError) {
       presenter.onServerRejectedRemoteUrl(remoteUrl, detail)
     } else {
-      presenter.onServerUnreachable(serverUrl, detail)
+      presenter.onServerUnreachable(server.getUrl(), detail)
     }
 
     return undefined
@@ -128,12 +121,12 @@ async function tryRegisterProject(
 function tryPersistProjectData(
   settingsStore: SettingsStore,
   cacheStore: CacheStore,
-  serverUrl: string,
+  server: Server,
   projectId: string,
   presenter: InitPresenter,
 ): boolean {
   try {
-    settingsStore.write({ serverUrl })
+    settingsStore.write({ serverUrl: server.getUrl() })
     cacheStore.write({ projectId })
 
     return true
