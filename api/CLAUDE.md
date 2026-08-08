@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<!-- test scenario: docs-only change inside a workspace, should skip api lint/typecheck/test in CI -->
+
 ## Commands
 
 ```bash
