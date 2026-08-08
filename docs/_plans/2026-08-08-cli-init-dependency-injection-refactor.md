@@ -8,7 +8,7 @@ a thin composition root. This is a standalone cleanup against current `main` —
 touch anything related to skill registration** (US-2.1), which depends on this refactor landing
 first.
 
-**Why now:** the existing `.claude/rules/cli/commands-stay-pure.md` rule (merged into `main`
+**Why now:** the existing `.claude/rules/cli/single-io-composition-root.md` rule (merged into `main`
 after `feature/us-2.1-skill-registration` diverged) already documents most of this intent but the
 current `init.ts` violates it directly (9 raw `console.*` calls). Untangling this was going to be
 unavoidable once US-2.1 added several new warnings/errors to the same command — better to do it
@@ -164,7 +164,7 @@ prompt/presenter implementations call the injected `askFn`/`logFn`/`errorFn`/`wa
 touching the environment directly, and commands call the injected `presenter`/`prompts`. This is
 a literal, greppable invariant: `grep -rn 'console\.\|readline\|process\.std' cli/src/` should
 return only the lines in `index.ts`. Use this as the acceptance check for the refactor, and as the
-wording basis for the rewritten `.claude/rules/cli/commands-stay-pure.md` (see below).
+wording basis for the rewritten `.claude/rules/cli/single-io-composition-root.md` (see below).
 
 ## Test impact
 
@@ -194,7 +194,7 @@ wording basis for the rewritten `.claude/rules/cli/commands-stay-pure.md` (see b
 - `cli/STANDARDS.md` — replace the stale single-`logFn`-parameter example (which described an
   injected-logger pattern that was never actually implemented and is now explicitly superseded)
   with the prompts/presenter pattern above.
-- `.claude/rules/cli/commands-stay-pure.md` — rewrite using the precise form above: raw
+- `.claude/rules/cli/single-io-composition-root.md` — rewrite using the precise form above: raw
   `console`/`process`/`stdin`/`stdout` access exists only in `index.ts`; everywhere else, injected
   functions (`askFn`/`logFn`/`errorFn`/`warnFn` in `cli.ts`; `prompts`/`presenter` in commands)
   are the sanctioned mechanism for both asking and telling. The old wording ("doesn't call
