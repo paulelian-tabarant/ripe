@@ -2,6 +2,7 @@
   "name": "@paulelian-tabarant/ripe",
   "version": "0.2.0",
   "type": "module",
+  "license": "PolyFormNoncommercial-1.0.0",
   "bin": {
     "ripe": "./dist/index.js"
   },
