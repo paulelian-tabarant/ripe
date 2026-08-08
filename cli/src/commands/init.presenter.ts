@@ -1,5 +1,5 @@
-import type { Logger } from '@/cli.js'
-import type { InitPresenter } from '@/commands/init.js'
+import type { Logger } from '../cli.js'
+import type { InitPresenter } from './init.js'
 
 export function buildInitPresenter(logger: Logger): InitPresenter {
   return {

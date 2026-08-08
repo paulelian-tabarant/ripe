@@ -18,6 +18,18 @@ Package-specific standards for `cli/`. These supplement the general rules in
   every other dependency takes `ProjectDirectory`, not a raw `() => string`, and resolves its own
   path convention (e.g. `.ripe/settings.json`) internally.
 
+### Imports
+
+- **Relative imports only — no `@/*` path alias.** `tsc` type-checks a `paths` alias but never
+  rewrites it in emitted output, so a bare `@/...` import compiles clean, passes every test (Vitest
+  resolves it via its own `resolve.alias`), and then throws `ERR_MODULE_NOT_FOUND` the moment
+  `dist/index.js` actually runs — exactly the shape of bug that reaches the published package
+  (`bin: { ripe: "./dist/index.js" }`) without ever failing CI. Every file under `src/`/`tests/` is
+  at most two directories deep, so a relative import is never more than `../infrastructure/x.js`
+  or `../../src/commands/y.js` — there's no depth here an alias would meaningfully simplify. The
+  `smoke` script (`node dist/index.js --help`, wired into `ci:checks`) exists specifically to catch
+  a reintroduced alias (or any other emitted-but-unresolvable import) before it ships.
+
 ### File Naming
 
 - **Everything is kebab-case.**

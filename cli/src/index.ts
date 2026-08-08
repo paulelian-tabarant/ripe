@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createInterface } from 'node:readline/promises'
-import { buildInitFn } from '@/commands/init.factory.js'
 import { type ExitCode, type Logger, runCli } from './cli.js'
+import { buildInitFn } from './commands/init.factory.js'
 
 const logger: Logger = { log: console.log, error: console.error, warn: console.warn }
 

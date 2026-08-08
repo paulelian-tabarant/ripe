@@ -9,7 +9,8 @@ pnpm --filter ./cli lint        # Biome ci: lint + format check + import-sort ch
 pnpm --filter ./cli build       # tsc -p tsconfig.build.json → dist/
 pnpm --filter ./cli test        # vitest run (all tests under tests/)
 pnpm --filter ./cli typecheck   # tsc --noEmit (includes src + tests)
-pnpm --filter ./cli ci:checks   # lint + typecheck + test in one shot
+pnpm --filter ./cli smoke       # build output must already exist — runs `node dist/index.js --help`
+pnpm --filter ./cli ci:checks   # lint + typecheck + test + build + smoke, in one shot
 pnpm --filter ./cli cli -- <command-name>   # build, then invoke the CLI, e.g. `init`
 
 # Run a single test file

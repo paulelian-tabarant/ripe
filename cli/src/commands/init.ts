@@ -4,11 +4,11 @@ import {
   createApiClient,
   type ProjectRegistrationResult,
   ServerInvalidRemoteUrlError,
-} from '@/infrastructure/api-client.js'
-import type { CacheStore, RipeCache } from '@/infrastructure/cache-store.js'
-import type { GitRepository } from '@/infrastructure/git-repository.js'
-import type { ProjectDirectory } from '@/infrastructure/project-directory.js'
-import type { SettingsStore } from '@/infrastructure/settings-store.js'
+} from '../infrastructure/api-client.js'
+import type { CacheStore, RipeCache } from '../infrastructure/cache-store.js'
+import type { GitRepository } from '../infrastructure/git-repository.js'
+import type { ProjectDirectory } from '../infrastructure/project-directory.js'
+import type { SettingsStore } from '../infrastructure/settings-store.js'
 
 const MAIN_BRANCH = 'main'
 

@@ -20,7 +20,8 @@
     "lint": "biome ci ./src ./tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test",
+    "smoke": "node dist/index.js --help",
+    "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run smoke",
     "cli": "pnpm run build && node dist/index.js"
   },
   "devDependencies": {
