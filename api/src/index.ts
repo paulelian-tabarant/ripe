@@ -9,6 +9,7 @@ function main(): void {
   const { databasePath, port, shouldServeBuiltFrontend } = loadConfig()
 
   const db = new Database(databasePath)
+  db.pragma('foreign_keys = ON')
   migrate(db, migrations)
 
   const staticDir = join(process.cwd(), 'static')

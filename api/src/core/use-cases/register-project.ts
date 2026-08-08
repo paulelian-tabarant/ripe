@@ -17,13 +17,13 @@ export class RegisterProject {
     const existing = this.repository.getByRepoKey(repoReference.repoKey)
 
     if (existing) {
-      return { created: false, projectId: existing.id }
+      return { created: false, projectId: existing.snapshot().id }
     }
 
     const project = Project.create(name, repoReference)
 
     this.repository.addNewProject(project)
 
-    return { created: true, projectId: project.id }
+    return { created: true, projectId: project.snapshot().id }
   }
 }

@@ -35,4 +35,17 @@ export const migrations: IMigration[] = [
       ALTER TABLE projects_old RENAME TO projects;
     `,
   },
+  {
+    version: 3,
+    up: `
+      CREATE TABLE IF NOT EXISTS skills (
+        id         TEXT NOT NULL PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name       TEXT NOT NULL,
+        UNIQUE(project_id, name),
+        FOREIGN KEY(project_id) REFERENCES projects(id)
+      )
+    `,
+    down: 'DROP TABLE IF EXISTS skills',
+  },
 ]
