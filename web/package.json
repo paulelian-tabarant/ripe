@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "biome ci ./src",
+    "lint:fix": "biome check --write ./src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test"

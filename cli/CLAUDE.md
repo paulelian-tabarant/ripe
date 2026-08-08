@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm --filter ./cli lint        # Biome ci: lint + format check + import-sort check (src/ and tests/)
+pnpm --filter ./cli lint:fix    # Biome: auto-fix formatting/import-sort/lint issues in place
 pnpm --filter ./cli build       # tsc -p tsconfig.build.json → dist/
 pnpm --filter ./cli test        # vitest run (all tests under tests/)
 pnpm --filter ./cli typecheck   # tsc --noEmit (includes src + tests)
