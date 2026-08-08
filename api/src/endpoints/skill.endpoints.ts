@@ -10,6 +10,32 @@ interface SkillEndpointOptions {
   registerSkillsIntoProject: RegisterSkillsIntoProject
 }
 
+export const skillEndpoints: FastifyPluginAsync<SkillEndpointOptions> = async (
+  app: FastifyInstance,
+  opts: SkillEndpointOptions,
+): Promise<void> => {
+  app.post<{ Params: { id: string }; Body: RegisterSkillsRequestBody }>(
+    '/projects/:id/skills',
+    { schema: registerSkillsSchema },
+    async (request, reply) => {
+      const names = request.body.skills.map((skill) => skill.name)
+      const result = opts.registerSkillsIntoProject.run(request.params.id, names)
+
+      if (result instanceof UnknownProjectError) {
+        return reply.code(404).send()
+      }
+
+      if (result instanceof DuplicateSkillNameError) {
+        return reply.code(422).send()
+      }
+
+      const body: SkillResponseBodyItem[] = result
+
+      return reply.code(200).send(body)
+    },
+  )
+}
+
 const registerSkillsSchema: FastifySchema = {
   params: {
     type: 'object',
@@ -36,29 +62,3 @@ const registerSkillsSchema: FastifySchema = {
     additionalProperties: false,
   },
 } as const
-
-export const skillEndpoints: FastifyPluginAsync<SkillEndpointOptions> = async (
-  app: FastifyInstance,
-  opts: SkillEndpointOptions,
-): Promise<void> => {
-  app.post<{ Params: { id: string }; Body: RegisterSkillsRequestBody }>(
-    '/projects/:id/skills',
-    { schema: registerSkillsSchema },
-    async (request, reply) => {
-      const names = request.body.skills.map((skill) => skill.name)
-      const result = opts.registerSkillsIntoProject.run(request.params.id, names)
-
-      if (result instanceof UnknownProjectError) {
-        return reply.code(404).send()
-      }
-
-      if (result instanceof DuplicateSkillNameError) {
-        return reply.code(422).send()
-      }
-
-      const body: SkillResponseBodyItem[] = result
-
-      return reply.code(200).send(body)
-    },
-  )
-}

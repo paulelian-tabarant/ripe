@@ -80,11 +80,7 @@ export class ProjectRepository {
       repoKey: row.repo_key,
       remoteUrl: row.remote_url,
       skills: skillRows.map((skillRow) =>
-        Skill.reconstitute({
-          id: skillRow.id,
-          projectId: skillRow.project_id,
-          name: skillRow.name,
-        }),
+        Skill.reconstitute({ ...skillRow, projectId: skillRow.project_id }),
       ),
     })
   }

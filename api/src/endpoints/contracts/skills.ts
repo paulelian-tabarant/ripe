@@ -1,5 +1,5 @@
 export interface RegisterSkillsRequestBody {
-  skills: Array<{ name: string }>
+  skills: { name: string }[]
 }
 
 export interface SkillResponseBodyItem {

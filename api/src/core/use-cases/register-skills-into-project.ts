@@ -4,7 +4,7 @@ import { DuplicateSkillNameError } from '../domain/project.js'
 export class UnknownProjectError extends Error {}
 
 export type RegisterSkillsIntoProjectResult =
-  | Array<{ name: string; skillId: string }>
+  | { name: string; skillId: string }[]
   | UnknownProjectError
   | DuplicateSkillNameError
 
@@ -26,12 +26,9 @@ export class RegisterSkillsIntoProject {
 
     this.repository.save(project)
 
-    const skillIdsByName = new Map(project.snapshot().skills.map((skill) => [skill.name, skill.id]))
-
-    return names.flatMap((name) => {
-      const skillId = skillIdsByName.get(name)
-
-      return skillId ? [{ name, skillId }] : []
-    })
+    return project
+      .snapshot()
+      .skills.filter((skill) => names.includes(skill.name))
+      .map((skill) => ({ name: skill.name, skillId: skill.id }))
   }
 }

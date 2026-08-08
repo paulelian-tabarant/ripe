@@ -4,7 +4,7 @@ import { Skill } from './skill.js'
 
 export class Project {
   private constructor(
-    private readonly id: string,
+    readonly id: string,
     private readonly name: string,
     private readonly gitRepository: GitRepository,
     private readonly skills: Skill[] = [],
@@ -25,7 +25,7 @@ export class Project {
       data.id,
       data.name,
       GitRepository.reconstitute({ repoKey: data.repoKey, remoteUrl: data.remoteUrl }),
-      data.skills ?? [],
+      data.skills,
     )
   }
 
@@ -63,5 +63,5 @@ export type ProjectSnapshot = {
   name: string
   repoKey: string
   remoteUrl: string
-  skills: ReadonlyArray<{ id: string; name: string }>
+  skills: { id: string; name: string }[]
 }

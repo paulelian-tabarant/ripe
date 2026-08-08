@@ -13,18 +13,6 @@ interface ProjectEndpointOptions {
   listProjects: ListProjects
 }
 
-const projectSchema: FastifySchema = {
-  body: {
-    type: 'object',
-    required: ['name', 'remoteUrl'],
-    properties: {
-      name: { type: 'string', minLength: 1 },
-      remoteUrl: { type: 'string', minLength: 1 },
-    },
-    additionalProperties: false,
-  },
-} as const
-
 export const projectEndpoints: FastifyPluginAsync<ProjectEndpointOptions> = async (
   app: FastifyInstance,
   opts: ProjectEndpointOptions,
@@ -51,3 +39,15 @@ export const projectEndpoints: FastifyPluginAsync<ProjectEndpointOptions> = asyn
     return reply.code(200).send(projects)
   })
 }
+
+const projectSchema: FastifySchema = {
+  body: {
+    type: 'object',
+    required: ['name', 'remoteUrl'],
+    properties: {
+      name: { type: 'string', minLength: 1 },
+      remoteUrl: { type: 'string', minLength: 1 },
+    },
+    additionalProperties: false,
+  },
+} as const

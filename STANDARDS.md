@@ -155,6 +155,8 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   }
   ```
 
+- **`T[]` over `Array<T>`**: use the list-literal form for collection types; reserve `Array<T>` for
+  the rare case the literal form can't express (e.g. `ReadonlyArray<T>`).
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving
   from high-level intent to low-level detail (see `api/tests/endpoints/project.endpoints.test.ts`:
   the `it` blocks read first, the `postProjects` helper they call is defined last).
