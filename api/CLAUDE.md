@@ -16,7 +16,7 @@ pnpm --filter api start         # node dist/index.js
 To run a single test file:
 
 ```bash
-pnpm --filter api test tests/endpoints/registerProject.test.ts
+pnpm --filter api test tests/endpoints/project.endpoints.test.ts
 ```
 
 ## Required Environment Variables
@@ -40,8 +40,8 @@ singletons, no globals.
   `RegisterProject`, `ListProjects`), with `run()` as the single public method. Each use-case
   class takes a constructor-injected repository, calls repository functions, and returns typed
   result objects (e.g. `RegisterProjectResult`).
-- **Repositories** (`src/repositories/`) — raw SQL only; accept and return plain objects
-  (`ProjectRow`).
+- **Repositories** (`src/infrastructure/*.repository.ts`) — raw SQL only; accept and return plain
+  objects (`ProjectRow`).
 - **Domain** (`src/core/domain/`) — entity classes with a private constructor and a validating static
   factory. External input that needs deriving/validating before it can be used gets its own value
   object with a private constructor and a `resolve`-style factory (e.g.
@@ -52,9 +52,35 @@ singletons, no globals.
   invariants intrinsic to the entity or its inputs; an application-level workflow step belongs in
   a use-case instead.
 
-`buildApp(db, opts)` in `src/app.ts` wires all endpoints together and runs migrations.
-`src/index.ts` is the process entry point: loads config, creates the DB, calls `buildApp`,
-and starts listening.
+`buildApp(db, opts)` in `src/app.ts` wires all endpoints together. `src/index.ts` is the process
+entry point: loads config, creates the DB, runs migrations, calls `buildApp`, and starts
+listening.
+
+### Directory Structure
+
+```text
+src/
+  app.ts                    # buildApp(db, opts) — wires endpoints, no DB setup/migration
+  index.ts                  # process entry point — DB creation, migration, buildApp, listen
+  core/
+    domain/                 # entity classes and value objects (Project, ProjectRepoReference)
+    use-cases/              # one class per use case (RegisterProject, ListProjects)
+  endpoints/
+    contracts/              # wire-shape types only, exported to cli/web (health.ts, projects.ts)
+    *.endpoints.ts           # Fastify plugin functions (health.endpoints.ts, project.endpoints.ts)
+  infrastructure/
+    config.ts                # loadConfig()
+    *.repository.ts          # raw-SQL repositories (project.repository.ts)
+    db/
+      migrations.ts           # versioned up/down migration entries
+tests/
+  config.test.ts             # the one pure unit test
+  endpoints/*.endpoints.test.ts  # one test file per endpoints file, fastify.inject() + real DB
+  helpers/                    # test-only utilities (create-test-db.ts, post-projects.ts)
+```
+
+See [`api/STANDARDS.md`](STANDARDS.md) for the naming-convention rule behind `*.repository.ts`/
+`*.endpoints.ts`/`*.endpoints.test.ts`.
 
 ## Testing Conventions
 
@@ -65,8 +91,11 @@ internal layers. Each test file creates its own `Database(':memory:')` and `buil
 ## Key Conventions
 
 - Project IDs are server-assigned with `nanoid`, prefixed `proj_`.
-- Schema is managed via `@blackglory/better-sqlite3-migrations`. Migrations live in `src/infrastructure/db/migrations.ts`;
-  `migrateDatabase(db)` runs them at startup. Add new migrations as versioned entries with `up`/`down` SQL.
+- Schema is managed via `@blackglory/better-sqlite3-migrations`. Migrations live in
+  `src/infrastructure/db/migrations.ts`; `src/index.ts` (and each test's `createTestDb()` helper)
+  calls `migrate(db, migrations)` directly at startup — no wrapper function, since the call is a
+  single line with no logic of its own. Add new migrations as versioned entries with `up`/`down`
+  SQL.
 - The `db` instance is passed down through Fastify plugin options, not imported as a
   module-level singleton.
 

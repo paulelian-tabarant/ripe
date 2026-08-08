@@ -156,8 +156,8 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
   ```
 
 - **Step-down rule**: order code so callers appear before what they call, top to bottom, moving
-  from high-level intent to low-level detail (see `api/tests/endpoints/registerProject.test.ts`: the
-  `it` blocks read first, the `postProjects` helper they call is defined last).
+  from high-level intent to low-level detail (see `api/tests/endpoints/project.endpoints.test.ts`:
+  the `it` blocks read first, the `postProjects` helper they call is defined last).
 - **No comments unless the implementation is non-trivial**: don't restate what the code already
   says; only comment a hidden constraint, invariant, or otherwise surprising behavior.
 

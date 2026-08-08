@@ -1,11 +1,16 @@
 import { join } from 'node:path'
+import { migrate } from '@blackglory/better-sqlite3-migrations'
+import Database from 'better-sqlite3'
 import { buildApp } from './app.js'
 import { loadConfig } from './infrastructure/config.js'
-import { createDatabase } from './infrastructure/db/createDatabase.js'
+import { migrations } from './infrastructure/db/migrations.js'
 
 function main(): void {
   const { databasePath, port, shouldServeBuiltFrontend } = loadConfig()
-  const db = createDatabase(databasePath)
+
+  const db = new Database(databasePath)
+  migrate(db, migrations)
+
   const staticDir = join(process.cwd(), 'static')
   const app = buildApp(db, { shouldServeBuiltFrontend, staticDir })
 

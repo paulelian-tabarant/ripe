@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./contracts/*.js": "./src/contracts/*.ts"
+    "./contracts/*.js": "./src/endpoints/contracts/*.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

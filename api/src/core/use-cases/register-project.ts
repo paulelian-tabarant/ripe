@@ -1,4 +1,4 @@
-import type { ProjectRepository } from '../../infrastructure/project-repository.js'
+import type { ProjectRepository } from '../../infrastructure/project.repository.js'
 import { Project } from '../domain/project.js'
 import { InvalidRemoteUrlError, ProjectRepoReference } from '../domain/project-repo-reference.js'
 

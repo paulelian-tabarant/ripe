@@ -46,6 +46,28 @@ confirms keeping it, otherwise prompts) → POSTs `{ name, remoteUrl }` to
 `<server-url>/api/projects` (idempotent find-or-create, no `409`) → writes `.ripe/settings.json`
 and `.ripe/cache.json`.
 
+### Directory Structure
+
+```text
+src/
+  index.ts             # composition root — process.argv, real I/O primitives, process.exit
+  cli.ts                # routes to commands
+  commands/
+    init.ts              # orchestration logic, no direct console/process/git/fs access
+    init.factory.ts       # composition root for `init` — builds real prompter/presenter/lib deps
+    init.prompter.ts      # real InitPrompter (user-facing questions)
+    init.presenter.ts     # real InitPresenter (user-facing notifications)
+  lib/                  # single-purpose, typed-factory dependencies injected into commands
+    project-directory.ts
+    git-repository.ts
+    api-client.ts
+    settings-store.ts
+    cache-store.ts
+```
+
+See [`cli/STANDARDS.md`](STANDARDS.md) for the naming-convention rule behind `.factory.ts`/
+`.prompter.ts`/`.presenter.ts` vs. the hyphenated `src/lib/` filenames.
+
 **Testing**: Vitest + `nock` for HTTP interception. Tests create a real `tmpdir` and a real git
 repo, and inject prompt functions to avoid stdin. Network is disabled per-test via
 `nock.disableNetConnect()`.

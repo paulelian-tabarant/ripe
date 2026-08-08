@@ -34,6 +34,25 @@ Package-specific standards for `api/`. These supplement the general rules in
 - **No HTTP details leaking into use-cases**: use-cases don't reference HTTP concepts (status
   codes, request/response shapes, headers) — that mapping belongs to endpoints.
 
+### File Naming
+
+- **Everything is kebab-case.** No camelCase filenames (`createTestDb.ts` → `create-test-db.ts`).
+- **A dot-suffix (`.role.ts`) marks a file as an already-established, named architectural
+  role** — one that's documented as its own layer/pattern elsewhere in `CLAUDE.md`/`STANDARDS.md`,
+  not just a description of what the file happens to do. Established roles today:
+  `*.endpoints.ts` (Fastify plugin, e.g. `health.endpoints.ts`) and `*.repository.ts` (raw-SQL
+  repository, e.g. `project.repository.ts`). A test file mirrors the suffix of the file it tests
+  (`*.endpoints.test.ts`).
+- **A bare kebab-case name (no role suffix)** is for anything that doesn't carry one of those
+  established role tags — domain entities and value objects (`project.ts`,
+  `project-repo-reference.ts`), use-cases (`list-projects.ts`, `register-project.ts`),
+  `config.ts`. Don't invent a new dot-suffix for a one-off shape; only promote something to a
+  dot-suffix once it's actually documented as a recurring architectural pattern, not merely
+  renamed to look consistent.
+- **Test-only utilities are isolated in `tests/helpers/`** (`create-test-db.ts`,
+  `post-projects.ts`), kept out of `tests/endpoints/` so a directory listing distinguishes actual
+  test suites from the plain functions they call.
+
 ### Persistence & Infra
 
 - **No `console.*` in `src/`**: application code communicates via Fastify's request/reply and

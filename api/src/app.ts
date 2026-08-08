@@ -5,16 +5,13 @@ import { RegisterProject } from './core/use-cases/register-project.js'
 import { healthEndpoints } from './endpoints/health.endpoints.js'
 import { projectEndpoints } from './endpoints/project.endpoints.js'
 import { requireNonEmptyDir, staticEndpoints } from './endpoints/static.endpoints.js'
-import { migrateDatabase } from './infrastructure/db/migrateDatabase.js'
-import { ProjectRepository } from './infrastructure/project-repository.js'
+import { ProjectRepository } from './infrastructure/project.repository.js'
 
 export function buildApp(
   db: Database.Database,
   options: { logger?: boolean; shouldServeBuiltFrontend?: boolean; staticDir?: string } = {},
 ): FastifyInstance {
   const app = Fastify({ logger: options.logger ?? true })
-
-  migrateDatabase(db)
 
   const projectRepository = new ProjectRepository(db)
   const registerProject = new RegisterProject(projectRepository)
