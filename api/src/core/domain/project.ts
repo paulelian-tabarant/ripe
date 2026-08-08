@@ -5,11 +5,11 @@ export class Project {
   private constructor(
     readonly id: string,
     readonly name: string,
-    readonly repoReference: GitRepository,
+    readonly gitRepository: GitRepository,
   ) {}
 
-  static create(name: string, repoReference: GitRepository): Project {
-    return new Project(`proj_${nanoid()}`, name, repoReference)
+  static create(name: string, gitRepository: GitRepository): Project {
+    return new Project(`proj_${nanoid()}`, name, gitRepository)
   }
 
   static reconstitute(data: {

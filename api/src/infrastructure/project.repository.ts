@@ -50,8 +50,8 @@ export class ProjectRepository {
     this.insertStatement.run(
       project.id,
       project.name,
-      project.repoReference.repoKey,
-      project.repoReference.remoteUrl,
+      project.gitRepository.repoKey,
+      project.gitRepository.remoteUrl,
     )
   }
 }
