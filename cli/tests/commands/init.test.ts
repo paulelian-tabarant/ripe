@@ -10,7 +10,7 @@ import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { InitOptions, InitPresenter, InitPrompter } from '../../src/commands/init.js'
 import { init } from '../../src/commands/init.js'
-import { createCacheStore, type RipeCache } from '../../src/infrastructure/cache-store.js'
+import { type Cache, createCacheStore } from '../../src/infrastructure/cache-store.js'
 import { createGitRepository } from '../../src/infrastructure/git-repository.js'
 import { createProjectDirectory } from '../../src/infrastructure/project-directory.js'
 import { createSettingsStore, type RipeSettings } from '../../src/infrastructure/settings-store.js'
@@ -344,9 +344,9 @@ describe('init', () => {
   })
 
   describe('skill registration', () => {
-    it('POSTs the full scanned skill catalog and caches the returned skillIds when the cache is empty', async () => {
-      writeSkillFileAndCommit(tmpDir, 'alpha', skillMd('alpha'))
-      writeSkillFileAndCommit(tmpDir, 'beta', skillMd('beta'))
+    it('POSTs the full scanned skill catalog and caches the returned skillIdByName when the cache is empty', async () => {
+      writeSkillFileAndCommitOnMain(tmpDir, 'alpha', claudeCodeSkillFrontmatter('alpha'))
+      writeSkillFileAndCommitOnMain(tmpDir, 'beta', claudeCodeSkillFrontmatter('beta'))
       stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
       stubRegisterSkillsApi(
         'proj_abc123',
@@ -370,34 +370,13 @@ describe('init', () => {
       )
 
       expect(result).toBe('success')
-      expect(readWrittenCache().skillIds).toEqual({ alpha: 'skill_1', beta: 'skill_2' })
+      expect(readWrittenCache().skillIdByName).toEqual({ alpha: 'skill_1', beta: 'skill_2' })
     })
 
-    it('re-registers an unchanged skill catalog and overwrites the cache, even when it already matches', async () => {
-      writeSkillFileAndCommit(tmpDir, 'alpha', skillMd('alpha'))
-      writeExistingCache({ projectId: 'proj_abc123', skillIds: { alpha: 'skill_1' } })
-      stubRegisterProjectApi(200, { projectId: 'proj_abc123' })
-      stubRegisterSkillsApi('proj_abc123', 200, [{ name: 'alpha', skillId: 'skill_1' }], ['alpha'])
-
-      const result = await init(
-        fakeInitOptions({
-          getCurrentDirectoryName: () => tmpDir,
-          prompts: {
-            promptForServerUrl: async () => FAKE_SERVER_URL,
-            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
-          },
-          presenter: { onProjectAlreadyExisting: vi.fn() },
-        }),
-      )
-
-      expect(result).toBe('success')
-      expect(readWrittenCache().skillIds).toEqual({ alpha: 'skill_1' })
-    })
-
-    it('re-POSTs the full catalog and overwrites the cache when the scanned names no longer match a non-empty cache', async () => {
-      writeSkillFileAndCommit(tmpDir, 'alpha', skillMd('alpha'))
-      writeSkillFileAndCommit(tmpDir, 'beta', skillMd('beta'))
-      writeExistingCache({ projectId: 'proj_abc123', skillIds: { alpha: 'skill_1' } })
+    it('re-registers the full scanned catalog and overwrites an existing cache', async () => {
+      writeSkillFileAndCommitOnMain(tmpDir, 'alpha', claudeCodeSkillFrontmatter('alpha'))
+      writeSkillFileAndCommitOnMain(tmpDir, 'beta', claudeCodeSkillFrontmatter('beta'))
+      writeExistingCache({ projectId: 'proj_abc123', skillIdByName: { alpha: 'skill_1' } })
       stubRegisterProjectApi(200, { projectId: 'proj_abc123' })
       stubRegisterSkillsApi(
         'proj_abc123',
@@ -421,7 +400,7 @@ describe('init', () => {
       )
 
       expect(result).toBe('success')
-      expect(readWrittenCache().skillIds).toEqual({ alpha: 'skill_1', beta: 'skill_2' })
+      expect(readWrittenCache().skillIdByName).toEqual({ alpha: 'skill_1', beta: 'skill_2' })
     })
 
     it('warns and makes no skill registration call when no skills are found on main', async () => {
@@ -441,16 +420,16 @@ describe('init', () => {
 
       expect(result).toBe('success')
       expect(onNoSkillsFound).toHaveBeenCalled()
-      expect(readWrittenCache().skillIds).toBeUndefined()
+      expect(readWrittenCache().skillIdByName).toBeUndefined()
     })
 
     it.each([
-      ['a namespaced name', skillMd('team:alpha'), 'namespaced'],
+      ['a namespaced name', claudeCodeSkillFrontmatter('team:alpha'), 'namespaced'],
       ['malformed frontmatter', 'no frontmatter here\n', 'malformed-frontmatter'],
     ] as const)(
       'excludes a skill from registration and warns when it has %s',
       async (_description, content, expectedReason) => {
-        writeSkillFileAndCommit(tmpDir, 'skipped-skill', content)
+        writeSkillFileAndCommitOnMain(tmpDir, 'skipped-skill', content)
         stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
         const onSkillSkipped = vi.fn()
         const onNoSkillsFound = vi.fn()
@@ -472,13 +451,17 @@ describe('init', () => {
           expectedReason,
         )
         expect(onNoSkillsFound).toHaveBeenCalled()
-        expect(readWrittenCache().skillIds).toBeUndefined()
+        expect(readWrittenCache().skillIdByName).toBeUndefined()
       },
     )
 
     it('excludes a skill only committed on a feature branch, without any warning', async () => {
       execFileSync('git', ['checkout', '-b', 'feature'], { cwd: tmpDir })
-      writeSkillFileAndCommit(tmpDir, 'feature-only', skillMd('feature-only'))
+      writeSkillFileAndCommitOnMain(
+        tmpDir,
+        'feature-only',
+        claudeCodeSkillFrontmatter('feature-only'),
+      )
       execFileSync('git', ['checkout', 'main'], { cwd: tmpDir })
       stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
       const onNoSkillsFound = vi.fn()
@@ -498,11 +481,12 @@ describe('init', () => {
       expect(onNoSkillsFound).toHaveBeenCalled()
     })
 
-    it('excludes an uncommitted skill, without any warning', async () => {
+    it('warns and excludes an uncommitted skill', async () => {
       const skillDir = join(tmpDir, '.claude/skills/uncommitted')
       mkdirSync(skillDir, { recursive: true })
-      writeFileSync(join(skillDir, 'SKILL.md'), skillMd('uncommitted'))
+      writeFileSync(join(skillDir, 'SKILL.md'), claudeCodeSkillFrontmatter('uncommitted'))
       stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
+      const onSkillSkipped = vi.fn()
       const onNoSkillsFound = vi.fn()
 
       const result = await init(
@@ -512,11 +496,45 @@ describe('init', () => {
             promptForServerUrl: async () => FAKE_SERVER_URL,
             promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
           },
-          presenter: { onProjectCreated: vi.fn(), onNoSkillsFound },
+          presenter: { onProjectCreated: vi.fn(), onSkillSkipped, onNoSkillsFound },
         }),
       )
 
       expect(result).toBe('success')
+      expect(onSkillSkipped).toHaveBeenCalledWith(
+        expect.stringContaining('uncommitted/SKILL.md'),
+        'not-on-main',
+      )
+      expect(onNoSkillsFound).toHaveBeenCalled()
+    })
+
+    it('warns when a skill exists on the current non-main branch but not on main', async () => {
+      execFileSync('git', ['checkout', '-b', 'feature'], { cwd: tmpDir })
+      writeSkillFileAndCommitOnMain(
+        tmpDir,
+        'feature-only',
+        claudeCodeSkillFrontmatter('feature-only'),
+      )
+      stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
+      const onSkillSkipped = vi.fn()
+      const onNoSkillsFound = vi.fn()
+
+      const result = await init(
+        fakeInitOptions({
+          getCurrentDirectoryName: () => tmpDir,
+          prompts: {
+            promptForServerUrl: async () => FAKE_SERVER_URL,
+            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+          },
+          presenter: { onProjectCreated: vi.fn(), onSkillSkipped, onNoSkillsFound },
+        }),
+      )
+
+      expect(result).toBe('success')
+      expect(onSkillSkipped).toHaveBeenCalledWith(
+        expect.stringContaining('feature-only/SKILL.md'),
+        'not-on-main',
+      )
       expect(onNoSkillsFound).toHaveBeenCalled()
     })
 
@@ -543,7 +561,7 @@ describe('init', () => {
     })
   })
 
-  function writeExistingCache(cache: RipeCache): void {
+  function writeExistingCache(cache: Cache): void {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true })
     writeFileSync(join(tmpDir, '.ripe/cache.json'), JSON.stringify(cache))
   }
@@ -557,8 +575,8 @@ describe('init', () => {
     return JSON.parse(readFileSync(join(tmpDir, '.ripe/settings.json'), 'utf-8')) as RipeSettings
   }
 
-  function readWrittenCache(): RipeCache {
-    return JSON.parse(readFileSync(join(tmpDir, '.ripe/cache.json'), 'utf-8')) as RipeCache
+  function readWrittenCache(): Cache {
+    return JSON.parse(readFileSync(join(tmpDir, '.ripe/cache.json'), 'utf-8')) as Cache
   }
 })
 
@@ -620,7 +638,11 @@ function commitOnMain(cwd: string, message: string): void {
   execFileSync('git', ['commit', '--allow-empty', '-m', message], { cwd })
 }
 
-function writeSkillFileAndCommit(cwd: string, skillDirName: string, skillMdContent: string): void {
+function writeSkillFileAndCommitOnMain(
+  cwd: string,
+  skillDirName: string,
+  skillMdContent: string,
+): void {
   const skillDir = join(cwd, '.claude/skills', skillDirName)
   mkdirSync(skillDir, { recursive: true })
   writeFileSync(join(skillDir, 'SKILL.md'), skillMdContent)
@@ -628,7 +650,7 @@ function writeSkillFileAndCommit(cwd: string, skillDirName: string, skillMdConte
   commitOnMain(cwd, `feat: add ${skillDirName} skill`)
 }
 
-function skillMd(name: string): string {
+function claudeCodeSkillFrontmatter(name: string): string {
   return `---\nname: ${name}\ndescription: a test skill\n---\n\nBody content.\n`
 }
 

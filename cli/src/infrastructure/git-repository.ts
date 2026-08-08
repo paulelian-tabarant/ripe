@@ -4,13 +4,11 @@ import type { ProjectDirectory } from './project-directory.js'
 
 const execFileAsync = promisify(execFile)
 
-const SKILL_FILE_PATTERN = /^\.claude\/skills\/[^/]+\/SKILL\.md$/
-
 export interface GitRepository {
   getRemoteUrl(): Promise<string>
   isHttpsRemote(remoteUrl: string): boolean
   hasLocalBranch(branch: string): Promise<boolean>
-  listSkillFilePaths(ref: string): Promise<string[]>
+  listFilesAtRef(ref: string, path: string): Promise<string[]>
   readFileAtRef(ref: string, path: string): Promise<string>
 }
 
@@ -18,10 +16,19 @@ export function createGitRepository(projectDirectory: ProjectDirectory): GitRepo
   return {
     getRemoteUrl: (): Promise<string> => getRemoteUrl(projectDirectory.getPath()),
     isHttpsRemote: (remoteUrl: string): boolean => remoteUrl.startsWith('https://'),
-    hasLocalBranch: (branch: string): Promise<boolean> =>
-      hasLocalBranch(projectDirectory.getPath(), branch),
-    listSkillFilePaths: (ref: string): Promise<string[]> =>
-      listSkillFilePaths(projectDirectory.getPath(), ref),
+    hasLocalBranch: async (branch: string): Promise<boolean> => {
+      try {
+        await execFileAsync('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], {
+          cwd: projectDirectory.getPath(),
+        })
+
+        return true
+      } catch {
+        return false
+      }
+    },
+    listFilesAtRef: (ref: string, path: string): Promise<string[]> =>
+      listFilesAtRef(projectDirectory.getPath(), ref, path),
     readFileAtRef: (ref: string, path: string): Promise<string> =>
       readFileAtRef(projectDirectory.getPath(), ref, path),
   }
@@ -33,29 +40,15 @@ async function getRemoteUrl(cwd: string): Promise<string> {
   return stdout.trim()
 }
 
-async function hasLocalBranch(cwd: string, branch: string): Promise<boolean> {
-  try {
-    await execFileAsync('git', ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`], {
-      cwd,
-    })
-
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function listSkillFilePaths(cwd: string, ref: string): Promise<string[]> {
-  const { stdout } = await execFileAsync(
-    'git',
-    ['ls-tree', '-r', '--name-only', ref, '--', '.claude/skills'],
-    { cwd },
-  )
+async function listFilesAtRef(cwd: string, ref: string, path: string): Promise<string[]> {
+  const { stdout } = await execFileAsync('git', ['ls-tree', '-r', '--name-only', ref, '--', path], {
+    cwd,
+  })
 
   return stdout
     .split('\n')
     .map((line) => line.trim())
-    .filter((line) => SKILL_FILE_PATTERN.test(line))
+    .filter((line) => line.length > 0)
 }
 
 async function readFileAtRef(cwd: string, ref: string, path: string): Promise<string> {

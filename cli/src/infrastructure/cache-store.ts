@@ -2,26 +2,26 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { ProjectDirectory } from './project-directory.js'
 
-export interface RipeCache {
+export interface Cache {
   projectId: string
-  skillIds?: Record<string, string>
+  skillIdByName?: Record<string, string>
 }
 
 export interface CacheStore {
-  read(): RipeCache | undefined
-  write(cache: RipeCache): void
+  read(): Cache | undefined
+  write(cache: Cache): void
 }
 
 export function createCacheStore(projectDirectory: ProjectDirectory): CacheStore {
   const cachePath = (): string => join(projectDirectory.getPath(), '.ripe/cache.json')
 
   return {
-    read: (): RipeCache | undefined => readCache(cachePath()),
-    write: (cache: RipeCache): void => writeCache(cachePath(), cache),
+    read: (): Cache | undefined => readCache(cachePath()),
+    write: (cache: Cache): void => writeCache(cachePath(), cache),
   }
 }
 
-function isValidRipeCache(value: unknown): value is RipeCache {
+function isValidCache(value: unknown): value is Cache {
   if (typeof value !== 'object' || value === null) return false
 
   const cache = value as Record<string, unknown>
@@ -29,7 +29,7 @@ function isValidRipeCache(value: unknown): value is RipeCache {
   return typeof cache.projectId === 'string' && cache.projectId.length > 0
 }
 
-function readCache(cachePath: string): RipeCache | undefined {
+function readCache(cachePath: string): Cache | undefined {
   if (!existsSync(cachePath)) return undefined
 
   let parsed: unknown
@@ -39,10 +39,10 @@ function readCache(cachePath: string): RipeCache | undefined {
     return undefined
   }
 
-  return isValidRipeCache(parsed) ? parsed : undefined
+  return isValidCache(parsed) ? parsed : undefined
 }
 
-function writeCache(cachePath: string, cache: RipeCache): void {
+function writeCache(cachePath: string, cache: Cache): void {
   mkdirSync(dirname(cachePath), { recursive: true })
   writeFileSync(cachePath, `${JSON.stringify(cache, null, 2)}\n`, 'utf-8')
 }

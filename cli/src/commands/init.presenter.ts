@@ -1,4 +1,5 @@
 import type { Logger } from '../cli.js'
+import type { SkillSkipReason } from '../infrastructure/skill-scanner.js'
 import type { InitPresenter } from './init.js'
 
 export function buildInitPresenter(logger: Logger): InitPresenter {
@@ -34,11 +35,13 @@ export function buildInitPresenter(logger: Logger): InitPresenter {
     onNoSkillsFound: (): void => {
       logger.warn('Warning: no skills found in .claude/skills/ on main — nothing to register.')
     },
-    onSkillSkipped: (path: string, reason: 'namespaced' | 'malformed-frontmatter'): void => {
+    onSkillSkipped: (path: string, reason: SkillSkipReason): void => {
       const reasonText =
         reason === 'namespaced'
           ? 'its name is namespaced (contains ":")'
-          : 'its frontmatter is missing or malformed'
+          : reason === 'malformed-frontmatter'
+            ? 'its frontmatter is missing or malformed'
+            : 'it is not committed on main'
       logger.warn(`Warning: skipping skill at "${path}" — ${reasonText}.`)
     },
     onSkillRegistrationFailed: (detail?: string): void => {

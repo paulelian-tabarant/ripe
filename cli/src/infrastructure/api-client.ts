@@ -22,7 +22,7 @@ export class ServerInvalidRemoteUrlError extends Error {
 export interface ApiClient {
   getServerUrl(): string
   registerProject(name: string, remoteUrl: string): Promise<ProjectRegistrationResult>
-  registerSkills(projectId: string, names: string[]): Promise<SkillResponseBodyItem[]>
+  registerSkills(projectId: string, skillNames: string[]): Promise<SkillResponseBodyItem[]>
 }
 
 export function createApiClient(serverUrl: string): ApiClient {
@@ -30,8 +30,8 @@ export function createApiClient(serverUrl: string): ApiClient {
     getServerUrl: (): string => serverUrl,
     registerProject: (name: string, remoteUrl: string): Promise<ProjectRegistrationResult> =>
       registerProject(serverUrl, name, remoteUrl),
-    registerSkills: (projectId: string, names: string[]): Promise<SkillResponseBodyItem[]> =>
-      registerSkills(serverUrl, projectId, names),
+    registerSkills: (projectId: string, skillNames: string[]): Promise<SkillResponseBodyItem[]> =>
+      registerSkills(serverUrl, projectId, skillNames),
   }
 }
 
@@ -66,10 +66,10 @@ async function registerProject(
 async function registerSkills(
   serverUrl: string,
   projectId: string,
-  names: string[],
+  skillNames: string[],
 ): Promise<SkillResponseBodyItem[]> {
   const url = new URL(`/api/projects/${projectId}/skills`, serverUrl)
-  const requestBody: RegisterSkillsRequestBody = { skills: names.map((name) => ({ name })) }
+  const requestBody: RegisterSkillsRequestBody = { skills: skillNames.map((name) => ({ name })) }
   const body = JSON.stringify(requestBody)
 
   const res = await fetch(url, {

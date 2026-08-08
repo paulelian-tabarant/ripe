@@ -5,12 +5,15 @@ import {
   type ProjectRegistrationResult,
   ServerInvalidRemoteUrlError,
 } from '../infrastructure/api-client.js'
-import type { CacheStore, RipeCache } from '../infrastructure/cache-store.js'
+import type { Cache, CacheStore } from '../infrastructure/cache-store.js'
 import type { GitRepository } from '../infrastructure/git-repository.js'
 import type { ProjectDirectory } from '../infrastructure/project-directory.js'
 import type { SettingsStore } from '../infrastructure/settings-store.js'
-
-const MAIN_BRANCH = 'main'
+import {
+  MAIN_BRANCH,
+  type SkillSkipReason,
+  scanSkillCatalogOnMain,
+} from '../infrastructure/skill-scanner.js'
 
 export interface InitPrompter {
   promptForServerUrl(): Promise<string>
@@ -19,7 +22,7 @@ export interface InitPrompter {
   promptForHttpsRemote(remoteUrl: string): Promise<string>
 }
 
-export type SkillSkipReason = 'namespaced' | 'malformed-frontmatter'
+export type { SkillSkipReason }
 
 export interface InitPresenter {
   onInvalidServerUrl(url: string): void
@@ -74,7 +77,7 @@ export async function init(options: InitOptions): Promise<CommandResult> {
   const wereProjectDataSaved = saveProjectDataLocally(settingsStore, cacheStore, presenter, {
     serverUrl: apiClient.getServerUrl(),
     projectId: projectRegistrationResult.projectId,
-    skillIds: existingCache?.skillIds,
+    skillIdByName: existingCache?.skillIdByName,
   })
 
   if (!wereProjectDataSaved) {
@@ -83,6 +86,7 @@ export async function init(options: InitOptions): Promise<CommandResult> {
 
   const wereSkillsRegistered = await registerSkillsWithServer(
     gitRepository,
+    projectDirectory,
     apiClient,
     cacheStore,
     presenter,
@@ -163,11 +167,11 @@ function saveProjectDataLocally(
   settingsStore: SettingsStore,
   cacheStore: CacheStore,
   presenter: InitPresenter,
-  data: { serverUrl: string; projectId: string; skillIds: Record<string, string> | undefined },
+  data: { serverUrl: string; projectId: string; skillIdByName: Record<string, string> | undefined },
 ): boolean {
   try {
     settingsStore.write({ serverUrl: data.serverUrl })
-    cacheStore.write({ projectId: data.projectId, skillIds: data.skillIds })
+    cacheStore.write({ projectId: data.projectId, skillIdByName: data.skillIdByName })
 
     return true
   } catch (err) {
@@ -189,6 +193,7 @@ function isValidHttpUrl(url: string): boolean {
 
 async function registerSkillsWithServer(
   gitRepository: GitRepository,
+  projectDirectory: ProjectDirectory,
   apiClient: ApiClient,
   cacheStore: CacheStore,
   presenter: InitPresenter,
@@ -201,7 +206,7 @@ async function registerSkillsWithServer(
     return false
   }
 
-  const { names, skipped } = await scanSkillCatalogOnMain(gitRepository)
+  const { names, skipped } = await scanSkillCatalogOnMain(gitRepository, projectDirectory.getPath())
   for (const skill of skipped) presenter.onSkillSkipped(skill.path, skill.reason)
 
   if (names.length === 0) {
@@ -212,8 +217,8 @@ async function registerSkillsWithServer(
 
   try {
     const registered = await apiClient.registerSkills(data.projectId, names)
-    const skillIds = toSkillIdMap(registered)
-    const cache: RipeCache = { projectId: data.projectId, skillIds }
+    const skillIdByName = toSkillIdMap(registered)
+    const cache: Cache = { projectId: data.projectId, skillIdByName }
     cacheStore.write(cache)
 
     return true
@@ -222,66 +227,6 @@ async function registerSkillsWithServer(
 
     return false
   }
-}
-
-interface SkillFile {
-  path: string
-  content: string
-}
-
-interface SkillScanResult {
-  names: string[]
-  skipped: Array<{ path: string; reason: SkillSkipReason }>
-}
-
-async function scanSkillCatalogOnMain(gitRepository: GitRepository): Promise<SkillScanResult> {
-  const skillFilePaths = await gitRepository.listSkillFilePaths(MAIN_BRANCH)
-
-  const files = await Promise.all(
-    skillFilePaths.map(
-      async (path): Promise<SkillFile> => ({
-        path,
-        content: await gitRepository.readFileAtRef(MAIN_BRANCH, path),
-      }),
-    ),
-  )
-
-  return classifySkillFiles(files)
-}
-
-function classifySkillFiles(files: SkillFile[]): SkillScanResult {
-  const names: string[] = []
-  const skipped: SkillScanResult['skipped'] = []
-
-  for (const file of files) {
-    const name = extractSkillName(file.content)
-
-    if (name === undefined) {
-      skipped.push({ path: file.path, reason: 'malformed-frontmatter' })
-      continue
-    }
-
-    if (name.includes(':')) {
-      skipped.push({ path: file.path, reason: 'namespaced' })
-      continue
-    }
-
-    names.push(name)
-  }
-
-  return { names, skipped }
-}
-
-function extractSkillName(content: string): string | undefined {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/)
-  if (!frontmatterMatch) return undefined
-
-  const nameMatch = frontmatterMatch[1]?.match(/^name:\s*(.+)$/m)
-  if (!nameMatch) return undefined
-
-  const name = nameMatch[1]?.trim().replace(/^["']|["']$/g, '')
-
-  return name && name.length > 0 ? name : undefined
 }
 
 function toSkillIdMap(registered: SkillResponseBodyItem[]): Record<string, string> {
