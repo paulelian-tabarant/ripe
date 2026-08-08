@@ -1,17 +1,13 @@
 import type { Logger } from '@/cli.js'
 import type { InitPresenter } from '@/commands/init.js'
-import type { ProjectRegistrationResult } from '@/lib/registerProject.js'
 
 export function buildInitPresenter(logger: Logger): InitPresenter {
   return {
     onInvalidServerUrl: (url: string): void =>
       logger.error(`Invalid server URL: "${url}". Must be a valid http or https URL.`),
-    onProjectRegistered: (result: ProjectRegistrationResult): void =>
-      logger.log(
-        result.created
-          ? `Project registered: ${result.projectId}`
-          : `Using existing project ID: ${result.projectId}`,
-      ),
+    onProjectCreated: (projectId: string): void => logger.log(`Project registered: ${projectId}`),
+    onProjectAlreadyExisting: (projectId: string): void =>
+      logger.log(`Using existing project ID: ${projectId}`),
     onRemoteUrlError: (detail?: string): void => {
       logger.error('Error: could not determine the git remote URL for this directory')
       if (detail) logger.error(detail)

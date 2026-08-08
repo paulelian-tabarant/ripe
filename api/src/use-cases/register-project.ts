@@ -1,6 +1,6 @@
-import { Project } from '../domain/Project.js'
-import { InvalidRemoteUrlError, ProjectRepoReference } from '../domain/ProjectRepoReference.js'
-import type { ProjectRepository } from '../repositories/ProjectRepository.js'
+import { Project } from '../domain/project.js'
+import { InvalidRemoteUrlError, ProjectRepoReference } from '../domain/project-repo-reference.js'
+import type { ProjectRepository } from '../repositories/project-repository.js'
 
 export type RegisterProjectResult = { created: boolean; projectId: string } | InvalidRemoteUrlError
 

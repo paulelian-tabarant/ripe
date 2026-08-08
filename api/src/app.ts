@@ -4,9 +4,9 @@ import { migrateDatabase } from './db/migrateDatabase.js'
 import { healthEndpoints } from './endpoints/healthEndpoints.js'
 import { projectEndpoints } from './endpoints/projectEndpoints.js'
 import { requireNonEmptyDir, staticEndpoints } from './endpoints/staticEndpoints.js'
-import { ProjectRepository } from './repositories/ProjectRepository.js'
-import { ListProjects } from './use-cases/ListProjects.js'
-import { RegisterProject } from './use-cases/RegisterProject.js'
+import { ProjectRepository } from './repositories/project-repository.js'
+import { ListProjects } from './use-cases/list-projects.js'
+import { RegisterProject } from './use-cases/register-project.js'
 
 export function buildApp(
   db: Database.Database,

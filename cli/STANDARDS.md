@@ -10,6 +10,13 @@ Package-specific standards for `cli/`. These supplement the general rules in
 - **Layer split**: `src/commands/` holds orchestration logic; `src/lib/` holds single-purpose
   helpers (HTTP calls, config file I/O). Don't mix the two — a command function should read as a
   sequence of calls into `lib/`, not inline `fs`/`fetch` logic.
+- **External dependencies as typed factories**: a command's non-prompt/presenter dependencies
+  (filesystem paths, HTTP clients, git) are each a small named interface built via a `createX()`
+  factory in `src/lib/`, injected through the command's `*Options` type — not raw functions or
+  bare paths threaded through. See `GitRepository`/`SettingsStore`/`CacheStore`/`ProjectDirectory`/
+  `ApiClient` in `src/lib/`. `ProjectDirectory` in particular wraps `getCurrentDirectoryName` so
+  every other dependency takes `ProjectDirectory`, not a raw `() => string`, and resolves its own
+  path convention (e.g. `.ripe/settings.json`) internally.
 
 ### Command Boundaries
 
@@ -24,25 +31,38 @@ Package-specific standards for `cli/`. These supplement the general rules in
   same category as "what's the git remote."
 
   ```ts
-  interface InitPrompts {
+  interface InitPrompter {
     promptForServerUrl(): Promise<string>
   }
 
   interface InitPresenter {
-    onProjectRegistered(result: ProjectRegistrationResult): void
+    onProjectCreated(projectId: string): void
+    onProjectAlreadyExisting(projectId: string): void
   }
 
   interface InitOptions {
-    getCurrentDirectoryName: () => string // real implementation: () => process.cwd()
-    prompts: InitPrompts
+    projectDirectory: ProjectDirectory // real implementation wraps () => process.cwd()
+    prompter: InitPrompter
     presenter: InitPresenter
+    gitRepository: GitRepository
+    settingsStore: SettingsStore
+    cacheStore: CacheStore
   }
   ```
 
-  The one real implementation of each `*Prompts`/`*Presenter` interface is built in `src/cli.ts`,
-  as command-specific wording over the generic `ask`/`logFn`/`errorFn`/`warnFn` primitives
-  `src/index.ts` passes in — `src/cli.ts` itself never touches `readline`/`console`/`process.std*`
-  directly. See `buildInitPrompter`/`buildInitPresenter`/`buildInitFn` in `src/cli.ts`.
+  The one real implementation of each `*Prompter`/`*Presenter`, plus the real dependency
+  factories above, are built in the command's own `*.factory.ts` (e.g. `init.factory.ts`), as
+  command-specific wording over the generic `ask`/`logFn`/`errorFn`/`warnFn` primitives
+  `src/index.ts` passes in — never in `src/cli.ts`, which only routes. See `buildInitPrompter`
+  (`init.prompter.ts`), `buildInitPresenter` (`init.presenter.ts`), and `buildInitFn`
+  (`init.factory.ts`).
+
+  Prefer one presenter method per distinct outcome (`onProjectCreated`/`onProjectAlreadyExisting`)
+  over a single method that branches internally on a result field (e.g.
+  `onProjectRegistered(result)` picking a message off `result.wasAlreadyExisting`) — the command
+  makes the branch, since that's exercised by existing command tests; the real presenter
+  implementation (`init.presenter.ts`) has no test of its own, so branching logic placed there is
+  invisible to the test suite.
 
 - **Exit codes are not a command concern**: commands return a semantic success/error status, not
   an `exitCode`. Mapping that status to an `exitCode` and calling `process.exit` happens in
@@ -63,7 +83,7 @@ Package-specific standards for `cli/`. These supplement the general rules in
   the single composition root of the package and the only file allowed to touch `console.*`,
   `process.stdin`/`process.stdout`, or `node:readline` directly. Everywhere else — `src/cli.ts`
   and every command — relies exclusively on injected functions (`ask`/`logFn`/`errorFn`/`warnFn`
-  in `src/cli.ts`; `prompts`/`presenter` in commands) for both asking and telling. This is a
+  in `src/cli.ts`; `prompter`/`presenter` in commands) for both asking and telling. This is a
   literal, greppable invariant:
 
   ```bash
@@ -78,7 +98,7 @@ Package-specific standards for `cli/`. These supplement the general rules in
 
   // ✅ command calls an injected presenter method instead
   async function init(options: InitOptions) {
-    options.presenter.onProjectRegistered(result)
+    options.presenter.onProjectCreated(projectId)
   }
   ```
 

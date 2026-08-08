@@ -25,15 +25,20 @@ behind this):
 
 - `src/index.ts` — composition root: parses `process.argv`, builds the real I/O primitives, calls
   `process.exit`.
-- `src/cli.ts` — routes to commands; builds the real `*Prompts`/`*Presenter` implementation for
-  each.
-- `src/commands/` — orchestration logic.
-- `src/lib/getRemoteUrl.ts` — reads the `origin` remote via `git remote get-url origin`.
-- `src/lib/registerProject.ts` — raw HTTP call to `POST /api/projects` (no dependency, uses
-  `node:http`/`node:https` directly). Returns typed result objects.
-- `src/lib/writeSettings.ts`/`src/lib/readSettings.ts` — read/write `.ripe/settings.json`
-  (`{serverUrl}`, interactively set).
-- `src/lib/writeCache.ts` — writes `.ripe/cache.json` (`{projectId}`, server-resolved).
+- `src/cli.ts` — routes to commands.
+- `src/commands/init.ts` — orchestration logic only; depends on injected `prompter`/`presenter`
+  plus the `ProjectDirectory`/`GitRepository`/`SettingsStore`/`CacheStore` dependencies below.
+- `src/commands/init.factory.ts` — composition root for the `init` command: builds the real
+  `InitPrompter`/`InitPresenter` (via `init.prompter.ts`/`init.presenter.ts`) and the real
+  `ProjectDirectory`/`GitRepository`/`SettingsStore`/`CacheStore` instances.
+- `src/lib/project-directory.ts` — wraps the process's cwd (`getPath()`/`getName()`).
+- `src/lib/git-repository.ts` — reads the `origin` remote via `git remote get-url origin` and
+  checks whether it's HTTPS.
+- `src/lib/api-client.ts` — `ApiClient` interface (`registerProject`), backed by a raw `fetch` call to
+  `POST /api/projects`. Returns typed result objects.
+- `src/lib/settings-store.ts` — reads/writes `.ripe/settings.json` (`{serverUrl}`, interactively
+  set).
+- `src/lib/cache-store.ts` — writes `.ripe/cache.json` (`{projectId}`, server-resolved).
 
 **`ripe init` flow**: reads the `origin` remote (prompting for an HTTPS equivalent if it isn't
 `https://` already) → resolves `serverUrl` (reuses `.ripe/settings.json`'s value if the user

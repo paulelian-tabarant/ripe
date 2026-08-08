@@ -4,7 +4,7 @@ import type {
 } from '@ripe/api/contracts/projects.js'
 
 export interface ProjectRegistrationResult {
-  created: boolean
+  wasAlreadyExisting: boolean
   projectId: string
 }
 
@@ -15,7 +15,20 @@ export class ServerInvalidRemoteUrlError extends Error {
   }
 }
 
-export async function registerProject(
+export interface ApiClient {
+  getServerUrl(): string
+  registerProject(name: string, remoteUrl: string): Promise<ProjectRegistrationResult>
+}
+
+export function createApiClient(serverUrl: string): ApiClient {
+  return {
+    getServerUrl: (): string => serverUrl,
+    registerProject: (name: string, remoteUrl: string): Promise<ProjectRegistrationResult> =>
+      registerProject(serverUrl, name, remoteUrl),
+  }
+}
+
+async function registerProject(
   serverUrl: string,
   name: string,
   remoteUrl: string,
@@ -40,5 +53,5 @@ export async function registerProject(
 
   const parsed = (await res.json()) as RegisterProjectResponseBody
 
-  return { created: res.status === 201, projectId: parsed.projectId }
+  return { wasAlreadyExisting: res.status === 200, projectId: parsed.projectId }
 }

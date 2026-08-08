@@ -81,7 +81,7 @@ Package-specific standards for `api/`. These supplement the general rules in
     exist yet" branch — `create` is no longer called speculatively before that check, since
     there's no fallible work left inside it to justify calling it early.
   - Give a value object like this its own file once it carries real behavior/invariants of its
-    own (here `api/src/domain/ProjectRepoReference.ts`, separate from `Project.ts`) rather than
+    own (here `src/domain/project-repo-reference.ts`, separate from `project.ts`) rather than
     nesting it inside the entity that consumes it — and name it for what it actually represents,
     not a neighboring concept: `ProjectRepoReference` bundles `repoKey` and `remoteUrl` together
     deliberately (both derived from the same parse, both required before an entity can be
