@@ -4,10 +4,24 @@
   "timezone": "UTC",
   "schedule": ["before 6am on monday"],
   "dependencyDashboard": true,
+  "minimumReleaseAge": "7 days",
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on monday"]
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Keep package.json's devEngines.runtime.version (read by Railway's mise-based build) in sync with engines.node",
+      "fileMatch": ["^package\\.json$"],
+      "matchStrings": [
+        "\"name\":\\s*\"node\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "datasourceTemplate": "node-version",
+      "depNameTemplate": "node",
+      "versioningTemplate": "node"
+    }
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],

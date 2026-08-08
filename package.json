@@ -17,13 +17,15 @@
     "docs:c4:validate": "likec4 validate docs/architecture/",
     "docs:c4:build": "likec4 build docs/architecture/ -o dist-docs --base /ripe/ -t 'ripe — Architecture'",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
-    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\""
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
+    "renovate:validate": "renovate-config-validator renovate.json"
   },
   "packageManager": "pnpm@11.13.1",
   "license": "PolyFormNoncommercial-1.0.0",
   "devDependencies": {
     "likec4": "latest",
     "markdownlint-cli2": "^0.23.2",
+    "renovate": "^44.5.3",
     "typescript": "^7.0.2"
   }
 }

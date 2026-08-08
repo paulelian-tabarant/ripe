@@ -62,6 +62,32 @@ files for `node` and `pnpm` (see mise's [Node docs](https://mise.jdx.dev/lang/no
 `devEngines`/`engines`/`packageManager` once you run `mise trust` the first time you `cd` into
 the repo.
 
+pnpm itself also guards the `packageManager` pin natively (`pmOnFail`, default `download`): any
+locally installed `pnpm` binary — via Corepack, Homebrew, or a global install — detects a mismatch
+against `packageManager` and transparently re-execs the pinned version, so this doesn't rely on
+Corepack being enabled.
+
+### Dependency Updates
+
+[Renovate](https://docs.renovatebot.com) runs weekly via a self-hosted GitHub Actions workflow
+(`.github/workflows/renovate.yml` + `renovate.json`) rather than the hosted GitHub App.
+
+- **Minor/patch**: grouped into a single weekly PR, auto-merged once `ci-pr.yml` passes.
+- **Major**: one PR per dependency, opened monthly, never auto-merged — needs a changelog read and
+  manual verification.
+- **Supply-chain safety**: a 7-day `minimumReleaseAge` is enforced twice. Renovate itself won't
+  propose a dependency update until it's at least 7 days old, and pnpm independently re-checks the
+  same policy at install time (`pnpm-workspace.yaml`, `minimumReleaseAgeStrict: true`) across the
+  whole dependency graph, including transitive dependencies — failing the install rather than
+  silently letting a too-fresh package through.
+- **Build scripts**: native/postinstall scripts only run for packages explicitly allow-listed in
+  `pnpm-workspace.yaml`'s `allowBuilds`.
+- **`devEngines`/`engines` sync**: Renovate's built-in npm manager doesn't track `devEngines`, so a
+  custom regex manager in `renovate.json` keeps `devEngines.runtime.version` bumped alongside
+  `engines.node` whenever Renovate proposes a Node update.
+
+Validate `renovate.json` after editing it: `pnpm renovate:validate`.
+
 ### API (`api/`)
 
 ```bash
