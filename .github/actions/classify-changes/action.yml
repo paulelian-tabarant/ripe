@@ -37,7 +37,9 @@ runs:
       id: filter
       with:
         base: ${{ inputs.base }}
-        predicate-quantifier: 'some-with-excludes'
+        # v3 doesn't support 'some-with-excludes'; 'every' produces the same
+        # match-but-not-excluded semantics for filters using negated patterns.
+        predicate-quantifier: 'every'
         filters: |
           shared:
             - 'package.json'
