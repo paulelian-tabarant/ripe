@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import type { ProjectDirectory } from './projectDirectory.js'
+import type { ProjectDirectory } from './project-directory.js'
 
 const execFileAsync = promisify(execFile)
 

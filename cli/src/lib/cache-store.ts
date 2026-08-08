@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import type { ProjectDirectory } from './projectDirectory.js'
+import type { ProjectDirectory } from './project-directory.js'
 
 export interface RipeCache {
   projectId: string
