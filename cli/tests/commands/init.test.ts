@@ -373,10 +373,11 @@ describe('init', () => {
       expect(readWrittenCache().skillIds).toEqual({ alpha: 'skill_1', beta: 'skill_2' })
     })
 
-    it('makes no skill registration call when the scanned skill names already match the cache', async () => {
+    it('re-registers an unchanged skill catalog and overwrites the cache, even when it already matches', async () => {
       writeSkillFileAndCommit(tmpDir, 'alpha', skillMd('alpha'))
       writeExistingCache({ projectId: 'proj_abc123', skillIds: { alpha: 'skill_1' } })
       stubRegisterProjectApi(200, { projectId: 'proj_abc123' })
+      stubRegisterSkillsApi('proj_abc123', 200, [{ name: 'alpha', skillId: 'skill_1' }], ['alpha'])
 
       const result = await init(
         fakeInitOptions({
@@ -391,7 +392,6 @@ describe('init', () => {
 
       expect(result).toBe('success')
       expect(readWrittenCache().skillIds).toEqual({ alpha: 'skill_1' })
-      expect(nock.pendingMocks()).toEqual([])
     })
 
     it('re-POSTs the full catalog and overwrites the cache when the scanned names no longer match a non-empty cache', async () => {

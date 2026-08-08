@@ -86,10 +86,7 @@ export async function init(options: InitOptions): Promise<CommandResult> {
     apiClient,
     cacheStore,
     presenter,
-    {
-      projectId: projectRegistrationResult.projectId,
-      cachedSkillIds: existingCache?.skillIds,
-    },
+    { projectId: projectRegistrationResult.projectId },
   )
 
   if (!wereSkillsRegistered) {
@@ -195,7 +192,7 @@ async function registerSkillsWithServer(
   apiClient: ApiClient,
   cacheStore: CacheStore,
   presenter: InitPresenter,
-  data: { projectId: string; cachedSkillIds: Record<string, string> | undefined },
+  data: { projectId: string },
 ): Promise<boolean> {
   const hasMainBranch = await gitRepository.hasLocalBranch(MAIN_BRANCH)
   if (!hasMainBranch) {
@@ -212,9 +209,6 @@ async function registerSkillsWithServer(
 
     return true
   }
-
-  const cachedNames = Object.keys(data.cachedSkillIds ?? {})
-  if (haveSameNames(names, cachedNames)) return true
 
   try {
     const registered = await apiClient.registerSkills(data.projectId, names)
@@ -288,14 +282,6 @@ function extractSkillName(content: string): string | undefined {
   const name = nameMatch[1]?.trim().replace(/^["']|["']$/g, '')
 
   return name && name.length > 0 ? name : undefined
-}
-
-function haveSameNames(scannedNames: string[], cachedNames: string[]): boolean {
-  if (scannedNames.length !== cachedNames.length) return false
-
-  const scannedSet = new Set(scannedNames)
-
-  return cachedNames.every((name) => scannedSet.has(name))
 }
 
 function toSkillIdMap(registered: SkillResponseBodyItem[]): Record<string, string> {
