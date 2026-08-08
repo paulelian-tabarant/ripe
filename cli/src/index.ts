@@ -19,4 +19,5 @@ const { exitCode }: CliResult = await runCli(process.argv.slice(2), {
   ask: askFn,
   init: buildInitFn(askFn, logger),
 })
+
 process.exit(exitCode)
