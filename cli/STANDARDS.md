@@ -50,11 +50,11 @@ Package-specific standards for `cli/`. These supplement the general rules in
 
   ```ts
   // src/commands/init.ts
-  async function init(options: InitOptions): Promise<{ status: 'success' | 'error' }> { /* ... */ }
+  async function init(options: InitOptions): Promise<'success' | 'error'> { /* ... */ }
 
   // src/index.ts
   const result = await init(options)
-  process.exit(result.status === 'success' ? 0 : 1)
+  process.exit(result === 'success' ? 0 : 1)
   ```
 
 - **Typed results over ad hoc shapes**: functions that call out to the network return a typed

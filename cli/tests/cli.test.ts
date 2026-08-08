@@ -9,7 +9,10 @@ describe('runCli', () => {
       const log = vi.fn()
       const initFn = vi.fn()
 
-      const result = await runCli(argv, fakeRunCliOptions({ logger: fakeLogger({ log }), init: initFn }))
+      const result = await runCli(
+        argv,
+        fakeRunCliOptions({ logger: fakeLogger({ log }), init: initFn }),
+      )
 
       expect(result.exitCode).toBe(0)
       expect(log).toHaveBeenCalledWith(expect.stringContaining('Usage'))
@@ -19,7 +22,7 @@ describe('runCli', () => {
   )
 
   it('dispatches to init for the "init" command', async () => {
-    const initFn = vi.fn().mockResolvedValue({ status: 'success' })
+    const initFn = vi.fn().mockResolvedValue('success')
 
     const result = await runCli(['init'], fakeRunCliOptions({ init: initFn }))
 
@@ -34,7 +37,10 @@ describe('runCli', () => {
     const error = vi.fn()
     const initFn = vi.fn()
 
-    const result = await runCli(argv, fakeRunCliOptions({ logger: fakeLogger({ error }), init: initFn }))
+    const result = await runCli(
+      argv,
+      fakeRunCliOptions({ logger: fakeLogger({ error }), init: initFn }),
+    )
 
     expect(result.exitCode).toBe(1)
     expect(error).toHaveBeenCalledWith(expect.stringContaining(expectedSubstring))

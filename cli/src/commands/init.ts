@@ -31,9 +31,7 @@ export interface InitOptions {
   presenter: InitPresenter
 }
 
-export interface InitResult {
-  status: 'success' | 'error'
-}
+export type InitResult = 'success' | 'error'
 
 export async function init(options: InitOptions): Promise<InitResult> {
   const { getCurrentDirectoryName, prompter, presenter } = options
@@ -42,22 +40,22 @@ export async function init(options: InitOptions): Promise<InitResult> {
   const cachePath = join(currentDirectoryName, '.ripe/cache.json')
 
   const rawRemoteUrl = await readRemoteUrl(currentDirectoryName, presenter)
-  if (!rawRemoteUrl) return { status: 'error' }
+  if (!rawRemoteUrl) return 'error'
 
   const remoteUrl = await resolveHttpsRemoteUrl(rawRemoteUrl, prompter)
   const serverUrl = await resolveServerUrl(settingsPath, prompter, presenter)
   const defaultProjectName = basename(currentDirectoryName)
 
   const result = await tryRegisterProject(serverUrl, defaultProjectName, remoteUrl, presenter)
-  if (!result) return { status: 'error' }
+  if (!result) return 'error'
 
   presenter.onProjectRegistered(result)
 
   if (!tryWriteLocalState(settingsPath, cachePath, serverUrl, result.projectId, presenter)) {
-    return { status: 'error' }
+    return 'error'
   }
 
-  return { status: 'success' }
+  return 'success'
 }
 
 function tryWriteLocalState(

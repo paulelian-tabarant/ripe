@@ -54,7 +54,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
     expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
     expect(readWrittenCache().projectId).toBe('proj_abc123')
     expect(onProjectRegistered).toHaveBeenCalledWith({ created: true, projectId: 'proj_abc123' })
@@ -82,7 +82,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('error')
+    expect(result).toBe('error')
     expect(onLocalStateWriteFailed).toHaveBeenCalledWith(
       expect.stringContaining('ENOSPC: no space left on device'),
     )
@@ -105,7 +105,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
     expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
     expect(readWrittenCache().projectId).toBe('proj_existing')
     expect(onProjectRegistered).toHaveBeenCalledWith({
@@ -134,7 +134,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
     expect(onInvalidServerUrl).toHaveBeenCalledTimes(2)
     expect(onInvalidServerUrl).toHaveBeenCalledWith('not-a-url')
     expect(onInvalidServerUrl).toHaveBeenCalledWith('ftp://example.com')
@@ -157,7 +157,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('error')
+    expect(result).toBe('error')
     expect(onServerUnreachable).toHaveBeenCalledWith(
       FAKE_SERVER_URL,
       expect.stringContaining('ECONNREFUSED'),
@@ -180,7 +180,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('error')
+    expect(result).toBe('error')
     expect(onServerRejectedRemoteUrl).toHaveBeenCalledWith(
       FAKE_HTTPS_REMOTE_URL,
       expect.any(String),
@@ -201,7 +201,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('error')
+    expect(result).toBe('error')
     expect(onRemoteUrlError).toHaveBeenCalledWith(expect.any(String))
     expect(promptForServerUrl).not.toHaveBeenCalled()
   })
@@ -226,7 +226,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
     expect(promptForHttpsRemote).toHaveBeenCalledTimes(1)
   })
 
@@ -249,7 +249,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
     expect(promptForHttpsRemote).toHaveBeenCalledWith(FAKE_REMOTE_URL)
     expect(readWrittenCache().projectId).toBe('proj_abc123')
   })
@@ -270,7 +270,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
   })
 
   it('reuses an existing serverUrl from .ripe/settings.json without prompting when the user confirms keeping it', async () => {
@@ -294,7 +294,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
     expect(promptForServerUrl).not.toHaveBeenCalled()
     expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
     expect(readWrittenCache().projectId).toBe('proj_abc123')
@@ -317,7 +317,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
     expect(readWrittenSettings().serverUrl).toBe(newServerUrl)
   })
 
@@ -341,7 +341,7 @@ describe('init', () => {
       }),
     )
 
-    expect(result.status).toBe('success')
+    expect(result).toBe('success')
     expect(promptToConfirmServerUrl).not.toHaveBeenCalled()
   })
 
