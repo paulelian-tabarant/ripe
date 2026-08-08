@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Logger, RunCliOptions } from '@/cli.js'
-import { runCli } from '@/cli.js'
+import type { Logger, RunCliOptions } from '../src/cli.js'
+import { runCli } from '../src/cli.js'
 
 describe('runCli', () => {
   it.each([[['-h']], [['--help']], [['init', '-h']], [['init', '--help']]])(

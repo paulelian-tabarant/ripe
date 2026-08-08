@@ -137,6 +137,28 @@ Package-specific standards for `api/`. These supplement the general rules in
     Project)`), not a separately-declared write DTO.
   - Reserve a use-case (`src/core/use-cases/`) for logic that orchestrates repositories or multiple
     entities, rather than an invariant intrinsic to one entity.
+- **Nest a child entity into its parent's aggregate when the two share a lifecycle and an
+  invariant that spans them** — don't default to a peer entity with a plain foreign key.
+
+  Signals that a child belongs inside the parent aggregate rather than beside it:
+
+  - the child cannot exist meaningfully without the parent (no independent lifecycle), and
+  - there's a real invariant over the child collection (e.g. uniqueness within the parent) that a
+    database constraint alone would leave invisible in the domain layer.
+
+  When both hold *and* the child collection is small/bounded (so loading it in full to enforce
+  the invariant in memory is cheap), model the parent as the aggregate root: it holds the loaded
+  child collection and exposes the behavior that enforces the invariant (e.g.
+  `Project.registerSkills(names)` reconciling requested names against its own already-loaded
+  `skills`), rather than pushing that reconciliation into a repository-level query or leaving it
+  to a `UNIQUE` constraint alone. A supporting DB constraint can still exist as a defensive
+  backstop — it's just not the primary enforcement. See
+  [ADR-021](../docs/architecture/decisions/ADR-021-project-skill-aggregate.md) for a worked
+  example (`Project`/`Skill`) and the reasoning behind it.
+
+  This does not change how read/list endpoints work: they still go through a dedicated
+  `*ReadModel` query (see above), never through aggregate hydration — aggregates govern
+  write-side consistency only.
 
 ## Testing
 

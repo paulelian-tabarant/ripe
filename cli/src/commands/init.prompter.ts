@@ -1,4 +1,4 @@
-import type { InitPrompter } from '@/commands/init.js'
+import type { InitPrompter } from './init.js'
 
 export function buildInitPrompter(askFn: (question: string) => Promise<string>): InitPrompter {
   return {

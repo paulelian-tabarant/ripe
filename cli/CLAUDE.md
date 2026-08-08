@@ -6,15 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm --filter ./cli lint        # Biome ci: lint + format check + import-sort check (src/ and tests/)
+pnpm --filter ./cli lint:fix    # Biome: auto-fix formatting/import-sort/lint issues in place
 pnpm --filter ./cli build       # tsc -p tsconfig.build.json → dist/
 pnpm --filter ./cli test        # vitest run (all tests under tests/)
 pnpm --filter ./cli typecheck   # tsc --noEmit (includes src + tests)
-pnpm --filter ./cli ci:checks   # lint + typecheck + test in one shot
+pnpm --filter ./cli smoke       # build output must already exist — runs `node dist/index.js --help`
+pnpm --filter ./cli ci:checks   # lint + typecheck + test + build + smoke, in one shot
 pnpm --filter ./cli cli -- <command-name>   # build, then invoke the CLI, e.g. `init`
 
 # Run a single test file
 pnpm --filter ./cli test tests/commands/init.test.ts
 ```
+
+## Versioning
+
+Bump `cli/package.json`'s `version` (semver, matching the size of the change — most feature/fix
+work is a patch or minor bump) whenever a change touches any file under `cli/`. Do this as the
+last change on the branch, right before opening the PR — see e.g. commit `269c308`.
 
 ## Architecture
 

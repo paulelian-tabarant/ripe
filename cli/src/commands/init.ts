@@ -1,13 +1,19 @@
+import type { SkillResponseBodyItem } from '@ripe/api/contracts/skills.js'
 import {
   type ApiClient,
   createApiClient,
   type ProjectRegistrationResult,
   ServerInvalidRemoteUrlError,
-} from '@/infrastructure/api-client.js'
-import type { CacheStore } from '@/infrastructure/cache-store.js'
-import type { GitRepository } from '@/infrastructure/git-repository.js'
-import type { ProjectDirectory } from '@/infrastructure/project-directory.js'
-import type { SettingsStore } from '@/infrastructure/settings-store.js'
+} from '../infrastructure/api-client.js'
+import type { Cache, CacheStore } from '../infrastructure/cache-store.js'
+import type { GitRepository } from '../infrastructure/git-repository.js'
+import type { ProjectDirectory } from '../infrastructure/project-directory.js'
+import type { SettingsStore } from '../infrastructure/settings-store.js'
+import {
+  MAIN_BRANCH,
+  type SkillSkipReason,
+  scanSkillCatalogOnMain,
+} from '../infrastructure/skill-scanner.js'
 
 export interface InitPrompter {
   promptForServerUrl(): Promise<string>
@@ -15,6 +21,8 @@ export interface InitPrompter {
   promptToConfirmServerUrl(existingUrl: string): Promise<boolean>
   promptForHttpsRemote(remoteUrl: string): Promise<string>
 }
+
+export type { SkillSkipReason }
 
 export interface InitPresenter {
   onInvalidServerUrl(url: string): void
@@ -24,6 +32,10 @@ export interface InitPresenter {
   onServerRejectedRemoteUrl(remoteUrl: string, detail?: string): void
   onServerUnreachable(serverUrl: string, detail?: string): void
   onLocalStateWriteFailed(detail?: string): void
+  onNoLocalMainBranch(): void
+  onNoSkillsFound(): void
+  onSkillSkipped(path: string, reason: SkillSkipReason): void
+  onSkillRegistrationFailed(detail?: string): void
 }
 
 export interface InitOptions {
@@ -40,6 +52,8 @@ export type CommandResult = 'success' | 'error'
 export async function init(options: InitOptions): Promise<CommandResult> {
   const { projectDirectory, prompter, presenter, gitRepository, settingsStore, cacheStore } =
     options
+
+  const existingCache = cacheStore.read()
 
   const gitRemoteUrl = await getOrAskForGitRemoteUrl(gitRepository, prompter, presenter)
   if (!gitRemoteUrl) return 'error'
@@ -63,9 +77,23 @@ export async function init(options: InitOptions): Promise<CommandResult> {
   const wereProjectDataSaved = saveProjectDataLocally(settingsStore, cacheStore, presenter, {
     serverUrl: apiClient.getServerUrl(),
     projectId: projectRegistrationResult.projectId,
+    skillIdByName: existingCache?.skillIdByName,
   })
 
   if (!wereProjectDataSaved) {
+    return 'error'
+  }
+
+  const wereSkillsRegistered = await registerSkillsWithServer(
+    gitRepository,
+    projectDirectory,
+    apiClient,
+    cacheStore,
+    presenter,
+    { projectId: projectRegistrationResult.projectId },
+  )
+
+  if (!wereSkillsRegistered) {
     return 'error'
   }
 
@@ -139,11 +167,11 @@ function saveProjectDataLocally(
   settingsStore: SettingsStore,
   cacheStore: CacheStore,
   presenter: InitPresenter,
-  data: { serverUrl: string; projectId: string },
+  data: { serverUrl: string; projectId: string; skillIdByName: Record<string, string> | undefined },
 ): boolean {
   try {
     settingsStore.write({ serverUrl: data.serverUrl })
-    cacheStore.write({ projectId: data.projectId })
+    cacheStore.write({ projectId: data.projectId, skillIdByName: data.skillIdByName })
 
     return true
   } catch (err) {
@@ -161,4 +189,46 @@ function isValidHttpUrl(url: string): boolean {
   } catch {
     return false
   }
+}
+
+async function registerSkillsWithServer(
+  gitRepository: GitRepository,
+  projectDirectory: ProjectDirectory,
+  apiClient: ApiClient,
+  cacheStore: CacheStore,
+  presenter: InitPresenter,
+  data: { projectId: string },
+): Promise<boolean> {
+  const hasMainBranch = await gitRepository.hasLocalBranch(MAIN_BRANCH)
+  if (!hasMainBranch) {
+    presenter.onNoLocalMainBranch()
+
+    return false
+  }
+
+  const { names, skipped } = await scanSkillCatalogOnMain(gitRepository, projectDirectory.getPath())
+  for (const skill of skipped) presenter.onSkillSkipped(skill.path, skill.reason)
+
+  if (names.length === 0) {
+    presenter.onNoSkillsFound()
+
+    return true
+  }
+
+  try {
+    const registered = await apiClient.registerSkills(data.projectId, names)
+    const skillIdByName = toSkillIdMap(registered)
+    const cache: Cache = { projectId: data.projectId, skillIdByName }
+    cacheStore.write(cache)
+
+    return true
+  } catch (err) {
+    presenter.onSkillRegistrationFailed(err instanceof Error ? err.message : undefined)
+
+    return false
+  }
+}
+
+function toSkillIdMap(registered: SkillResponseBodyItem[]): Record<string, string> {
+  return Object.fromEntries(registered.map((skill) => [skill.name, skill.skillId]))
 }

@@ -13,9 +13,11 @@
     "start:local": "node --env-file=.env.local --import=tsx/esm src/index.ts",
     "flush:local": "node --env-file=.env.local -e 'import(\"node:fs\").then(fs => fs.rmSync(process.env.DATABASE_PATH, { force: true }))'",
     "lint": "biome ci ./src ./tests",
+    "lint:fix": "biome check --write ./src ./tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test"
+    "smoke": "node scripts/smoke.mjs",
+    "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run smoke"
   },
   "dependencies": {
     "@blackglory/better-sqlite3-migrations": "^0.2.2",
