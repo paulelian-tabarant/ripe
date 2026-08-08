@@ -31,9 +31,9 @@ export interface InitOptions {
   presenter: InitPresenter
 }
 
-export type InitResult = 'success' | 'error'
+export type CommandResult = 'success' | 'error'
 
-export async function init(options: InitOptions): Promise<InitResult> {
+export async function init(options: InitOptions): Promise<CommandResult> {
   const { getCurrentDirectoryName, prompter, presenter } = options
   const currentDirectoryName = getCurrentDirectoryName()
   const settingsPath = join(currentDirectoryName, '.ripe/settings.json')

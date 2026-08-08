@@ -76,7 +76,7 @@ export interface InitResult {
   }
   ```
 
-- `InitResult` collapses to `{ status: 'success' | 'error' }` — no `error`/`outcomes` field needed,
+- `CommandResult` collapses to `{ status: 'success' | 'error' }` — no `error`/`outcomes` field needed,
   since every fact that would have gone into one is now delivered via a presenter call at the
   point it's known.
 

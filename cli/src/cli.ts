@@ -1,4 +1,4 @@
-import type { InitResult } from './commands/init.js'
+import type { CommandResult } from './commands/init.js'
 
 const HELP_FLAGS = new Set(['-h', '--help'])
 
@@ -24,7 +24,7 @@ export interface Logger {
 export interface RunCliOptions {
   logger: Logger
   ask: (question: string) => Promise<string>
-  init: () => Promise<InitResult>
+  init: () => Promise<CommandResult>
 }
 
 export async function runCli(args: string[], options: RunCliOptions): Promise<CliResult> {
