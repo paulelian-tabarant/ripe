@@ -1,6 +1,6 @@
 import type { Logger } from '@/cli.js'
 import type { InitPresenter } from '@/commands/init.js'
-import type { ProjectRegistrationResult } from '@/lib/registerProject.js'
+import type { ProjectRegistrationResult } from '@/lib/server.js'
 
 export function buildInitPresenter(logger: Logger): InitPresenter {
   return {

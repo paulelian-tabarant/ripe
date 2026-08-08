@@ -1,12 +1,12 @@
-import type { CacheStore } from '../lib/cacheStore.js'
-import type { GitRepository } from '../lib/gitRepository.js'
-import type { ProjectDirectory } from '../lib/projectDirectory.js'
+import type { CacheStore } from '../lib/cache-store.js'
+import type { GitRepository } from '../lib/git-repository.js'
+import type { ProjectDirectory } from '../lib/project-directory.js'
 import {
+  createServer,
   type ProjectRegistrationResult,
-  registerProject,
   ServerInvalidRemoteUrlError,
-} from '../lib/registerProject.js'
-import type { SettingsStore } from '../lib/settingsStore.js'
+} from '../lib/server.js'
+import type { SettingsStore } from '../lib/settings-store.js'
 
 export interface InitPrompter {
   promptForServerUrl(): Promise<string>
@@ -45,9 +45,11 @@ export async function init(options: InitOptions): Promise<CommandResult> {
   const serverUrl = await resolveServerUrl(settingsStore, prompter, presenter)
   const defaultProjectName = projectDirectory.getName()
 
+  const server = createServer(serverUrl)
+
   let result: ProjectRegistrationResult
   try {
-    result = await registerProject(serverUrl, defaultProjectName, remoteUrl)
+    result = await server.registerProject(defaultProjectName, remoteUrl)
   } catch (err) {
     const detail = err instanceof Error ? err.message : undefined
 

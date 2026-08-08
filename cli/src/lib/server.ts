@@ -15,7 +15,18 @@ export class ServerInvalidRemoteUrlError extends Error {
   }
 }
 
-export async function server(
+export interface Server {
+  registerProject(name: string, remoteUrl: string): Promise<ProjectRegistrationResult>
+}
+
+export function createServer(serverUrl: string): Server {
+  return {
+    registerProject: (name: string, remoteUrl: string): Promise<ProjectRegistrationResult> =>
+      registerProject(serverUrl, name, remoteUrl),
+  }
+}
+
+async function registerProject(
   serverUrl: string,
   name: string,
   remoteUrl: string,
