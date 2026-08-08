@@ -9,13 +9,13 @@ inputs:
 
 outputs:
   api:
-    description: api/** changed
+    description: api/** changed, excluding docs-only changes (*.md)
     value: ${{ steps.filter.outputs.api }}
   cli:
-    description: cli/** changed
+    description: cli/** changed, excluding docs-only changes (*.md)
     value: ${{ steps.filter.outputs.cli }}
   web:
-    description: web/** changed
+    description: web/** changed, excluding docs-only changes (*.md)
     value: ${{ steps.filter.outputs.web }}
   md:
     description: any *.md changed
@@ -37,6 +37,7 @@ runs:
       id: filter
       with:
         base: ${{ inputs.base }}
+        predicate-quantifier: 'some-with-excludes'
         filters: |
           shared:
             - 'package.json'
@@ -50,10 +51,13 @@ runs:
             - '.github/workflows/deploy-staging.yml'
           api:
             - 'api/**'
+            - '!api/**/*.md'
           cli:
             - 'cli/**'
+            - '!cli/**/*.md'
           web:
             - 'web/**'
+            - '!web/**/*.md'
           md:
             - '**/*.md'
           docs:
