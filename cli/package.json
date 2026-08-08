@@ -24,7 +24,7 @@
     "cli": "pnpm run build && node dist/index.js"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.7",
+    "@biomejs/biome": "^2.5.6",
     "@ripe/api": "workspace:*",
     "@types/node": "^26.1.2",
     "nock": "^14.0.17",
