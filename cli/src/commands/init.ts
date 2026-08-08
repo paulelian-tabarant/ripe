@@ -4,6 +4,7 @@ import type { ProjectDirectory } from '../lib/project-directory.js'
 import {
   createServer,
   type ProjectRegistrationResult,
+  type Server,
   ServerInvalidRemoteUrlError,
 } from '../lib/server.js'
 import type { SettingsStore } from '../lib/settings-store.js'
@@ -44,32 +45,20 @@ export async function init(options: InitOptions): Promise<CommandResult> {
 
   const serverUrl = await resolveServerUrl(settingsStore, prompter, presenter)
   const defaultProjectName = projectDirectory.getName()
-
   const server = createServer(serverUrl)
 
-  let result: ProjectRegistrationResult
-  try {
-    result = await server.registerProject(defaultProjectName, remoteUrl)
-  } catch (err) {
-    const detail = err instanceof Error ? err.message : undefined
-
-    if (err instanceof ServerInvalidRemoteUrlError) {
-      presenter.onServerRejectedRemoteUrl(remoteUrl, detail)
-    } else {
-      presenter.onServerUnreachable(serverUrl, detail)
-    }
-
-    return 'error'
-  }
+  const result = await tryRegisterProject(
+    server,
+    serverUrl,
+    defaultProjectName,
+    remoteUrl,
+    presenter,
+  )
+  if (!result) return 'error'
 
   presenter.onProjectRegistered(result)
 
-  try {
-    settingsStore.write({ serverUrl })
-    cacheStore.write({ projectId: result.projectId })
-  } catch (err) {
-    presenter.onLocalStateWriteFailed(err instanceof Error ? err.message : undefined)
-
+  if (!tryPersistProjectData(settingsStore, cacheStore, serverUrl, result.projectId, presenter)) {
     return 'error'
   }
 
@@ -112,6 +101,47 @@ async function resolveServerUrl(
   }
 
   return serverUrl
+}
+
+async function tryRegisterProject(
+  server: Server,
+  serverUrl: string,
+  name: string,
+  remoteUrl: string,
+  presenter: InitPresenter,
+): Promise<ProjectRegistrationResult | undefined> {
+  try {
+    return await server.registerProject(name, remoteUrl)
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : undefined
+
+    if (err instanceof ServerInvalidRemoteUrlError) {
+      presenter.onServerRejectedRemoteUrl(remoteUrl, detail)
+    } else {
+      presenter.onServerUnreachable(serverUrl, detail)
+    }
+
+    return undefined
+  }
+}
+
+function tryPersistProjectData(
+  settingsStore: SettingsStore,
+  cacheStore: CacheStore,
+  serverUrl: string,
+  projectId: string,
+  presenter: InitPresenter,
+): boolean {
+  try {
+    settingsStore.write({ serverUrl })
+    cacheStore.write({ projectId })
+
+    return true
+  } catch (err) {
+    presenter.onLocalStateWriteFailed(err instanceof Error ? err.message : undefined)
+
+    return false
+  }
 }
 
 function isValidHttpUrl(url: string): boolean {
