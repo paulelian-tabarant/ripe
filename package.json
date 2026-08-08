@@ -17,8 +17,7 @@
     "docs:c4:validate": "likec4 validate docs/architecture/",
     "docs:c4:build": "likec4 build docs/architecture/ -o dist-docs --base /ripe/ -t 'ripe — Architecture'",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
-    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
-    "lint:ci": "actionlint"
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\""
   },
   "packageManager": "pnpm@11.13.1",
   "license": "PolyFormNoncommercial-1.0.0",
