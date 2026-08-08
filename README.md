@@ -77,12 +77,20 @@ whatever Node is actually running).
 
 ### Dependency Updates
 
-[Renovate](https://docs.renovatebot.com) runs weekly via a self-hosted GitHub Actions workflow
+[Renovate](https://docs.renovatebot.com) runs via a self-hosted GitHub Actions workflow
 (`.github/workflows/renovate.yml` + `renovate.json`) rather than the hosted GitHub App.
 
-- **Minor/patch**: grouped into a single weekly PR, auto-merged once `ci-pr.yml` passes.
-- **Major**: one PR per dependency, opened monthly, never auto-merged — needs a changelog read and
-  manual verification.
+Cadence is controlled entirely by two `cron` triggers in `renovate.yml`, not by Renovate's own
+`schedule`/`timezone` config — those two answer different questions ("did we wake up" vs. "is now
+an allowed time") that are easy to get out of sync (e.g. DST shifting a schedule window relative to
+a fixed-UTC cron, or a weekly cron rarely landing on "the 1st of the month"). Each cron run instead
+passes a small `force` override (`.github/renovate/weekly.json` or `monthly.json`) that toggles
+which update types are allowed, so there's only one clock to reason about:
+
+- **Weekly** (`.github/renovate/weekly.json`): minor/patch/pin/digest only, grouped into a single
+  PR, auto-merged once `ci-pr.yml` passes.
+- **Monthly**, on the actual 1st (`.github/renovate/monthly.json`): major only, one PR per
+  dependency, never auto-merged — needs a changelog read and manual verification.
 - **Supply-chain safety**: a 7-day `minimumReleaseAge` is enforced twice. Renovate itself won't
   propose a dependency update until it's at least 7 days old, and pnpm independently re-checks the
   same policy at install time (`pnpm-workspace.yaml`, `minimumReleaseAgeStrict: true`) across the

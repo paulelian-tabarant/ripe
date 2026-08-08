@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "force": {
+    "minor": {
+      "enabled": false
+    },
+    "patch": {
+      "enabled": false
+    },
+    "pin": {
+      "enabled": false
+    },
+    "digest": {
+      "enabled": false
+    }
+  }
+}

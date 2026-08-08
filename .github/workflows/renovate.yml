@@ -2,10 +2,22 @@ name: Renovate
 
 on:
   schedule:
-    # Runs weekly; renovate.json's own per-rule schedules decide what's actually due
-    # (minor/patch weekly, major monthly), so a weekly cron covers both.
-    - cron: '0 4 * * 1'
-  workflow_dispatch: {}
+    # Weekly: minor/patch/pin/digest, grouped + auto-merged (see .github/renovate/weekly.json)
+    - cron: '0 2 * * 1'
+    # Monthly: majors only, one PR per dependency, never auto-merged (see .github/renovate/monthly.json).
+    # Fires on the actual 1st of the month regardless of weekday — a weekly-only cron would
+    # only coincide with "the 1st" about 1 in 7 months.
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Which update types to process'
+        required: false
+        default: 'weekly'
+        type: choice
+        options:
+          - weekly
+          - monthly
 
 jobs:
   renovate:
@@ -13,10 +25,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Pick config for this run
+        id: mode
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 3 1 * *" ] || [ "${{ github.event.inputs.mode }}" = "monthly" ]; then
+            echo "configurationFile=.github/renovate/monthly.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "configurationFile=.github/renovate/weekly.json" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Self-hosted Renovate
         uses: renovatebot/github-action@v46.2.1
         with:
-          configurationFile: renovate.json
+          configurationFile: ${{ steps.mode.outputs.configurationFile }}
           token: '${{ secrets.RENOVATE_TOKEN }}'
         env:
           RENOVATE_REPOSITORIES: '${{ github.repository }}'
