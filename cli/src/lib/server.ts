@@ -15,7 +15,7 @@ export class ServerInvalidRemoteUrlError extends Error {
   }
 }
 
-export async function registerProject(
+export async function server(
   serverUrl: string,
   name: string,
   remoteUrl: string,

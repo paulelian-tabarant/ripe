@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import { Project } from '../domain/Project.js'
+import { Project } from '../domain/project.js'
 
 export type ProjectReadModel = {
   id: string

@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import { ProjectRepoReference } from './ProjectRepoReference.js'
+import { ProjectRepoReference } from './project-repo-reference.js'
 
 export class Project {
   private constructor(
