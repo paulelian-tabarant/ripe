@@ -1,13 +1,12 @@
 import { basename, join } from 'node:path'
-import { getRemoteUrl } from '../lib/getRemoteUrl.js'
-import { readSettings } from '../lib/readSettings.js'
+import { createCacheStore } from '../lib/cacheStore.js'
+import { createGitRepository, type GitRepository } from '../lib/gitRepository.js'
 import {
   type ProjectRegistrationResult,
   registerProject,
   ServerInvalidRemoteUrlError,
 } from '../lib/registerProject.js'
-import { writeCache } from '../lib/writeCache.js'
-import { writeSettings } from '../lib/writeSettings.js'
+import { createSettingsStore, type SettingsStore } from '../lib/settingsStore.js'
 
 export interface InitPrompter {
   promptForServerUrl(): Promise<string>
@@ -36,90 +35,19 @@ export type CommandResult = 'success' | 'error'
 export async function init(options: InitOptions): Promise<CommandResult> {
   const { getCurrentDirectoryName, prompter, presenter } = options
   const currentDirectoryName = getCurrentDirectoryName()
-  const settingsPath = join(currentDirectoryName, '.ripe/settings.json')
-  const cachePath = join(currentDirectoryName, '.ripe/cache.json')
+  const gitRepository = createGitRepository(currentDirectoryName)
+  const settingsStore = createSettingsStore(join(currentDirectoryName, '.ripe/settings.json'))
+  const cacheStore = createCacheStore(join(currentDirectoryName, '.ripe/cache.json'))
 
-  const rawRemoteUrl = await readRemoteUrl(currentDirectoryName, presenter)
-  if (!rawRemoteUrl) return 'error'
+  const remoteUrl = await resolveRemoteUrl(gitRepository, prompter, presenter)
+  if (!remoteUrl) return 'error'
 
-  const remoteUrl = await resolveHttpsRemoteUrl(rawRemoteUrl, prompter)
-  const serverUrl = await resolveServerUrl(settingsPath, prompter, presenter)
+  const serverUrl = await resolveServerUrl(settingsStore, prompter, presenter)
   const defaultProjectName = basename(currentDirectoryName)
 
-  const result = await tryRegisterProject(serverUrl, defaultProjectName, remoteUrl, presenter)
-  if (!result) return 'error'
-
-  presenter.onProjectRegistered(result)
-
-  if (!tryWriteLocalState(settingsPath, cachePath, serverUrl, result.projectId, presenter)) {
-    return 'error'
-  }
-
-  return 'success'
-}
-
-function tryWriteLocalState(
-  settingsPath: string,
-  cachePath: string,
-  serverUrl: string,
-  projectId: string,
-  presenter: InitPresenter,
-): boolean {
+  let result: ProjectRegistrationResult
   try {
-    writeSettings(settingsPath, { serverUrl })
-    writeCache(cachePath, { projectId })
-
-    return true
-  } catch (err) {
-    presenter.onLocalStateWriteFailed(err instanceof Error ? err.message : undefined)
-
-    return false
-  }
-}
-
-async function resolveServerUrl(
-  settingsPath: string,
-  prompts: InitPrompter,
-  presenter: InitPresenter,
-): Promise<string> {
-  const existingSettings = readSettings(settingsPath)
-  if (existingSettings && (await prompts.promptToConfirmServerUrl(existingSettings.serverUrl))) {
-    return existingSettings.serverUrl
-  }
-
-  let serverUrl = await prompts.promptForServerUrl()
-  while (!isValidHttpUrl(serverUrl)) {
-    presenter.onInvalidServerUrl(serverUrl)
-    serverUrl = await prompts.promptAnotherServerUrl()
-  }
-
-  return serverUrl
-}
-
-async function readRemoteUrl(cwd: string, presenter: InitPresenter): Promise<string | undefined> {
-  try {
-    return await getRemoteUrl(cwd)
-  } catch (err) {
-    presenter.onRemoteUrlError(err instanceof Error ? err.message : undefined)
-
-    return undefined
-  }
-}
-
-async function resolveHttpsRemoteUrl(rawRemoteUrl: string, prompts: InitPrompter): Promise<string> {
-  if (rawRemoteUrl.startsWith('https://')) return rawRemoteUrl
-
-  return prompts.promptForHttpsRemote(rawRemoteUrl)
-}
-
-async function tryRegisterProject(
-  serverUrl: string,
-  name: string,
-  remoteUrl: string,
-  presenter: InitPresenter,
-): Promise<ProjectRegistrationResult | undefined> {
-  try {
-    return await registerProject(serverUrl, name, remoteUrl)
+    result = await registerProject(serverUrl, defaultProjectName, remoteUrl)
   } catch (err) {
     const detail = err instanceof Error ? err.message : undefined
 
@@ -129,8 +57,59 @@ async function tryRegisterProject(
       presenter.onServerUnreachable(serverUrl, detail)
     }
 
+    return 'error'
+  }
+
+  presenter.onProjectRegistered(result)
+
+  try {
+    settingsStore.write({ serverUrl })
+    cacheStore.write({ projectId: result.projectId })
+  } catch (err) {
+    presenter.onLocalStateWriteFailed(err instanceof Error ? err.message : undefined)
+
+    return 'error'
+  }
+
+  return 'success'
+}
+
+async function resolveRemoteUrl(
+  gitRepository: GitRepository,
+  prompter: InitPrompter,
+  presenter: InitPresenter,
+): Promise<string | undefined> {
+  let rawRemoteUrl: string
+  try {
+    rawRemoteUrl = await gitRepository.getRemoteUrl()
+  } catch (err) {
+    presenter.onRemoteUrlError(err instanceof Error ? err.message : undefined)
+
     return undefined
   }
+
+  if (gitRepository.isHttpsRemote(rawRemoteUrl)) return rawRemoteUrl
+
+  return prompter.promptForHttpsRemote(rawRemoteUrl)
+}
+
+async function resolveServerUrl(
+  settingsStore: SettingsStore,
+  prompter: InitPrompter,
+  presenter: InitPresenter,
+): Promise<string> {
+  const existingSettings = settingsStore.read()
+  if (existingSettings && (await prompter.promptToConfirmServerUrl(existingSettings.serverUrl))) {
+    return existingSettings.serverUrl
+  }
+
+  let serverUrl = await prompter.promptForServerUrl()
+  while (!isValidHttpUrl(serverUrl)) {
+    presenter.onInvalidServerUrl(serverUrl)
+    serverUrl = await prompter.promptAnotherServerUrl()
+  }
+
+  return serverUrl
 }
 
 function isValidHttpUrl(url: string): boolean {
