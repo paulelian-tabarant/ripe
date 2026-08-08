@@ -13,7 +13,7 @@ injected functions, never the environment directly:
 
 - `src/cli.ts` never touches `console`/`readline`/`process.std*` itself. It only maps command-
   specific wording to the generic `ask`/`logFn`/`errorFn`/`warnFn` primitives it receives from
-  `src/index.ts` (see `buildInitPrompts`/`buildInitPresenter` in `src/cli.ts`).
+  `src/index.ts` (see `buildInitPrompter`/`buildInitPresenter` in `src/cli.ts`).
 - `src/commands/` holds orchestration logic only. A command doesn't read `process.argv`/
   `process.env`, touch stdin/stdout, or call `console.*`/`readline` — it calls its injected
   `prompts`/`presenter` methods instead, and never maps its result to an `exitCode` or calls
@@ -44,7 +44,7 @@ export async function init(options: InitOptions): Promise<InitResult> {
 ```
 
 **Why**: side-effecting inputs and outputs passed in as injected functions (see
-`InitPrompts`/`InitPresenter` in `src/commands/init.ts`, and `RunCliOptions` in `src/cli.ts`) are
+`InitPrompter`/`InitPresenter` in `src/commands/init.ts`, and `RunCliOptions` in `src/cli.ts`) are
 what let tests inject fakes instead of touching the real filesystem, env, or stdin — and what
 keeps every raw environment access auditable from a single file. See `cli/STANDARDS.md` for the
 full architecture rationale.

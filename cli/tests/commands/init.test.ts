@@ -8,7 +8,7 @@ import type {
 } from '@ripe/api/contracts/projects.js'
 import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { InitOptions, InitPresenter, InitPrompts } from '@/commands/init.js'
+import type { InitOptions, InitPresenter, InitPrompter } from '@/commands/init.js'
 import { init } from '@/commands/init.js'
 import type { RipeCache } from '@/lib/writeCache.js'
 import * as writeCacheModule from '@/lib/writeCache.js'
@@ -367,13 +367,13 @@ function unexpectedCall(name: string): (...args: unknown[]) => never {
 
 function fakeInitOptions(overrides: {
   getCurrentDirectoryName?: () => string
-  prompts?: Partial<InitPrompts>
+  prompts?: Partial<InitPrompter>
   presenter?: Partial<InitPresenter>
 }): InitOptions {
   return {
     getCurrentDirectoryName:
       overrides.getCurrentDirectoryName ?? unexpectedCall('getCurrentDirectoryName'),
-    prompts: {
+    prompter: {
       promptForServerUrl: unexpectedCall('promptForServerUrl'),
       promptAnotherServerUrl: unexpectedCall('promptAnotherServerUrl'),
       promptToConfirmServerUrl: unexpectedCall('promptToConfirmServerUrl'),

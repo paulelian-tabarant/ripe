@@ -42,7 +42,7 @@ Package-specific standards for `cli/`. These supplement the general rules in
   The one real implementation of each `*Prompts`/`*Presenter` interface is built in `src/cli.ts`,
   as command-specific wording over the generic `ask`/`logFn`/`errorFn`/`warnFn` primitives
   `src/index.ts` passes in — `src/cli.ts` itself never touches `readline`/`console`/`process.std*`
-  directly. See `buildInitPrompts`/`buildInitPresenter`/`buildInitFn` in `src/cli.ts`.
+  directly. See `buildInitPrompter`/`buildInitPresenter`/`buildInitFn` in `src/cli.ts`.
 
 - **Exit codes are not a command concern**: commands return a semantic success/error status, not
   an `exitCode`. Mapping that status to an `exitCode` and calling `process.exit` happens in

@@ -56,7 +56,7 @@ export interface InitResult {
   "what's the server URL"), so it's triggered from inside the command, not pre-resolved by the
   caller. Real implementation: `() => process.cwd()`. This matches `cli/STANDARDS.md`'s existing
   (previously unimplemented) documented shape — fix the code to match the doc, not the reverse.
-- `onInvalidServerUrl` lives on `InitPresenter`, not `InitPrompts` — it's a one-way, void
+- `onInvalidServerUrl` lives on `InitPresenter`, not `InitPrompter` — it's a one-way, void
   notification (same shape as every other presenter method), even though it happens mid-process
   between two prompt calls. The split between the two interfaces is by *call shape* (prompts
   return a value and drive control flow; presenter calls are one-way and don't), not by "does this
@@ -82,7 +82,7 @@ export interface InitResult {
 
 ### `cli.ts`
 
-- Owns the one real `InitPrompts` implementation and the one real `InitPresenter`
+- Owns the one real `InitPrompter` implementation and the one real `InitPresenter`
   implementation — but built purely as command-specific *wording* over two generic primitives
   received from `index.ts`: `askFn: (question: string) => Promise<string>` (input) and
   `logFn`/`errorFn`/`warnFn` (output). `cli.ts` itself never touches `readline`/`process.stdin`/
@@ -187,7 +187,7 @@ wording basis for the rewritten `.claude/rules/cli/single-io-composition-root.md
 
 ## Documentation & CLAUDE-context updates (do this *after* the code changes, as an explicit final step)
 
-- `cli/CLAUDE.md` — update the Architecture section to describe the `InitPrompts`/`InitPresenter`/
+- `cli/CLAUDE.md` — update the Architecture section to describe the `InitPrompter`/`InitPresenter`/
   `getCurrentDirectoryName` pattern, `cli.ts` as the command-specific wording layer over generic
   `ask`/`logFn`/`errorFn`/`warnFn` primitives, `index.ts` as the single composition root owning
   every raw environment access (both output and input) in the package.
@@ -215,7 +215,7 @@ new ADR) once a second command exists.
 - Anything related to skill registration (US-2.1) — no `scanSkills`/`registerSkills`/
   `syncSkillCatalog`/cache changes here. That work resumes on `feature/us-2.1-skill-registration`
   **after** this lands on `main` and the feature branch is rebased onto it, extending
-  `InitPrompts`/`InitPresenter` with the new skill-registration-specific methods rather than
+  `InitPrompter`/`InitPresenter` with the new skill-registration-specific methods rather than
   reintroducing direct `console.*` calls.
 - The invalid-server-URL retry loop's *wording* — only its structure (`promptAnotherServerUrl` vs
   `promptForServerUrl`) is prescribed here; actual copy is an implementation detail.

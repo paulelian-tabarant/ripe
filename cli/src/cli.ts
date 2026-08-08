@@ -1,11 +1,5 @@
-import {
-  type InitOptions,
-  type InitPresenter,
-  type InitPrompts,
-  type InitResult,
-  init,
-} from './commands/init.js'
-import type { ProjectRegistrationResult } from './lib/registerProject.js'
+import {init, type InitOptions, type InitPresenter, type InitPrompter, type InitResult,} from './commands/init.js'
+import type {ProjectRegistrationResult} from './lib/registerProject.js'
 
 const HELP_FLAGS = new Set(['-h', '--help'])
 
@@ -57,18 +51,17 @@ export async function runCli(args: string[], options: RunCliOptions): Promise<Cl
 }
 
 export function buildInitFn(
-  askFn: (question: string) => Promise<string>,
+  ask: (question: string) => Promise<string>,
   logger: Logger,
 ): () => Promise<InitResult> {
-  const prompts = buildInitPrompts(askFn)
+  const prompter = buildInitPrompter(ask)
   const presenter = buildInitPresenter(logger)
-  const options: InitOptions = {
-    getCurrentDirectoryName: () => process.cwd(),
-    prompts,
-    presenter,
-  }
 
-  return () => init(options)
+  return () => init({
+    getCurrentDirectoryName: () => process.cwd(),
+    prompter,
+    presenter,
+  })
 }
 
 export function buildInitPresenter(logger: Logger): InitPresenter {
@@ -102,7 +95,7 @@ export function buildInitPresenter(logger: Logger): InitPresenter {
   }
 }
 
-export function buildInitPrompts(askFn: (question: string) => Promise<string>): InitPrompts {
+export function buildInitPrompter(askFn: (question: string) => Promise<string>): InitPrompter {
   return {
     promptForServerUrl: (): Promise<string> => askFn('Server URL: '),
     promptAnotherServerUrl: (): Promise<string> => askFn('Please enter another server URL: '),

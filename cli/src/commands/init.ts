@@ -9,7 +9,7 @@ import {
 import { writeCache } from '../lib/writeCache.js'
 import { writeSettings } from '../lib/writeSettings.js'
 
-export interface InitPrompts {
+export interface InitPrompter {
   promptForServerUrl(): Promise<string>
   promptAnotherServerUrl(): Promise<string>
   promptToConfirmServerUrl(existingUrl: string): Promise<boolean>
@@ -27,7 +27,7 @@ export interface InitPresenter {
 
 export interface InitOptions {
   getCurrentDirectoryName: () => string
-  prompts: InitPrompts
+  prompter: InitPrompter
   presenter: InitPresenter
 }
 
@@ -36,7 +36,7 @@ export interface InitResult {
 }
 
 export async function init(options: InitOptions): Promise<InitResult> {
-  const { getCurrentDirectoryName, prompts, presenter } = options
+  const { getCurrentDirectoryName, prompter, presenter } = options
   const currentDirectoryName = getCurrentDirectoryName()
   const settingsPath = join(currentDirectoryName, '.ripe/settings.json')
   const cachePath = join(currentDirectoryName, '.ripe/cache.json')
@@ -44,8 +44,8 @@ export async function init(options: InitOptions): Promise<InitResult> {
   const rawRemoteUrl = await readRemoteUrl(currentDirectoryName, presenter)
   if (!rawRemoteUrl) return { status: 'error' }
 
-  const remoteUrl = await resolveHttpsRemoteUrl(rawRemoteUrl, prompts)
-  const serverUrl = await resolveServerUrl(settingsPath, prompts, presenter)
+  const remoteUrl = await resolveHttpsRemoteUrl(rawRemoteUrl, prompter)
+  const serverUrl = await resolveServerUrl(settingsPath, prompter, presenter)
   const defaultProjectName = basename(currentDirectoryName)
 
   const result = await tryRegisterProject(serverUrl, defaultProjectName, remoteUrl, presenter)
@@ -81,7 +81,7 @@ function tryWriteLocalState(
 
 async function resolveServerUrl(
   settingsPath: string,
-  prompts: InitPrompts,
+  prompts: InitPrompter,
   presenter: InitPresenter,
 ): Promise<string> {
   const existingSettings = readSettings(settingsPath)
@@ -108,7 +108,7 @@ async function readRemoteUrl(cwd: string, presenter: InitPresenter): Promise<str
   }
 }
 
-async function resolveHttpsRemoteUrl(rawRemoteUrl: string, prompts: InitPrompts): Promise<string> {
+async function resolveHttpsRemoteUrl(rawRemoteUrl: string, prompts: InitPrompter): Promise<string> {
   if (rawRemoteUrl.startsWith('https://')) return rawRemoteUrl
 
   return prompts.promptForHttpsRemote(rawRemoteUrl)
