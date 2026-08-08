@@ -12,6 +12,7 @@ import type { InitOptions, InitPresenter, InitPrompter } from '@/commands/init.j
 import { init } from '@/commands/init.js'
 import { createCacheStore } from '@/lib/cacheStore.js'
 import { createGitRepository } from '@/lib/gitRepository.js'
+import { createProjectDirectory } from '@/lib/projectDirectory.js'
 import { createSettingsStore } from '@/lib/settingsStore.js'
 import type { RipeCache } from '@/lib/writeCache.js'
 import * as writeCacheModule from '@/lib/writeCache.js'
@@ -375,9 +376,10 @@ function fakeInitOptions(overrides: {
 }): InitOptions {
   const getCurrentDirectoryName =
     overrides.getCurrentDirectoryName ?? unexpectedCall('getCurrentDirectoryName')
+  const projectDirectory = createProjectDirectory(getCurrentDirectoryName)
 
   return {
-    getCurrentDirectoryName,
+    projectDirectory,
     prompter: {
       promptForServerUrl: unexpectedCall('promptForServerUrl'),
       promptAnotherServerUrl: unexpectedCall('promptAnotherServerUrl'),
@@ -394,9 +396,9 @@ function fakeInitOptions(overrides: {
       onLocalStateWriteFailed: unexpectedCall('onLocalStateWriteFailed'),
       ...overrides.presenter,
     },
-    gitRepository: createGitRepository(getCurrentDirectoryName),
-    settingsStore: createSettingsStore(getCurrentDirectoryName),
-    cacheStore: createCacheStore(getCurrentDirectoryName),
+    gitRepository: createGitRepository(projectDirectory),
+    settingsStore: createSettingsStore(projectDirectory),
+    cacheStore: createCacheStore(projectDirectory),
   }
 }
 

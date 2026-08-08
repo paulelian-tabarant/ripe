@@ -1,6 +1,6 @@
-import { basename } from 'node:path'
 import type { CacheStore } from '../lib/cacheStore.js'
 import type { GitRepository } from '../lib/gitRepository.js'
+import type { ProjectDirectory } from '../lib/projectDirectory.js'
 import {
   type ProjectRegistrationResult,
   registerProject,
@@ -25,7 +25,7 @@ export interface InitPresenter {
 }
 
 export interface InitOptions {
-  getCurrentDirectoryName: () => string
+  projectDirectory: ProjectDirectory
   prompter: InitPrompter
   presenter: InitPresenter
   gitRepository: GitRepository
@@ -36,15 +36,14 @@ export interface InitOptions {
 export type CommandResult = 'success' | 'error'
 
 export async function init(options: InitOptions): Promise<CommandResult> {
-  const { getCurrentDirectoryName, prompter, presenter, gitRepository, settingsStore, cacheStore } =
+  const { projectDirectory, prompter, presenter, gitRepository, settingsStore, cacheStore } =
     options
-  const currentDirectoryName = getCurrentDirectoryName()
 
   const remoteUrl = await resolveRemoteUrl(gitRepository, prompter, presenter)
   if (!remoteUrl) return 'error'
 
   const serverUrl = await resolveServerUrl(settingsStore, prompter, presenter)
-  const defaultProjectName = basename(currentDirectoryName)
+  const defaultProjectName = projectDirectory.getName()
 
   let result: ProjectRegistrationResult
   try {
