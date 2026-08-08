@@ -1,12 +1,12 @@
 import { basename } from 'node:path'
-import { createCacheStore } from '../lib/cacheStore.js'
-import { createGitRepository, type GitRepository } from '../lib/gitRepository.js'
+import type { CacheStore } from '../lib/cacheStore.js'
+import type { GitRepository } from '../lib/gitRepository.js'
 import {
   type ProjectRegistrationResult,
   registerProject,
   ServerInvalidRemoteUrlError,
 } from '../lib/registerProject.js'
-import { createSettingsStore, type SettingsStore } from '../lib/settingsStore.js'
+import type { SettingsStore } from '../lib/settingsStore.js'
 
 export interface InitPrompter {
   promptForServerUrl(): Promise<string>
@@ -28,16 +28,17 @@ export interface InitOptions {
   getCurrentDirectoryName: () => string
   prompter: InitPrompter
   presenter: InitPresenter
+  gitRepository: GitRepository
+  settingsStore: SettingsStore
+  cacheStore: CacheStore
 }
 
 export type CommandResult = 'success' | 'error'
 
 export async function init(options: InitOptions): Promise<CommandResult> {
-  const { getCurrentDirectoryName, prompter, presenter } = options
+  const { getCurrentDirectoryName, prompter, presenter, gitRepository, settingsStore, cacheStore } =
+    options
   const currentDirectoryName = getCurrentDirectoryName()
-  const gitRepository = createGitRepository(getCurrentDirectoryName)
-  const settingsStore = createSettingsStore(getCurrentDirectoryName)
-  const cacheStore = createCacheStore(getCurrentDirectoryName)
 
   const remoteUrl = await resolveRemoteUrl(gitRepository, prompter, presenter)
   if (!remoteUrl) return 'error'

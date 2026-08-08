@@ -10,6 +10,9 @@ import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { InitOptions, InitPresenter, InitPrompter } from '@/commands/init.js'
 import { init } from '@/commands/init.js'
+import { createCacheStore } from '@/lib/cacheStore.js'
+import { createGitRepository } from '@/lib/gitRepository.js'
+import { createSettingsStore } from '@/lib/settingsStore.js'
 import type { RipeCache } from '@/lib/writeCache.js'
 import * as writeCacheModule from '@/lib/writeCache.js'
 import type { RipeSettings } from '@/lib/writeSettings.js'
@@ -370,9 +373,11 @@ function fakeInitOptions(overrides: {
   prompts?: Partial<InitPrompter>
   presenter?: Partial<InitPresenter>
 }): InitOptions {
+  const getCurrentDirectoryName =
+    overrides.getCurrentDirectoryName ?? unexpectedCall('getCurrentDirectoryName')
+
   return {
-    getCurrentDirectoryName:
-      overrides.getCurrentDirectoryName ?? unexpectedCall('getCurrentDirectoryName'),
+    getCurrentDirectoryName,
     prompter: {
       promptForServerUrl: unexpectedCall('promptForServerUrl'),
       promptAnotherServerUrl: unexpectedCall('promptAnotherServerUrl'),
@@ -389,6 +394,9 @@ function fakeInitOptions(overrides: {
       onLocalStateWriteFailed: unexpectedCall('onLocalStateWriteFailed'),
       ...overrides.presenter,
     },
+    gitRepository: createGitRepository(getCurrentDirectoryName),
+    settingsStore: createSettingsStore(getCurrentDirectoryName),
+    cacheStore: createCacheStore(getCurrentDirectoryName),
   }
 }
 
