@@ -25,6 +25,10 @@ pnpm --filter api test
 pnpm --filter ./cli test
 pnpm --filter web test
 
+pnpm --filter api lint:fix      # Biome: auto-fix formatting/import-sort/lint issues in place
+pnpm --filter ./cli lint:fix    # same, for cli/
+pnpm --filter web lint:fix      # same, for web/
+
 pnpm lint:md           # Markdown lint
 ```
 
