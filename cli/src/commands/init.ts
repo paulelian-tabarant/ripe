@@ -1,12 +1,12 @@
+import {
+  type ApiClient,
+  createApiClient,
+  type ProjectRegistrationResult,
+  ServerInvalidRemoteUrlError,
+} from '../lib/api-client.js'
 import type { CacheStore } from '../lib/cache-store.js'
 import type { GitRepository } from '../lib/git-repository.js'
 import type { ProjectDirectory } from '../lib/project-directory.js'
-import {
-  createServer,
-  type ProjectRegistrationResult,
-  type Server,
-  ServerInvalidRemoteUrlError,
-} from '../lib/server.js'
 import type { SettingsStore } from '../lib/settings-store.js'
 
 export interface InitPrompter {
@@ -18,7 +18,8 @@ export interface InitPrompter {
 
 export interface InitPresenter {
   onInvalidServerUrl(url: string): void
-  onProjectRegistered(result: ProjectRegistrationResult): void
+  onProjectCreated(projectId: string): void
+  onProjectAlreadyExisting(projectId: string): void
   onRemoteUrlError(detail?: string): void
   onServerRejectedRemoteUrl(remoteUrl: string, detail?: string): void
   onServerUnreachable(serverUrl: string, detail?: string): void
@@ -44,20 +45,23 @@ export async function init(options: InitOptions): Promise<CommandResult> {
   if (!gitRemoteUrl) return 'error'
 
   const serverUrl = await getOrAskForServerUrl(settingsStore, prompter, presenter)
-  const projectName = projectDirectory.getName()
-  const server = createServer(serverUrl)
+  const apiClient = createApiClient(serverUrl)
 
-  const projectRegistrationResult = await registerProjectToServer(server, presenter, {
-    name: projectName,
+  const projectRegistrationResult = await registerProjectToServer(apiClient, presenter, {
+    name: projectDirectory.getName(),
     gitRemoteUrl,
   })
 
   if (!projectRegistrationResult) return 'error'
 
-  presenter.onProjectRegistered(projectRegistrationResult)
+  if (projectRegistrationResult.wasAlreadyExisting) {
+    presenter.onProjectAlreadyExisting(projectRegistrationResult.projectId)
+  } else {
+    presenter.onProjectCreated(projectRegistrationResult.projectId)
+  }
 
-  const wereProjectDataSaved = saveProjectData(settingsStore, cacheStore, presenter, {
-    serverUrl: server.getUrl(),
+  const wereProjectDataSaved = saveProjectDataLocally(settingsStore, cacheStore, presenter, {
+    serverUrl: apiClient.getServerUrl(),
     projectId: projectRegistrationResult.projectId,
   })
 
@@ -109,7 +113,7 @@ async function getOrAskForServerUrl(
 }
 
 async function registerProjectToServer(
-  server: Server,
+  server: ApiClient,
   presenter: InitPresenter,
   project: {
     name: string
@@ -124,14 +128,14 @@ async function registerProjectToServer(
     if (err instanceof ServerInvalidRemoteUrlError) {
       presenter.onServerRejectedRemoteUrl(project.gitRemoteUrl, detail)
     } else {
-      presenter.onServerUnreachable(server.getUrl(), detail)
+      presenter.onServerUnreachable(server.getServerUrl(), detail)
     }
 
     return undefined
   }
 }
 
-function saveProjectData(
+function saveProjectDataLocally(
   settingsStore: SettingsStore,
   cacheStore: CacheStore,
   presenter: InitPresenter,

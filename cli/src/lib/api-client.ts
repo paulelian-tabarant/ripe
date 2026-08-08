@@ -15,14 +15,14 @@ export class ServerInvalidRemoteUrlError extends Error {
   }
 }
 
-export interface Server {
-  getUrl(): string
+export interface ApiClient {
+  getServerUrl(): string
   registerProject(name: string, remoteUrl: string): Promise<ProjectRegistrationResult>
 }
 
-export function createServer(serverUrl: string): Server {
+export function createApiClient(serverUrl: string): ApiClient {
   return {
-    getUrl: (): string => serverUrl,
+    getServerUrl: (): string => serverUrl,
     registerProject: (name: string, remoteUrl: string): Promise<ProjectRegistrationResult> =>
       registerProject(serverUrl, name, remoteUrl),
   }

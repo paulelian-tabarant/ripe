@@ -42,7 +42,7 @@ describe('init', () => {
       { projectId: 'proj_abc123' },
       { name: basename(tmpDir), remoteUrl: FAKE_HTTPS_REMOTE_URL },
     )
-    const onProjectRegistered = vi.fn()
+    const onProjectCreated = vi.fn()
 
     const result = await init(
       fakeInitOptions({
@@ -51,17 +51,14 @@ describe('init', () => {
           promptForServerUrl: async () => FAKE_SERVER_URL,
           promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
         },
-        presenter: { onProjectRegistered },
+        presenter: { onProjectCreated },
       }),
     )
 
     expect(result).toBe('success')
     expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
     expect(readWrittenCache().projectId).toBe('proj_abc123')
-    expect(onProjectRegistered).toHaveBeenCalledWith({
-      wasAlreadyExisting: false,
-      projectId: 'proj_abc123',
-    })
+    expect(onProjectCreated).toHaveBeenCalledWith('proj_abc123')
   })
 
   it('reports a retryable error, without crashing, when saving local state fails after a successful registration', async () => {
@@ -77,7 +74,7 @@ describe('init', () => {
         promptForServerUrl: async () => FAKE_SERVER_URL,
         promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
       },
-      presenter: { onProjectRegistered: vi.fn(), onLocalStateWriteFailed },
+      presenter: { onProjectCreated: vi.fn(), onLocalStateWriteFailed },
     })
     vi.spyOn(options.cacheStore, 'write').mockImplementation(() => {
       throw new Error('ENOSPC: no space left on device')
@@ -93,7 +90,7 @@ describe('init', () => {
 
   it('writes settings and cache on 200 (existing project) with no confirmation prompt', async () => {
     stubRegisterProjectApi(200, { projectId: 'proj_existing' })
-    const onProjectRegistered = vi.fn()
+    const onProjectAlreadyExisting = vi.fn()
 
     const result = await init(
       fakeInitOptions({
@@ -102,17 +99,14 @@ describe('init', () => {
           promptForServerUrl: async () => FAKE_SERVER_URL,
           promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
         },
-        presenter: { onProjectRegistered },
+        presenter: { onProjectAlreadyExisting },
       }),
     )
 
     expect(result).toBe('success')
     expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
     expect(readWrittenCache().projectId).toBe('proj_existing')
-    expect(onProjectRegistered).toHaveBeenCalledWith({
-      wasAlreadyExisting: true,
-      projectId: 'proj_existing',
-    })
+    expect(onProjectAlreadyExisting).toHaveBeenCalledWith('proj_existing')
   })
 
   it('re-prompts on invalid URL until a valid one is provided', async () => {
@@ -131,7 +125,7 @@ describe('init', () => {
           promptAnotherServerUrl: async () => urls[call++]!,
           promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
         },
-        presenter: { onInvalidServerUrl, onProjectRegistered: vi.fn() },
+        presenter: { onInvalidServerUrl, onProjectCreated: vi.fn() },
       }),
     )
 
@@ -223,7 +217,7 @@ describe('init', () => {
           promptForServerUrl: async () => FAKE_SERVER_URL,
           promptForHttpsRemote,
         },
-        presenter: { onProjectRegistered: vi.fn() },
+        presenter: { onProjectCreated: vi.fn() },
       }),
     )
 
@@ -246,7 +240,7 @@ describe('init', () => {
           promptForServerUrl: async () => FAKE_SERVER_URL,
           promptForHttpsRemote,
         },
-        presenter: { onProjectRegistered: vi.fn() },
+        presenter: { onProjectCreated: vi.fn() },
       }),
     )
 
@@ -267,7 +261,7 @@ describe('init', () => {
       fakeInitOptions({
         getCurrentDirectoryName: () => tmpDir,
         prompts: { promptForServerUrl: async () => FAKE_SERVER_URL },
-        presenter: { onProjectRegistered: vi.fn() },
+        presenter: { onProjectCreated: vi.fn() },
       }),
     )
 
@@ -291,7 +285,7 @@ describe('init', () => {
           promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
           promptToConfirmServerUrl: async () => true,
         },
-        presenter: { onProjectRegistered: vi.fn() },
+        presenter: { onProjectCreated: vi.fn() },
       }),
     )
 
@@ -314,7 +308,7 @@ describe('init', () => {
           promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
           promptToConfirmServerUrl: async () => false,
         },
-        presenter: { onProjectRegistered: vi.fn() },
+        presenter: { onProjectCreated: vi.fn() },
       }),
     )
 
@@ -338,7 +332,7 @@ describe('init', () => {
           promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
           promptToConfirmServerUrl,
         },
-        presenter: { onProjectRegistered: vi.fn() },
+        presenter: { onProjectCreated: vi.fn() },
       }),
     )
 
@@ -386,7 +380,8 @@ function fakeInitOptions(overrides: {
     },
     presenter: {
       onInvalidServerUrl: unexpectedCall('onInvalidServerUrl'),
-      onProjectRegistered: unexpectedCall('onProjectRegistered'),
+      onProjectCreated: unexpectedCall('onProjectCreated'),
+      onProjectAlreadyExisting: unexpectedCall('onProjectAlreadyExisting'),
       onRemoteUrlError: unexpectedCall('onRemoteUrlError'),
       onServerRejectedRemoteUrl: unexpectedCall('onServerRejectedRemoteUrl'),
       onServerUnreachable: unexpectedCall('onServerUnreachable'),

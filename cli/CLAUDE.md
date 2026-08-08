@@ -34,7 +34,7 @@ behind this):
 - `src/lib/project-directory.ts` — wraps the process's cwd (`getPath()`/`getName()`).
 - `src/lib/git-repository.ts` — reads the `origin` remote via `git remote get-url origin` and
   checks whether it's HTTPS.
-- `src/lib/server.ts` — `Server` interface (`registerProject`), backed by a raw `fetch` call to
+- `src/lib/api-client.ts` — `ApiClient` interface (`registerProject`), backed by a raw `fetch` call to
   `POST /api/projects`. Returns typed result objects.
 - `src/lib/settings-store.ts` — reads/writes `.ripe/settings.json` (`{serverUrl}`, interactively
   set).
