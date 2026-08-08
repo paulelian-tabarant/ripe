@@ -58,7 +58,10 @@ describe('init', () => {
     expect(result).toBe('success')
     expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
     expect(readWrittenCache().projectId).toBe('proj_abc123')
-    expect(onProjectRegistered).toHaveBeenCalledWith({ created: true, projectId: 'proj_abc123' })
+    expect(onProjectRegistered).toHaveBeenCalledWith({
+      wasAlreadyExisting: false,
+      projectId: 'proj_abc123',
+    })
   })
 
   it('reports a retryable error, without crashing, when saving local state fails after a successful registration', async () => {
@@ -107,7 +110,7 @@ describe('init', () => {
     expect(readWrittenSettings().serverUrl).toBe(FAKE_SERVER_URL)
     expect(readWrittenCache().projectId).toBe('proj_existing')
     expect(onProjectRegistered).toHaveBeenCalledWith({
-      created: false,
+      wasAlreadyExisting: true,
       projectId: 'proj_existing',
     })
   })

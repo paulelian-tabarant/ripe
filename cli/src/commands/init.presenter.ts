@@ -8,7 +8,7 @@ export function buildInitPresenter(logger: Logger): InitPresenter {
       logger.error(`Invalid server URL: "${url}". Must be a valid http or https URL.`),
     onProjectRegistered: (result: ProjectRegistrationResult): void =>
       logger.log(
-        result.created
+        result.wasAlreadyExisting
           ? `Project registered: ${result.projectId}`
           : `Using existing project ID: ${result.projectId}`,
       ),

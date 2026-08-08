@@ -4,7 +4,7 @@ import type {
 } from '@ripe/api/contracts/projects.js'
 
 export interface ProjectRegistrationResult {
-  created: boolean
+  wasAlreadyExisting: boolean
   projectId: string
 }
 
@@ -53,5 +53,5 @@ async function registerProject(
 
   const parsed = (await res.json()) as RegisterProjectResponseBody
 
-  return { created: res.status === 201, projectId: parsed.projectId }
+  return { wasAlreadyExisting: res.status === 200, projectId: parsed.projectId }
 }
