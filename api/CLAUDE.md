@@ -26,7 +26,7 @@ pnpm --filter api test tests/endpoints/registerProject.test.ts
 | `DATABASE_PATH` | Absolute path to the SQLite file   |
 | `PORT`          | HTTP port (integer, 1–65535)       |
 
-`loadConfig()` in `src/config.ts` throws on startup if either is missing or invalid.
+`loadConfig()` in `src/infrastructure/config.ts` throws on startup if either is missing or invalid.
 
 ## Architecture
 
@@ -36,13 +36,13 @@ singletons, no globals.
 
 - **Endpoints** (`src/endpoints/`) — Fastify plugin functions, one per API endpoint; validate
   request shape via JSON Schema, delegate to use-cases, map results to HTTP status codes.
-- **Use-cases** (`src/use-cases/`) — business logic; one class per use case (e.g.
+- **Use-cases** (`src/core/use-cases/`) — business logic; one class per use case (e.g.
   `RegisterProject`, `ListProjects`), with `run()` as the single public method. Each use-case
   class takes a constructor-injected repository, calls repository functions, and returns typed
   result objects (e.g. `RegisterProjectResult`).
 - **Repositories** (`src/repositories/`) — raw SQL only; accept and return plain objects
   (`ProjectRow`).
-- **Domain** (`src/domain/`) — entity classes with a private constructor and a validating static
+- **Domain** (`src/core/domain/`) — entity classes with a private constructor and a validating static
   factory. External input that needs deriving/validating before it can be used gets its own value
   object with a private constructor and a `resolve`-style factory (e.g.
   `ProjectRepoReference.resolve(remoteUrl): ProjectRepoReference | InvalidRemoteUrlError`), kept
@@ -65,7 +65,7 @@ internal layers. Each test file creates its own `Database(':memory:')` and `buil
 ## Key Conventions
 
 - Project IDs are server-assigned with `nanoid`, prefixed `proj_`.
-- Schema is managed via `@blackglory/better-sqlite3-migrations`. Migrations live in `src/db/migrations.ts`;
+- Schema is managed via `@blackglory/better-sqlite3-migrations`. Migrations live in `src/infrastructure/db/migrations.ts`;
   `migrateDatabase(db)` runs them at startup. Add new migrations as versioned entries with `up`/`down` SQL.
 - The `db` instance is passed down through Fastify plugin options, not imported as a
   module-level singleton.

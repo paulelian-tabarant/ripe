@@ -1,12 +1,12 @@
 import type Database from 'better-sqlite3'
 import Fastify, { type FastifyInstance } from 'fastify'
-import { migrateDatabase } from './db/migrateDatabase.js'
-import { healthEndpoints } from './endpoints/healthEndpoints.js'
-import { projectEndpoints } from './endpoints/projectEndpoints.js'
-import { requireNonEmptyDir, staticEndpoints } from './endpoints/staticEndpoints.js'
-import { ProjectRepository } from './repositories/project-repository.js'
-import { ListProjects } from './use-cases/list-projects.js'
-import { RegisterProject } from './use-cases/register-project.js'
+import { ListProjects } from './core/use-cases/list-projects.js'
+import { RegisterProject } from './core/use-cases/register-project.js'
+import { healthEndpoints } from './endpoints/health.endpoints.js'
+import { projectEndpoints } from './endpoints/project.endpoints.js'
+import { requireNonEmptyDir, staticEndpoints } from './endpoints/static.endpoints.js'
+import { migrateDatabase } from './infrastructure/db/migrateDatabase.js'
+import { ProjectRepository } from './infrastructure/project-repository.js'
 
 export function buildApp(
   db: Database.Database,

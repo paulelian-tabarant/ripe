@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { buildApp } from './app.js'
-import { loadConfig } from './config.js'
-import { createDatabase } from './db/createDatabase.js'
+import { loadConfig } from './infrastructure/config.js'
+import { createDatabase } from './infrastructure/db/createDatabase.js'
 
 function main(): void {
   const { databasePath, port, shouldServeBuiltFrontend } = loadConfig()

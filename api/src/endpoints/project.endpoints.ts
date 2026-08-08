@@ -1,12 +1,12 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifySchema } from 'fastify'
+import { InvalidRemoteUrlError } from '../core/domain/project-repo-reference.js'
+import type { ListProjects } from '../core/use-cases/list-projects.js'
+import type { RegisterProject } from '../core/use-cases/register-project.js'
 import type {
   ProjectResponseBodyItem,
   RegisterProjectRequestBody,
   RegisterProjectResponseBody,
-} from '../contracts/projects.js'
-import { InvalidRemoteUrlError } from '../domain/project-repo-reference.js'
-import type { ListProjects } from '../use-cases/list-projects.js'
-import type { RegisterProject } from '../use-cases/register-project.js'
+} from './contracts/projects.js'
 
 interface ProjectEndpointOptions {
   registerProject: RegisterProject

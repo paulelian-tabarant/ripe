@@ -76,7 +76,7 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
     need to distinguish more than one reason — reach for the named-class shape as soon as either
     of those stops being true.
 - **Shared API contract types live in `api`, not duplicated per client**: request/response wire
-  shapes for `api` endpoints are declared once, in `api/src/contracts/<domain>.ts` (types only —
+  shapes for `api` endpoints are declared once, in `api/src/endpoints/contracts/<domain>.ts` (types only —
   no Fastify, DB, or other runtime imports), and exposed to `cli`/`web` via a dedicated `exports`
   subpath in `api/package.json` (`./contracts/*.js`).
   - Response bodies get their own dedicated interface, not a reuse of the internal use-case/domain
