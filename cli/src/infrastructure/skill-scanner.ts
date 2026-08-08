@@ -35,7 +35,7 @@ export async function scanSkillCatalogOnMain(
   )
 
   const { names, skipped } = classifySkillFiles(files)
-  const notOnMain = findSkillDirsNotOnMain(projectDirectoryPath, mainSkillFilePaths)
+  const notOnMain = listSkillDirsNotOnMain(projectDirectoryPath, mainSkillFilePaths)
 
   return { names, skipped: [...skipped, ...notOnMain] }
 }
@@ -72,7 +72,7 @@ function extractSkillName(content: string): string | undefined {
   return nameMatch?.[1]
 }
 
-function findSkillDirsNotOnMain(
+function listSkillDirsNotOnMain(
   projectDirectoryPath: string,
   mainSkillFilePaths: string[],
 ): SkillScanResult['skipped'] {
