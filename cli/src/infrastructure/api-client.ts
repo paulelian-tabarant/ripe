@@ -8,6 +8,11 @@ export interface ProjectRegistrationResult {
   projectId: string
 }
 
+export interface SkillRegistrationResult {
+  name: string
+  skillId: string
+}
+
 export class ServerInvalidRemoteUrlError extends Error {
   constructor(status: number) {
     super(`Server rejected the request: ${String(status)}`)
@@ -18,6 +23,7 @@ export class ServerInvalidRemoteUrlError extends Error {
 export interface ApiClient {
   getServerUrl(): string
   registerProject(name: string, remoteUrl: string): Promise<ProjectRegistrationResult>
+  registerSkills(projectId: string, names: string[]): Promise<SkillRegistrationResult[]>
 }
 
 export function createApiClient(serverUrl: string): ApiClient {
@@ -25,6 +31,8 @@ export function createApiClient(serverUrl: string): ApiClient {
     getServerUrl: (): string => serverUrl,
     registerProject: (name: string, remoteUrl: string): Promise<ProjectRegistrationResult> =>
       registerProject(serverUrl, name, remoteUrl),
+    registerSkills: (projectId: string, names: string[]): Promise<SkillRegistrationResult[]> =>
+      registerSkills(serverUrl, projectId, names),
   }
 }
 
@@ -54,4 +62,25 @@ async function registerProject(
   const parsed = (await res.json()) as RegisterProjectResponseBody
 
   return { wasAlreadyExisting: res.status === 200, projectId: parsed.projectId }
+}
+
+async function registerSkills(
+  serverUrl: string,
+  projectId: string,
+  names: string[],
+): Promise<SkillRegistrationResult[]> {
+  const url = new URL(`/api/projects/${projectId}/skills`, serverUrl)
+  const body = JSON.stringify({ skills: names.map((name) => ({ name })) })
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+  })
+
+  if (res.status !== 200) {
+    throw new Error(`Unexpected response status: ${String(res.status)}`)
+  }
+
+  return (await res.json()) as SkillRegistrationResult[]
 }

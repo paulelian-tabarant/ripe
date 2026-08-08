@@ -3,11 +3,14 @@ import {
   createApiClient,
   type ProjectRegistrationResult,
   ServerInvalidRemoteUrlError,
+  type SkillRegistrationResult,
 } from '@/infrastructure/api-client.js'
-import type { CacheStore } from '@/infrastructure/cache-store.js'
+import type { CacheStore, RipeCache } from '@/infrastructure/cache-store.js'
 import type { GitRepository } from '@/infrastructure/git-repository.js'
 import type { ProjectDirectory } from '@/infrastructure/project-directory.js'
 import type { SettingsStore } from '@/infrastructure/settings-store.js'
+
+const MAIN_BRANCH = 'main'
 
 export interface InitPrompter {
   promptForServerUrl(): Promise<string>
@@ -15,6 +18,8 @@ export interface InitPrompter {
   promptToConfirmServerUrl(existingUrl: string): Promise<boolean>
   promptForHttpsRemote(remoteUrl: string): Promise<string>
 }
+
+export type SkillSkipReason = 'namespaced' | 'malformed-frontmatter'
 
 export interface InitPresenter {
   onInvalidServerUrl(url: string): void
@@ -24,6 +29,10 @@ export interface InitPresenter {
   onServerRejectedRemoteUrl(remoteUrl: string, detail?: string): void
   onServerUnreachable(serverUrl: string, detail?: string): void
   onLocalStateWriteFailed(detail?: string): void
+  onNoLocalMainBranch(): void
+  onNoSkillsFound(): void
+  onSkillSkipped(path: string, reason: SkillSkipReason): void
+  onSkillRegistrationFailed(detail?: string): void
 }
 
 export interface InitOptions {
@@ -40,6 +49,8 @@ export type CommandResult = 'success' | 'error'
 export async function init(options: InitOptions): Promise<CommandResult> {
   const { projectDirectory, prompter, presenter, gitRepository, settingsStore, cacheStore } =
     options
+
+  const existingCache = cacheStore.read()
 
   const gitRemoteUrl = await getOrAskForGitRemoteUrl(gitRepository, prompter, presenter)
   if (!gitRemoteUrl) return 'error'
@@ -63,9 +74,25 @@ export async function init(options: InitOptions): Promise<CommandResult> {
   const wereProjectDataSaved = saveProjectDataLocally(settingsStore, cacheStore, presenter, {
     serverUrl: apiClient.getServerUrl(),
     projectId: projectRegistrationResult.projectId,
+    skillIds: existingCache?.skillIds,
   })
 
   if (!wereProjectDataSaved) {
+    return 'error'
+  }
+
+  const wereSkillsRegistered = await registerSkillsWithServer(
+    gitRepository,
+    apiClient,
+    cacheStore,
+    presenter,
+    {
+      projectId: projectRegistrationResult.projectId,
+      cachedSkillIds: existingCache?.skillIds,
+    },
+  )
+
+  if (!wereSkillsRegistered) {
     return 'error'
   }
 
@@ -139,11 +166,11 @@ function saveProjectDataLocally(
   settingsStore: SettingsStore,
   cacheStore: CacheStore,
   presenter: InitPresenter,
-  data: { serverUrl: string; projectId: string },
+  data: { serverUrl: string; projectId: string; skillIds: Record<string, string> | undefined },
 ): boolean {
   try {
     settingsStore.write({ serverUrl: data.serverUrl })
-    cacheStore.write({ projectId: data.projectId })
+    cacheStore.write({ projectId: data.projectId, skillIds: data.skillIds })
 
     return true
   } catch (err) {
@@ -161,4 +188,116 @@ function isValidHttpUrl(url: string): boolean {
   } catch {
     return false
   }
+}
+
+interface SkillFile {
+  path: string
+  content: string
+}
+
+interface SkillScanResult {
+  names: string[]
+  skipped: Array<{ path: string; reason: SkillSkipReason }>
+}
+
+function extractSkillName(content: string): string | undefined {
+  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/)
+  if (!frontmatterMatch) return undefined
+
+  const nameMatch = frontmatterMatch[1]?.match(/^name:\s*(.+)$/m)
+  if (!nameMatch) return undefined
+
+  const name = nameMatch[1]?.trim().replace(/^["']|["']$/g, '')
+
+  return name && name.length > 0 ? name : undefined
+}
+
+function classifySkillFiles(files: SkillFile[]): SkillScanResult {
+  const names: string[] = []
+  const skipped: SkillScanResult['skipped'] = []
+
+  for (const file of files) {
+    const name = extractSkillName(file.content)
+
+    if (name === undefined) {
+      skipped.push({ path: file.path, reason: 'malformed-frontmatter' })
+      continue
+    }
+
+    if (name.includes(':')) {
+      skipped.push({ path: file.path, reason: 'namespaced' })
+      continue
+    }
+
+    names.push(name)
+  }
+
+  return { names, skipped }
+}
+
+function haveSameNames(scannedNames: string[], cachedNames: string[]): boolean {
+  if (scannedNames.length !== cachedNames.length) return false
+
+  const scannedSet = new Set(scannedNames)
+
+  return cachedNames.every((name) => scannedSet.has(name))
+}
+
+async function scanSkillCatalogOnMain(gitRepository: GitRepository): Promise<SkillScanResult> {
+  const skillFilePaths = await gitRepository.listSkillFilePaths(MAIN_BRANCH)
+
+  const files = await Promise.all(
+    skillFilePaths.map(
+      async (path): Promise<SkillFile> => ({
+        path,
+        content: await gitRepository.readFileAtRef(MAIN_BRANCH, path),
+      }),
+    ),
+  )
+
+  return classifySkillFiles(files)
+}
+
+async function registerSkillsWithServer(
+  gitRepository: GitRepository,
+  apiClient: ApiClient,
+  cacheStore: CacheStore,
+  presenter: InitPresenter,
+  data: { projectId: string; cachedSkillIds: Record<string, string> | undefined },
+): Promise<boolean> {
+  const hasMainBranch = await gitRepository.hasLocalBranch(MAIN_BRANCH)
+  if (!hasMainBranch) {
+    presenter.onNoLocalMainBranch()
+
+    return false
+  }
+
+  const { names, skipped } = await scanSkillCatalogOnMain(gitRepository)
+  for (const skill of skipped) presenter.onSkillSkipped(skill.path, skill.reason)
+
+  if (names.length === 0) {
+    presenter.onNoSkillsFound()
+
+    return true
+  }
+
+  const cachedNames = Object.keys(data.cachedSkillIds ?? {})
+  if (haveSameNames(names, cachedNames)) return true
+
+  try {
+    const registered = await apiClient.registerSkills(data.projectId, names)
+    const skillIds = toSkillIdMap(registered)
+    const cache: RipeCache = { projectId: data.projectId, skillIds }
+    cacheStore.write(cache)
+
+    return true
+  } catch (err) {
+    presenter.onSkillRegistrationFailed(err instanceof Error ? err.message : undefined)
+
+    return false
+  }
+}
+
+function toSkillIdMap(registered: SkillRegistrationResult[]): Record<string, string> {
+  return Object.fromEntries(registered.map((skill) => [skill.name, skill.skillId]))
 }

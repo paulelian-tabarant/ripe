@@ -24,7 +24,10 @@ describe('init', () => {
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), 'ripe-test-'))
-    execFileSync('git', ['init'], { cwd: tmpDir })
+    execFileSync('git', ['init', '-b', 'main'], { cwd: tmpDir })
+    execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: tmpDir })
+    execFileSync('git', ['config', 'user.name', 'Test'], { cwd: tmpDir })
+    commitOnMain(tmpDir, 'chore: initial commit')
     execFileSync('git', ['remote', 'add', 'origin', FAKE_REMOTE_URL], { cwd: tmpDir })
     nock.cleanAll()
     nock.disableNetConnect()
@@ -340,6 +343,211 @@ describe('init', () => {
     expect(promptToConfirmServerUrl).not.toHaveBeenCalled()
   })
 
+  describe('skill registration', () => {
+    it('POSTs the full scanned skill catalog and caches the returned skillIds when the cache is empty', async () => {
+      writeSkillFileAndCommit(tmpDir, 'alpha', skillMd('alpha'))
+      writeSkillFileAndCommit(tmpDir, 'beta', skillMd('beta'))
+      stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
+      stubRegisterSkillsApi(
+        'proj_abc123',
+        200,
+        [
+          { name: 'alpha', skillId: 'skill_1' },
+          { name: 'beta', skillId: 'skill_2' },
+        ],
+        ['alpha', 'beta'],
+      )
+
+      const result = await init(
+        fakeInitOptions({
+          getCurrentDirectoryName: () => tmpDir,
+          prompts: {
+            promptForServerUrl: async () => FAKE_SERVER_URL,
+            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+          },
+          presenter: { onProjectCreated: vi.fn() },
+        }),
+      )
+
+      expect(result).toBe('success')
+      expect(readWrittenCache().skillIds).toEqual({ alpha: 'skill_1', beta: 'skill_2' })
+    })
+
+    it('makes no skill registration call when the scanned skill names already match the cache', async () => {
+      writeSkillFileAndCommit(tmpDir, 'alpha', skillMd('alpha'))
+      writeExistingCache({ projectId: 'proj_abc123', skillIds: { alpha: 'skill_1' } })
+      stubRegisterProjectApi(200, { projectId: 'proj_abc123' })
+
+      const result = await init(
+        fakeInitOptions({
+          getCurrentDirectoryName: () => tmpDir,
+          prompts: {
+            promptForServerUrl: async () => FAKE_SERVER_URL,
+            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+          },
+          presenter: { onProjectAlreadyExisting: vi.fn() },
+        }),
+      )
+
+      expect(result).toBe('success')
+      expect(readWrittenCache().skillIds).toEqual({ alpha: 'skill_1' })
+      expect(nock.pendingMocks()).toEqual([])
+    })
+
+    it('re-POSTs the full catalog and overwrites the cache when the scanned names no longer match a non-empty cache', async () => {
+      writeSkillFileAndCommit(tmpDir, 'alpha', skillMd('alpha'))
+      writeSkillFileAndCommit(tmpDir, 'beta', skillMd('beta'))
+      writeExistingCache({ projectId: 'proj_abc123', skillIds: { alpha: 'skill_1' } })
+      stubRegisterProjectApi(200, { projectId: 'proj_abc123' })
+      stubRegisterSkillsApi(
+        'proj_abc123',
+        200,
+        [
+          { name: 'alpha', skillId: 'skill_1' },
+          { name: 'beta', skillId: 'skill_2' },
+        ],
+        ['alpha', 'beta'],
+      )
+
+      const result = await init(
+        fakeInitOptions({
+          getCurrentDirectoryName: () => tmpDir,
+          prompts: {
+            promptForServerUrl: async () => FAKE_SERVER_URL,
+            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+          },
+          presenter: { onProjectAlreadyExisting: vi.fn() },
+        }),
+      )
+
+      expect(result).toBe('success')
+      expect(readWrittenCache().skillIds).toEqual({ alpha: 'skill_1', beta: 'skill_2' })
+    })
+
+    it('warns and makes no skill registration call when no skills are found on main', async () => {
+      stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
+      const onNoSkillsFound = vi.fn()
+
+      const result = await init(
+        fakeInitOptions({
+          getCurrentDirectoryName: () => tmpDir,
+          prompts: {
+            promptForServerUrl: async () => FAKE_SERVER_URL,
+            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+          },
+          presenter: { onProjectCreated: vi.fn(), onNoSkillsFound },
+        }),
+      )
+
+      expect(result).toBe('success')
+      expect(onNoSkillsFound).toHaveBeenCalled()
+      expect(readWrittenCache().skillIds).toBeUndefined()
+    })
+
+    it.each([
+      ['a namespaced name', skillMd('team:alpha'), 'namespaced'],
+      ['malformed frontmatter', 'no frontmatter here\n', 'malformed-frontmatter'],
+    ] as const)(
+      'excludes a skill from registration and warns when it has %s',
+      async (_description, content, expectedReason) => {
+        writeSkillFileAndCommit(tmpDir, 'skipped-skill', content)
+        stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
+        const onSkillSkipped = vi.fn()
+        const onNoSkillsFound = vi.fn()
+
+        const result = await init(
+          fakeInitOptions({
+            getCurrentDirectoryName: () => tmpDir,
+            prompts: {
+              promptForServerUrl: async () => FAKE_SERVER_URL,
+              promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+            },
+            presenter: { onProjectCreated: vi.fn(), onSkillSkipped, onNoSkillsFound },
+          }),
+        )
+
+        expect(result).toBe('success')
+        expect(onSkillSkipped).toHaveBeenCalledWith(
+          expect.stringContaining('skipped-skill/SKILL.md'),
+          expectedReason,
+        )
+        expect(onNoSkillsFound).toHaveBeenCalled()
+        expect(readWrittenCache().skillIds).toBeUndefined()
+      },
+    )
+
+    it('excludes a skill only committed on a feature branch, without any warning', async () => {
+      execFileSync('git', ['checkout', '-b', 'feature'], { cwd: tmpDir })
+      writeSkillFileAndCommit(tmpDir, 'feature-only', skillMd('feature-only'))
+      execFileSync('git', ['checkout', 'main'], { cwd: tmpDir })
+      stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
+      const onNoSkillsFound = vi.fn()
+
+      const result = await init(
+        fakeInitOptions({
+          getCurrentDirectoryName: () => tmpDir,
+          prompts: {
+            promptForServerUrl: async () => FAKE_SERVER_URL,
+            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+          },
+          presenter: { onProjectCreated: vi.fn(), onNoSkillsFound },
+        }),
+      )
+
+      expect(result).toBe('success')
+      expect(onNoSkillsFound).toHaveBeenCalled()
+    })
+
+    it('excludes an uncommitted skill, without any warning', async () => {
+      const skillDir = join(tmpDir, '.claude/skills/uncommitted')
+      mkdirSync(skillDir, { recursive: true })
+      writeFileSync(join(skillDir, 'SKILL.md'), skillMd('uncommitted'))
+      stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
+      const onNoSkillsFound = vi.fn()
+
+      const result = await init(
+        fakeInitOptions({
+          getCurrentDirectoryName: () => tmpDir,
+          prompts: {
+            promptForServerUrl: async () => FAKE_SERVER_URL,
+            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+          },
+          presenter: { onProjectCreated: vi.fn(), onNoSkillsFound },
+        }),
+      )
+
+      expect(result).toBe('success')
+      expect(onNoSkillsFound).toHaveBeenCalled()
+    })
+
+    it('fails with an error and makes no skill registration call when no local main branch exists', async () => {
+      execFileSync('git', ['checkout', '-b', 'feature'], { cwd: tmpDir })
+      execFileSync('git', ['branch', '-D', 'main'], { cwd: tmpDir })
+      stubRegisterProjectApi(201, { projectId: 'proj_abc123' })
+      const onNoLocalMainBranch = vi.fn()
+
+      const result = await init(
+        fakeInitOptions({
+          getCurrentDirectoryName: () => tmpDir,
+          prompts: {
+            promptForServerUrl: async () => FAKE_SERVER_URL,
+            promptForHttpsRemote: async () => FAKE_HTTPS_REMOTE_URL,
+          },
+          presenter: { onProjectCreated: vi.fn(), onNoLocalMainBranch },
+        }),
+      )
+
+      expect(result).toBe('error')
+      expect(onNoLocalMainBranch).toHaveBeenCalled()
+      expect(nock.pendingMocks()).toEqual([])
+    })
+  })
+
+  function writeExistingCache(cache: RipeCache): void {
+    mkdirSync(join(tmpDir, '.ripe'), { recursive: true })
+    writeFileSync(join(tmpDir, '.ripe/cache.json'), JSON.stringify(cache))
+  }
+
   function writeExistingSettings(content: string): void {
     mkdirSync(join(tmpDir, '.ripe'), { recursive: true })
     writeFileSync(join(tmpDir, '.ripe/settings.json'), content)
@@ -386,6 +594,10 @@ function fakeInitOptions(overrides: {
       onServerRejectedRemoteUrl: unexpectedCall('onServerRejectedRemoteUrl'),
       onServerUnreachable: unexpectedCall('onServerUnreachable'),
       onLocalStateWriteFailed: unexpectedCall('onLocalStateWriteFailed'),
+      onNoLocalMainBranch: unexpectedCall('onNoLocalMainBranch'),
+      onNoSkillsFound: (): void => {},
+      onSkillSkipped: unexpectedCall('onSkillSkipped'),
+      onSkillRegistrationFailed: unexpectedCall('onSkillRegistrationFailed'),
       ...overrides.presenter,
     },
     gitRepository: createGitRepository(projectDirectory),
@@ -401,5 +613,44 @@ function stubRegisterProjectApi(
 ): void {
   nock(FAKE_SERVER_URL)
     .post('/api/projects', requestBody as nock.RequestBodyMatcher | undefined)
+    .reply(status, body)
+}
+
+function commitOnMain(cwd: string, message: string): void {
+  execFileSync('git', ['commit', '--allow-empty', '-m', message], { cwd })
+}
+
+function writeSkillFileAndCommit(cwd: string, skillDirName: string, skillMdContent: string): void {
+  const skillDir = join(cwd, '.claude/skills', skillDirName)
+  mkdirSync(skillDir, { recursive: true })
+  writeFileSync(join(skillDir, 'SKILL.md'), skillMdContent)
+  execFileSync('git', ['add', '.'], { cwd })
+  commitOnMain(cwd, `feat: add ${skillDirName} skill`)
+}
+
+function skillMd(name: string): string {
+  return `---\nname: ${name}\ndescription: a test skill\n---\n\nBody content.\n`
+}
+
+function stubRegisterSkillsApi(
+  projectId: string,
+  status: number,
+  body: Array<{ name: string; skillId: string }>,
+  expectedNames?: string[],
+): void {
+  nock(FAKE_SERVER_URL)
+    .post(
+      `/api/projects/${projectId}/skills`,
+      (requestBody: { skills: Array<{ name: string }> }) => {
+        if (!expectedNames) return true
+
+        const names = requestBody.skills.map((skill) => skill.name)
+
+        return (
+          names.length === expectedNames.length &&
+          expectedNames.every((name) => names.includes(name))
+        )
+      },
+    )
     .reply(status, body)
 }

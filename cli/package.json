@@ -1,6 +1,6 @@
 {
   "name": "@paulelian-tabarant/ripe",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "license": "PolyFormNoncommercial-1.0.0",
   "bin": {

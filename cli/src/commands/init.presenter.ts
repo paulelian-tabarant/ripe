@@ -26,5 +26,24 @@ export function buildInitPresenter(logger: Logger): InitPresenter {
       )
       if (detail) logger.error(detail)
     },
+    onNoLocalMainBranch: (): void => {
+      logger.error(
+        'Error: no local "main" branch found — cannot scan for skills committed on main.',
+      )
+    },
+    onNoSkillsFound: (): void => {
+      logger.warn('Warning: no skills found in .claude/skills/ on main — nothing to register.')
+    },
+    onSkillSkipped: (path: string, reason: 'namespaced' | 'malformed-frontmatter'): void => {
+      const reasonText =
+        reason === 'namespaced'
+          ? 'its name is namespaced (contains ":")'
+          : 'its frontmatter is missing or malformed'
+      logger.warn(`Warning: skipping skill at "${path}" — ${reasonText}.`)
+    },
+    onSkillRegistrationFailed: (detail?: string): void => {
+      logger.error('Error: failed to register skills with the server.')
+      if (detail) logger.error(detail)
+    },
   }
 }
