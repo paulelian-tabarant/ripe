@@ -16,6 +16,12 @@ pnpm --filter ./cli cli -- <command-name>   # build, then invoke the CLI, e.g. `
 pnpm --filter ./cli test tests/commands/init.test.ts
 ```
 
+## Versioning
+
+Bump `cli/package.json`'s `version` (semver, matching the size of the change — most feature/fix
+work is a patch or minor bump) whenever a change touches any file under `cli/`. Do this as the
+last change on the branch, right before opening the PR — see e.g. commit `269c308`.
+
 ## Architecture
 
 This is the `ripe` CLI — one command today: `ripe init` (prompts for the server URL).
