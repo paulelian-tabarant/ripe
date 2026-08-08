@@ -1,4 +1,4 @@
-import { basename, join } from 'node:path'
+import { basename } from 'node:path'
 import { createCacheStore } from '../lib/cacheStore.js'
 import { createGitRepository, type GitRepository } from '../lib/gitRepository.js'
 import {
@@ -35,9 +35,9 @@ export type CommandResult = 'success' | 'error'
 export async function init(options: InitOptions): Promise<CommandResult> {
   const { getCurrentDirectoryName, prompter, presenter } = options
   const currentDirectoryName = getCurrentDirectoryName()
-  const gitRepository = createGitRepository(currentDirectoryName)
-  const settingsStore = createSettingsStore(join(currentDirectoryName, '.ripe/settings.json'))
-  const cacheStore = createCacheStore(join(currentDirectoryName, '.ripe/cache.json'))
+  const gitRepository = createGitRepository(getCurrentDirectoryName)
+  const settingsStore = createSettingsStore(getCurrentDirectoryName)
+  const cacheStore = createCacheStore(getCurrentDirectoryName)
 
   const remoteUrl = await resolveRemoteUrl(gitRepository, prompter, presenter)
   if (!remoteUrl) return 'error'

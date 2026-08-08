@@ -5,9 +5,9 @@ export interface GitRepository {
   isHttpsRemote(remoteUrl: string): boolean
 }
 
-export function createGitRepository(cwd: string): GitRepository {
+export function createGitRepository(getCurrentDirectoryName: () => string): GitRepository {
   return {
-    getRemoteUrl: (): Promise<string> => getRemoteUrl(cwd),
+    getRemoteUrl: (): Promise<string> => getRemoteUrl(getCurrentDirectoryName()),
     isHttpsRemote: (remoteUrl: string): boolean => remoteUrl.startsWith('https://'),
   }
 }
