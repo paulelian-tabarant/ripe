@@ -27,7 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: reviewdog/action-actionlint@v1
+      - uses: ./.github/actions/setup-node-env
+      - name: Install actionlint
+        run: bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.12 /usr/local/bin
+        shell: bash
+      - name: Lint CI workflows
+        run: pnpm lint:ci
 
   static-checks-md:
     needs: changes
