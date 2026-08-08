@@ -45,7 +45,7 @@ Package-specific standards for `api/`. These supplement the general rules in
   (`*.endpoints.test.ts`).
 - **A bare kebab-case name (no role suffix)** is for anything that doesn't carry one of those
   established role tags — domain entities and value objects (`project.ts`,
-  `project-repo-reference.ts`), use-cases (`list-projects.ts`, `register-project.ts`),
+  `git-repository.ts`), use-cases (`list-projects.ts`, `register-project.ts`),
   `config.ts`. Don't invent a new dot-suffix for a one-off shape; only promote something to a
   dot-suffix once it's actually documented as a recurring architectural pattern, not merely
   renamed to look consistent.
@@ -94,15 +94,15 @@ Package-specific standards for `api/`. These supplement the general rules in
   ```
 
   - There's no error branch left to duplicate or forget inside `create` — an invalid
-    `ProjectRepoReference` is simply unrepresentable by the time it runs.
+    `GitRepository` is simply unrepresentable by the time it runs.
   - A use-case resolves the value object first, uses its derived fields (e.g.
     `repoReference.repoKey`) for the existence check, and only calls `create` in the "doesn't
     exist yet" branch — `create` is no longer called speculatively before that check, since
     there's no fallible work left inside it to justify calling it early.
   - Give a value object like this its own file once it carries real behavior/invariants of its
-    own (here `src/core/domain/project-repo-reference.ts`, separate from `project.ts`) rather than
+    own (here `src/core/domain/git-repository.ts`, separate from `project.ts`) rather than
     nesting it inside the entity that consumes it — and name it for what it actually represents,
-    not a neighboring concept: `ProjectRepoReference` bundles `repoKey` and `remoteUrl` together
+    not a neighboring concept: `GitRepository` bundles `repoKey` and `remoteUrl` together
     deliberately (both derived from the same parse, both required before an entity can be
     constructed), but is not itself "the project's identity" (that's `Project.id`) and is not a
     `*Repository` in the persistence-layer sense — hence the more specific name over a generic

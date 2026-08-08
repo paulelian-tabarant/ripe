@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifySchema } from 'fastify'
-import { InvalidRemoteUrlError } from '../core/domain/project-repo-reference.js'
+import { InvalidRemoteUrlError } from '../core/domain/git-repository.js'
 import type { ListProjects } from '../core/use-cases/list-projects.js'
 import type { RegisterProject } from '../core/use-cases/register-project.js'
 import type {

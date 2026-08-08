@@ -1,6 +1,6 @@
 import type { ProjectRepository } from '../../infrastructure/project.repository.js'
+import { GitRepository, InvalidRemoteUrlError } from '../domain/git-repository.js'
 import { Project } from '../domain/project.js'
-import { InvalidRemoteUrlError, ProjectRepoReference } from '../domain/project-repo-reference.js'
 
 export type RegisterProjectResult = { created: boolean; projectId: string } | InvalidRemoteUrlError
 
@@ -8,7 +8,7 @@ export class RegisterProject {
   constructor(private readonly repository: ProjectRepository) {}
 
   run(name: string, remoteUrl: string): RegisterProjectResult {
-    const repoReference = ProjectRepoReference.resolve(remoteUrl)
+    const repoReference = GitRepository.resolve(remoteUrl)
 
     if (repoReference instanceof InvalidRemoteUrlError) {
       return repoReference

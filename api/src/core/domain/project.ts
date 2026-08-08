@@ -1,14 +1,14 @@
 import { nanoid } from 'nanoid'
-import { ProjectRepoReference } from './project-repo-reference.js'
+import { GitRepository } from './git-repository.js'
 
 export class Project {
   private constructor(
     readonly id: string,
     readonly name: string,
-    readonly repoReference: ProjectRepoReference,
+    readonly repoReference: GitRepository,
   ) {}
 
-  static create(name: string, repoReference: ProjectRepoReference): Project {
+  static create(name: string, repoReference: GitRepository): Project {
     return new Project(`proj_${nanoid()}`, name, repoReference)
   }
 
@@ -21,7 +21,7 @@ export class Project {
     return new Project(
       data.id,
       data.name,
-      ProjectRepoReference.reconstitute({ repoKey: data.repoKey, remoteUrl: data.remoteUrl }),
+      GitRepository.reconstitute({ repoKey: data.repoKey, remoteUrl: data.remoteUrl }),
     )
   }
 }

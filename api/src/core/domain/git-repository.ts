@@ -9,13 +9,13 @@ export class InvalidRemoteUrlError extends Error {
 
 const MANAGED_PROTOCOLS = new Set(['https'])
 
-export class ProjectRepoReference {
+export class GitRepository {
   private constructor(
     readonly repoKey: string,
     readonly remoteUrl: string,
   ) {}
 
-  static resolve(remoteUrl: string): ProjectRepoReference | InvalidRemoteUrlError {
+  static resolve(remoteUrl: string): GitRepository | InvalidRemoteUrlError {
     let parsed: ReturnType<typeof GitUrlParse>
 
     try {
@@ -33,13 +33,13 @@ export class ProjectRepoReference {
       return new InvalidRemoteUrlError(remoteUrl)
     }
 
-    return new ProjectRepoReference(
+    return new GitRepository(
       `${parsed.source}/${parsed.owner}/${parsed.name}`,
       `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
     )
   }
 
-  static reconstitute(data: { repoKey: string; remoteUrl: string }): ProjectRepoReference {
-    return new ProjectRepoReference(data.repoKey, data.remoteUrl)
+  static reconstitute(data: { repoKey: string; remoteUrl: string }): GitRepository {
+    return new GitRepository(data.repoKey, data.remoteUrl)
   }
 }
