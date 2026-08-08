@@ -1,9 +1,9 @@
+import type { SkillResponseBodyItem } from '@ripe/api/contracts/skills.js'
 import {
   type ApiClient,
   createApiClient,
   type ProjectRegistrationResult,
   ServerInvalidRemoteUrlError,
-  type SkillRegistrationResult,
 } from '@/infrastructure/api-client.js'
 import type { CacheStore, RipeCache } from '@/infrastructure/cache-store.js'
 import type { GitRepository } from '@/infrastructure/git-repository.js'
@@ -190,74 +190,6 @@ function isValidHttpUrl(url: string): boolean {
   }
 }
 
-interface SkillFile {
-  path: string
-  content: string
-}
-
-interface SkillScanResult {
-  names: string[]
-  skipped: Array<{ path: string; reason: SkillSkipReason }>
-}
-
-function extractSkillName(content: string): string | undefined {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/)
-  if (!frontmatterMatch) return undefined
-
-  const nameMatch = frontmatterMatch[1]?.match(/^name:\s*(.+)$/m)
-  if (!nameMatch) return undefined
-
-  const name = nameMatch[1]?.trim().replace(/^["']|["']$/g, '')
-
-  return name && name.length > 0 ? name : undefined
-}
-
-function classifySkillFiles(files: SkillFile[]): SkillScanResult {
-  const names: string[] = []
-  const skipped: SkillScanResult['skipped'] = []
-
-  for (const file of files) {
-    const name = extractSkillName(file.content)
-
-    if (name === undefined) {
-      skipped.push({ path: file.path, reason: 'malformed-frontmatter' })
-      continue
-    }
-
-    if (name.includes(':')) {
-      skipped.push({ path: file.path, reason: 'namespaced' })
-      continue
-    }
-
-    names.push(name)
-  }
-
-  return { names, skipped }
-}
-
-function haveSameNames(scannedNames: string[], cachedNames: string[]): boolean {
-  if (scannedNames.length !== cachedNames.length) return false
-
-  const scannedSet = new Set(scannedNames)
-
-  return cachedNames.every((name) => scannedSet.has(name))
-}
-
-async function scanSkillCatalogOnMain(gitRepository: GitRepository): Promise<SkillScanResult> {
-  const skillFilePaths = await gitRepository.listSkillFilePaths(MAIN_BRANCH)
-
-  const files = await Promise.all(
-    skillFilePaths.map(
-      async (path): Promise<SkillFile> => ({
-        path,
-        content: await gitRepository.readFileAtRef(MAIN_BRANCH, path),
-      }),
-    ),
-  )
-
-  return classifySkillFiles(files)
-}
-
 async function registerSkillsWithServer(
   gitRepository: GitRepository,
   apiClient: ApiClient,
@@ -298,6 +230,74 @@ async function registerSkillsWithServer(
   }
 }
 
-function toSkillIdMap(registered: SkillRegistrationResult[]): Record<string, string> {
+interface SkillFile {
+  path: string
+  content: string
+}
+
+interface SkillScanResult {
+  names: string[]
+  skipped: Array<{ path: string; reason: SkillSkipReason }>
+}
+
+async function scanSkillCatalogOnMain(gitRepository: GitRepository): Promise<SkillScanResult> {
+  const skillFilePaths = await gitRepository.listSkillFilePaths(MAIN_BRANCH)
+
+  const files = await Promise.all(
+    skillFilePaths.map(
+      async (path): Promise<SkillFile> => ({
+        path,
+        content: await gitRepository.readFileAtRef(MAIN_BRANCH, path),
+      }),
+    ),
+  )
+
+  return classifySkillFiles(files)
+}
+
+function classifySkillFiles(files: SkillFile[]): SkillScanResult {
+  const names: string[] = []
+  const skipped: SkillScanResult['skipped'] = []
+
+  for (const file of files) {
+    const name = extractSkillName(file.content)
+
+    if (name === undefined) {
+      skipped.push({ path: file.path, reason: 'malformed-frontmatter' })
+      continue
+    }
+
+    if (name.includes(':')) {
+      skipped.push({ path: file.path, reason: 'namespaced' })
+      continue
+    }
+
+    names.push(name)
+  }
+
+  return { names, skipped }
+}
+
+function extractSkillName(content: string): string | undefined {
+  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/)
+  if (!frontmatterMatch) return undefined
+
+  const nameMatch = frontmatterMatch[1]?.match(/^name:\s*(.+)$/m)
+  if (!nameMatch) return undefined
+
+  const name = nameMatch[1]?.trim().replace(/^["']|["']$/g, '')
+
+  return name && name.length > 0 ? name : undefined
+}
+
+function haveSameNames(scannedNames: string[], cachedNames: string[]): boolean {
+  if (scannedNames.length !== cachedNames.length) return false
+
+  const scannedSet = new Set(scannedNames)
+
+  return cachedNames.every((name) => scannedSet.has(name))
+}
+
+function toSkillIdMap(registered: SkillResponseBodyItem[]): Record<string, string> {
   return Object.fromEntries(registered.map((skill) => [skill.name, skill.skillId]))
 }

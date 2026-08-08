@@ -2,15 +2,14 @@ import type {
   RegisterProjectRequestBody,
   RegisterProjectResponseBody,
 } from '@ripe/api/contracts/projects.js'
+import type {
+  RegisterSkillsRequestBody,
+  SkillResponseBodyItem,
+} from '@ripe/api/contracts/skills.js'
 
 export interface ProjectRegistrationResult {
   wasAlreadyExisting: boolean
   projectId: string
-}
-
-export interface SkillRegistrationResult {
-  name: string
-  skillId: string
 }
 
 export class ServerInvalidRemoteUrlError extends Error {
@@ -23,7 +22,7 @@ export class ServerInvalidRemoteUrlError extends Error {
 export interface ApiClient {
   getServerUrl(): string
   registerProject(name: string, remoteUrl: string): Promise<ProjectRegistrationResult>
-  registerSkills(projectId: string, names: string[]): Promise<SkillRegistrationResult[]>
+  registerSkills(projectId: string, names: string[]): Promise<SkillResponseBodyItem[]>
 }
 
 export function createApiClient(serverUrl: string): ApiClient {
@@ -31,7 +30,7 @@ export function createApiClient(serverUrl: string): ApiClient {
     getServerUrl: (): string => serverUrl,
     registerProject: (name: string, remoteUrl: string): Promise<ProjectRegistrationResult> =>
       registerProject(serverUrl, name, remoteUrl),
-    registerSkills: (projectId: string, names: string[]): Promise<SkillRegistrationResult[]> =>
+    registerSkills: (projectId: string, names: string[]): Promise<SkillResponseBodyItem[]> =>
       registerSkills(serverUrl, projectId, names),
   }
 }
@@ -68,9 +67,10 @@ async function registerSkills(
   serverUrl: string,
   projectId: string,
   names: string[],
-): Promise<SkillRegistrationResult[]> {
+): Promise<SkillResponseBodyItem[]> {
   const url = new URL(`/api/projects/${projectId}/skills`, serverUrl)
-  const body = JSON.stringify({ skills: names.map((name) => ({ name })) })
+  const requestBody: RegisterSkillsRequestBody = { skills: names.map((name) => ({ name })) }
+  const body = JSON.stringify(requestBody)
 
   const res = await fetch(url, {
     method: 'POST',
@@ -82,5 +82,5 @@ async function registerSkills(
     throw new Error(`Unexpected response status: ${String(res.status)}`)
   }
 
-  return (await res.json()) as SkillRegistrationResult[]
+  return (await res.json()) as SkillResponseBodyItem[]
 }
