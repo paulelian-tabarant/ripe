@@ -3,11 +3,11 @@ import {
   createApiClient,
   type ProjectRegistrationResult,
   ServerInvalidRemoteUrlError,
-} from '../lib/api-client.js'
-import type { CacheStore } from '../lib/cache-store.js'
-import type { GitRepository } from '../lib/git-repository.js'
-import type { ProjectDirectory } from '../lib/project-directory.js'
-import type { SettingsStore } from '../lib/settings-store.js'
+} from '@/infrastructure/api-client.js'
+import type { CacheStore } from '@/infrastructure/cache-store.js'
+import type { GitRepository } from '@/infrastructure/git-repository.js'
+import type { ProjectDirectory } from '@/infrastructure/project-directory.js'
+import type { SettingsStore } from '@/infrastructure/settings-store.js'
 
 export interface InitPrompter {
   promptForServerUrl(): Promise<string>
