@@ -9,7 +9,7 @@ describe('runCli', () => {
       const log = vi.fn()
       const initFn = vi.fn()
 
-      const result = await runCli(argv, fakeRunCliOptions({ logger: fakeLogger({ log }), initFn }))
+      const result = await runCli(argv, fakeRunCliOptions({ logger: fakeLogger({ log }), init: initFn }))
 
       expect(result.exitCode).toBe(0)
       expect(log).toHaveBeenCalledWith(expect.stringContaining('Usage'))
@@ -21,7 +21,7 @@ describe('runCli', () => {
   it('dispatches to init for the "init" command', async () => {
     const initFn = vi.fn().mockResolvedValue({ status: 'success' })
 
-    const result = await runCli(['init'], fakeRunCliOptions({ initFn }))
+    const result = await runCli(['init'], fakeRunCliOptions({ init: initFn }))
 
     expect(initFn).toHaveBeenCalledOnce()
     expect(result.exitCode).toBe(0)
@@ -34,7 +34,7 @@ describe('runCli', () => {
     const error = vi.fn()
     const initFn = vi.fn()
 
-    const result = await runCli(argv, fakeRunCliOptions({ logger: fakeLogger({ error }), initFn }))
+    const result = await runCli(argv, fakeRunCliOptions({ logger: fakeLogger({ error }), init: initFn }))
 
     expect(result.exitCode).toBe(1)
     expect(error).toHaveBeenCalledWith(expect.stringContaining(expectedSubstring))
@@ -61,8 +61,8 @@ function fakeLogger(overrides: Partial<Logger> = {}): Logger {
 function fakeRunCliOptions(overrides: Partial<RunCliOptions> = {}): RunCliOptions {
   return {
     logger: fakeLogger(),
-    askFn: unexpectedCall('askFn'),
-    initFn: unexpectedCall('initFn'),
+    ask: unexpectedCall('askFn'),
+    init: unexpectedCall('initFn'),
     ...overrides,
   }
 }

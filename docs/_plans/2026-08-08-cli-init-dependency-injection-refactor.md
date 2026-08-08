@@ -129,7 +129,7 @@ export interface InitResult {
 
 - Becomes the single true composition root: builds the generic, command-agnostic raw I/O
   primitives — `logFn: console.log`, `errorFn: console.error`, `warnFn: console.warn` (output),
-  and `askFn` (input, wrapping `readline` — today's `ask()` helper, moved here unchanged) — and
+  and `ask` (input, wrapping `readline` — today's `ask()` helper, moved here unchanged) — and
   passes all five into `runCli`. It never knows what a specific command asks or tells, only how to
   perform a raw ask/tell in general.
 
@@ -160,7 +160,7 @@ process.exit(exitCode)
 
 Once this lands: **all raw `console`/`process`/`stdin`/`stdout` access — both output and input —
 exists nowhere in `cli/src/` except `index.ts`.** Everywhere else is injected: `cli.ts`'s
-prompt/presenter implementations call the injected `askFn`/`logFn`/`errorFn`/`warnFn` rather than
+prompt/presenter implementations call the injected `ask`/`logFn`/`errorFn`/`warnFn` rather than
 touching the environment directly, and commands call the injected `presenter`/`prompts`. This is
 a literal, greppable invariant: `grep -rn 'console\.\|readline\|process\.std' cli/src/` should
 return only the lines in `index.ts`. Use this as the acceptance check for the refactor, and as the
@@ -181,7 +181,7 @@ wording basis for the rewritten `.claude/rules/cli/single-io-composition-root.md
 - `cli/tests/cli.test.ts` needs the same treatment for `RunCliOptions`. Verified against the
   current file: today's tests already rely on partial defaulting (e.g.
   `runCli(argv, { logFn, initFn })` omits `errorFn`/`warnFn`, `runCli(argv, { errorFn, initFn })`
-  omits `logFn`/`warnFn`) — once all five fields (`logFn`/`errorFn`/`warnFn`/`askFn`/`initFn`) are
+  omits `logFn`/`warnFn`) — once all five fields (`logFn`/`errorFn`/`warnFn`/`ask`/`init`) are
   required, every call site needs all of them, not just the one under test. Add a local
   fake-`RunCliOptions` builder here too, same pattern as `init.test.ts`.
 
@@ -189,14 +189,14 @@ wording basis for the rewritten `.claude/rules/cli/single-io-composition-root.md
 
 - `cli/CLAUDE.md` — update the Architecture section to describe the `InitPrompts`/`InitPresenter`/
   `getCurrentDirectoryName` pattern, `cli.ts` as the command-specific wording layer over generic
-  `askFn`/`logFn`/`errorFn`/`warnFn` primitives, `index.ts` as the single composition root owning
+  `ask`/`logFn`/`errorFn`/`warnFn` primitives, `index.ts` as the single composition root owning
   every raw environment access (both output and input) in the package.
 - `cli/STANDARDS.md` — replace the stale single-`logFn`-parameter example (which described an
   injected-logger pattern that was never actually implemented and is now explicitly superseded)
   with the prompts/presenter pattern above.
 - `.claude/rules/cli/single-io-composition-root.md` — rewrite using the precise form above: raw
   `console`/`process`/`stdin`/`stdout` access exists only in `index.ts`; everywhere else, injected
-  functions (`askFn`/`logFn`/`errorFn`/`warnFn` in `cli.ts`; `prompts`/`presenter` in commands)
+  functions (`ask`/`logFn`/`errorFn`/`warnFn` in `cli.ts`; `prompts`/`presenter` in commands)
   are the sanctioned mechanism for both asking and telling. The old wording ("doesn't call
   `console.*` or any logger") was already inconsistent with the accepted prompt-injection pattern
   before this refactor; this makes the rule match reality and gives it a literally greppable

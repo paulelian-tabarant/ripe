@@ -15,7 +15,7 @@ async function askFn(question: string): Promise<string> {
 
 const { exitCode }: CliResult = await runCli(process.argv.slice(2), {
   logger,
-  askFn,
-  initFn: buildInitFn(askFn, logger),
+  ask: askFn,
+  init: buildInitFn(askFn, logger),
 })
 process.exit(exitCode)

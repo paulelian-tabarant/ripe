@@ -12,7 +12,7 @@ Everywhere else, both asking the user something and telling the user something g
 injected functions, never the environment directly:
 
 - `src/cli.ts` never touches `console`/`readline`/`process.std*` itself. It only maps command-
-  specific wording to the generic `askFn`/`logFn`/`errorFn`/`warnFn` primitives it receives from
+  specific wording to the generic `ask`/`logFn`/`errorFn`/`warnFn` primitives it receives from
   `src/index.ts` (see `buildInitPrompts`/`buildInitPresenter` in `src/cli.ts`).
 - `src/commands/` holds orchestration logic only. A command doesn't read `process.argv`/
   `process.env`, touch stdin/stdout, or call `console.*`/`readline` — it calls its injected

@@ -30,12 +30,12 @@ export interface Logger {
 
 export interface RunCliOptions {
   logger: Logger
-  askFn: (question: string) => Promise<string>
-  initFn: () => Promise<InitResult>
+  ask: (question: string) => Promise<string>
+  init: () => Promise<InitResult>
 }
 
 export async function runCli(args: string[], options: RunCliOptions): Promise<CliResult> {
-  const { logger, initFn } = options
+  const { logger, init } = options
   const [command] = args
 
   if (args.some((arg) => HELP_FLAGS.has(arg))) {
@@ -45,7 +45,7 @@ export async function runCli(args: string[], options: RunCliOptions): Promise<Cl
   }
 
   if (command === 'init') {
-    const result = await initFn()
+    const result = await init()
 
     return { exitCode: result.status === 'success' ? 0 : 1 }
   }

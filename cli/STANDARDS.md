@@ -40,7 +40,7 @@ Package-specific standards for `cli/`. These supplement the general rules in
   ```
 
   The one real implementation of each `*Prompts`/`*Presenter` interface is built in `src/cli.ts`,
-  as command-specific wording over the generic `askFn`/`logFn`/`errorFn`/`warnFn` primitives
+  as command-specific wording over the generic `ask`/`logFn`/`errorFn`/`warnFn` primitives
   `src/index.ts` passes in — `src/cli.ts` itself never touches `readline`/`console`/`process.std*`
   directly. See `buildInitPrompts`/`buildInitPresenter`/`buildInitFn` in `src/cli.ts`.
 
@@ -62,7 +62,7 @@ Package-specific standards for `cli/`. These supplement the general rules in
 - **No raw `console`/`process.std*`/`readline` access outside `src/index.ts`**: `src/index.ts` is
   the single composition root of the package and the only file allowed to touch `console.*`,
   `process.stdin`/`process.stdout`, or `node:readline` directly. Everywhere else — `src/cli.ts`
-  and every command — relies exclusively on injected functions (`askFn`/`logFn`/`errorFn`/`warnFn`
+  and every command — relies exclusively on injected functions (`ask`/`logFn`/`errorFn`/`warnFn`
   in `src/cli.ts`; `prompts`/`presenter` in commands) for both asking and telling. This is a
   literal, greppable invariant:
 
