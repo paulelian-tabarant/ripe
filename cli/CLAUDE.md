@@ -20,14 +20,14 @@ pnpm --filter ./cli test tests/commands/init.test.ts
 
 This is the `ripe` CLI — one command today: `ripe init` (prompts for the server URL).
 
-**Entry point**: `src/index.ts` — parses `process.argv`, routes to command handlers via
-`src/cli.ts`, calls `process.exit`.
+**Layer split** (see [`cli/STANDARDS.md`](STANDARDS.md) for the injection pattern and invariants
+behind this):
 
-**Layer split**:
-
-- `src/commands/` — orchestration logic, returns `{ status: 'success' | 'error' }`, never calls
-  `process.exit` directly. Accepts injected `cwd` and prompt functions for testability. Exit codes
-  are not this layer's concern — mapping `status` to a process exit code happens in `src/cli.ts`.
+- `src/index.ts` — composition root: parses `process.argv`, builds the real I/O primitives, calls
+  `process.exit`.
+- `src/cli.ts` — routes to commands; builds the real `*Prompts`/`*Presenter` implementation for
+  each.
+- `src/commands/` — orchestration logic.
 - `src/lib/getRemoteUrl.ts` — reads the `origin` remote via `git remote get-url origin`.
 - `src/lib/registerProject.ts` — raw HTTP call to `POST /api/projects` (no dependency, uses
   `node:http`/`node:https` directly). Returns typed result objects.
