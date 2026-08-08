@@ -55,6 +55,11 @@ npm view pnpm@<version> engines
 Pick a Node version that satisfies the range it reports, then update `devEngines`, `engines`, and
 `packageManager` together so every stage (CI, Railpack, mise) resolves the same compatible pair.
 
+Renovate bumps `packageManager` and `engines`/`devEngines` independently and doesn't cross-check
+them against each other. If it ever proposes an incompatible pair, `pnpm install` fails closed in
+CI (`engineStrict`/`pmOnFail` below) instead of merging — if that happens, follow the same manual
+process above to work out a compatible pair before re-pinning.
+
 **Using [mise](https://mise.jdx.dev) locally**: mise doesn't pick up `devEngines` or
 `packageManager` automatically by default. This repo's `.mise.toml` enables idiomatic version
 files for `node` and `pnpm` (see mise's [Node docs](https://mise.jdx.dev/lang/node.html)), so
