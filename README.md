@@ -3,7 +3,7 @@
 **Visibility into which custom skills are actually being used by your coding agent teams.**
 
 > **License:** Free for personal and non-commercial use under the PolyForm Noncommercial License
-> 1.0.0. For commercial use, please contact [YOUR EMAIL/CONTACT] to obtain a commercial license.
+> 1.0.0. For commercial use, please contact paul.tabarant@gmail.com to obtain a commercial license.
 
 ## The Problem
 
@@ -120,4 +120,4 @@ a labeled PR or a `main` merge — is what's live.
 This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). In plain
 language: you're free to use, modify, and share this software for personal, educational, research,
 and other noncommercial purposes, but commercial use requires a separate commercial license.
-Contact [YOUR EMAIL/CONTACT] for commercial licensing.
+Contact paul.tabarant@gmail.com for commercial licensing.
