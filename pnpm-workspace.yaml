@@ -11,3 +11,4 @@ allowBuilds:
   re2: true
 minimumReleaseAge: 10080
 minimumReleaseAgeStrict: true
+engineStrict: true

@@ -65,7 +65,10 @@ the repo.
 pnpm itself also guards the `packageManager` pin natively (`pmOnFail`, default `download`): any
 locally installed `pnpm` binary — via Corepack, Homebrew, or a global install — detects a mismatch
 against `packageManager` and transparently re-execs the pinned version, so this doesn't rely on
-Corepack being enabled.
+Corepack being enabled. `pnpm-workspace.yaml`'s `engineStrict: true` gives the Node version the
+same hard local enforcement: pnpm checks the actual running Node version against `engines.node`
+and refuses to install/build on a mismatch (no separate `nodeVersion` pin needed — it defaults to
+whatever Node is actually running).
 
 ### Dependency Updates
 
