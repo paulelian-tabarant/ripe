@@ -20,7 +20,7 @@
     "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\""
   },
   "packageManager": "pnpm@11.13.1",
-  "license": "ISC",
+  "license": "PolyFormNoncommercial-1.0.0",
   "devDependencies": {
     "likec4": "latest",
     "markdownlint-cli2": "^0.23.2",
