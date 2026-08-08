@@ -1,5 +1,4 @@
 import { basename, join } from 'node:path'
-import { createInterface } from 'node:readline/promises'
 import { getRemoteUrl } from '../lib/getRemoteUrl.js'
 import { readSettings } from '../lib/readSettings.js'
 import {
@@ -10,47 +9,53 @@ import {
 import { writeCache } from '../lib/writeCache.js'
 import { writeSettings } from '../lib/writeSettings.js'
 
+export interface InitPrompts {
+  promptForServerUrl(): Promise<string>
+  promptAnotherServerUrl(): Promise<string>
+  promptToConfirmServerUrl(existingUrl: string): Promise<boolean>
+  promptForHttpsRemote(remoteUrl: string): Promise<string>
+}
+
+export interface InitPresenter {
+  onInvalidServerUrl(url: string): void
+  onProjectRegistered(result: ProjectRegistrationResult): void
+  onRemoteUrlError(detail?: string): void
+  onServerRejectedRemoteUrl(remoteUrl: string, detail?: string): void
+  onServerUnreachable(serverUrl: string, detail?: string): void
+  onLocalStateWriteFailed(detail?: string): void
+}
+
 export interface InitOptions {
-  currentDirectoryName?: string
-  urlPromptFn?: () => Promise<string>
-  confirmServerUrlPromptFn?: (existingUrl: string) => Promise<boolean>
-  httpsRemotePromptFn?: (remoteUrl: string) => Promise<string>
+  getCurrentDirectoryName: () => string
+  prompts: InitPrompts
+  presenter: InitPresenter
 }
 
 export interface InitResult {
   status: 'success' | 'error'
 }
 
-export async function init(options: InitOptions = {}): Promise<InitResult> {
-  const currentDirectoryName = options.currentDirectoryName ?? process.cwd()
-  const urlPromptFn = options.urlPromptFn ?? defaultUrlPromptFn
-  const confirmServerUrlPromptFn =
-    options.confirmServerUrlPromptFn ?? defaultConfirmServerUrlPromptFn
-  const httpsRemotePromptFn = options.httpsRemotePromptFn ?? defaultHttpsRemotePromptFn
+export async function init(options: InitOptions): Promise<InitResult> {
+  const { getCurrentDirectoryName, prompts, presenter } = options
+  const currentDirectoryName = getCurrentDirectoryName()
   const settingsPath = join(currentDirectoryName, '.ripe/settings.json')
   const cachePath = join(currentDirectoryName, '.ripe/cache.json')
 
-  const rawRemoteUrl = await readRemoteUrl(currentDirectoryName)
+  const rawRemoteUrl = await readRemoteUrl(currentDirectoryName, presenter)
   if (!rawRemoteUrl) return { status: 'error' }
 
-  const remoteUrl = await resolveHttpsRemoteUrl(rawRemoteUrl, httpsRemotePromptFn)
-
-  const serverUrl = await resolveServerUrl(settingsPath, urlPromptFn, confirmServerUrlPromptFn)
-
+  const remoteUrl = await resolveHttpsRemoteUrl(rawRemoteUrl, prompts)
+  const serverUrl = await resolveServerUrl(settingsPath, prompts, presenter)
   const defaultProjectName = basename(currentDirectoryName)
 
-  const result = await tryRegisterProject(serverUrl, defaultProjectName, remoteUrl)
+  const result = await tryRegisterProject(serverUrl, defaultProjectName, remoteUrl, presenter)
   if (!result) return { status: 'error' }
 
-  const message = result.created
-    ? `Project registered: ${result.projectId}`
-    : `Using existing project ID: ${result.projectId}`
+  presenter.onProjectRegistered(result)
 
-  if (!tryWriteLocalState(settingsPath, cachePath, serverUrl, result.projectId)) {
+  if (!tryWriteLocalState(settingsPath, cachePath, serverUrl, result.projectId, presenter)) {
     return { status: 'error' }
   }
-
-  console.log(message)
 
   return { status: 'success' }
 }
@@ -60,6 +65,7 @@ function tryWriteLocalState(
   cachePath: string,
   serverUrl: string,
   projectId: string,
+  presenter: InitPresenter,
 ): boolean {
   try {
     writeSettings(settingsPath, { serverUrl })
@@ -67,11 +73,7 @@ function tryWriteLocalState(
 
     return true
   } catch (err) {
-    console.error(
-      'Error: registered successfully, but failed to save local state — run ripe init again to retry.',
-    )
-
-    if (err instanceof Error) console.error(err.message)
+    presenter.onLocalStateWriteFailed(err instanceof Error ? err.message : undefined)
 
     return false
   }
@@ -79,60 +81,55 @@ function tryWriteLocalState(
 
 async function resolveServerUrl(
   settingsPath: string,
-  urlPromptFn: () => Promise<string>,
-  confirmServerUrlPromptFn: (existingUrl: string) => Promise<boolean>,
+  prompts: InitPrompts,
+  presenter: InitPresenter,
 ): Promise<string> {
   const existingSettings = readSettings(settingsPath)
-  if (existingSettings && (await confirmServerUrlPromptFn(existingSettings.serverUrl))) {
+  if (existingSettings && (await prompts.promptToConfirmServerUrl(existingSettings.serverUrl))) {
     return existingSettings.serverUrl
   }
 
-  let serverUrl: string
-  while (true) {
-    serverUrl = await urlPromptFn()
-    if (isValidHttpUrl(serverUrl)) break
-    console.error(`Invalid server URL: "${serverUrl}". Must be a valid http or https URL.`)
+  let serverUrl = await prompts.promptForServerUrl()
+  while (!isValidHttpUrl(serverUrl)) {
+    presenter.onInvalidServerUrl(serverUrl)
+    serverUrl = await prompts.promptAnotherServerUrl()
   }
 
   return serverUrl
 }
 
-async function readRemoteUrl(cwd: string): Promise<string | undefined> {
+async function readRemoteUrl(cwd: string, presenter: InitPresenter): Promise<string | undefined> {
   try {
     return await getRemoteUrl(cwd)
   } catch (err) {
-    console.error('Error: could not determine the git remote URL for this directory')
-
-    if (err instanceof Error) console.error(err.message)
+    presenter.onRemoteUrlError(err instanceof Error ? err.message : undefined)
 
     return undefined
   }
 }
 
-async function resolveHttpsRemoteUrl(
-  rawRemoteUrl: string,
-  httpsRemotePromptFn: (remoteUrl: string) => Promise<string>,
-): Promise<string> {
+async function resolveHttpsRemoteUrl(rawRemoteUrl: string, prompts: InitPrompts): Promise<string> {
   if (rawRemoteUrl.startsWith('https://')) return rawRemoteUrl
 
-  return httpsRemotePromptFn(rawRemoteUrl)
+  return prompts.promptForHttpsRemote(rawRemoteUrl)
 }
 
 async function tryRegisterProject(
   serverUrl: string,
   name: string,
   remoteUrl: string,
+  presenter: InitPresenter,
 ): Promise<ProjectRegistrationResult | undefined> {
   try {
     return await registerProject(serverUrl, name, remoteUrl)
   } catch (err) {
-    if (err instanceof ServerInvalidRemoteUrlError) {
-      console.error(`Error: the server rejected this remote URL: "${remoteUrl}"`)
-    } else {
-      console.error(`Error: could not reach server at ${serverUrl}`)
-    }
+    const detail = err instanceof Error ? err.message : undefined
 
-    if (err instanceof Error) console.error(err.message)
+    if (err instanceof ServerInvalidRemoteUrlError) {
+      presenter.onServerRejectedRemoteUrl(remoteUrl, detail)
+    } else {
+      presenter.onServerUnreachable(serverUrl, detail)
+    }
 
     return undefined
   }
@@ -141,31 +138,9 @@ async function tryRegisterProject(
 function isValidHttpUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
+
     return parsed.protocol === 'http:' || parsed.protocol === 'https:'
   } catch {
     return false
   }
-}
-
-async function ask(question: string): Promise<string> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout })
-  try {
-    return await rl.question(question)
-  } finally {
-    rl.close()
-  }
-}
-
-async function defaultUrlPromptFn(): Promise<string> {
-  return ask('Server URL: ')
-}
-
-async function defaultHttpsRemotePromptFn(remoteUrl: string): Promise<string> {
-  return ask(`Your git remote ("${remoteUrl}") isn't HTTPS. Enter the HTTPS URL for this repo: `)
-}
-
-async function defaultConfirmServerUrlPromptFn(existingUrl: string): Promise<boolean> {
-  const answer = await ask(`Found existing server URL: "${existingUrl}". Keep it? (y/n) `)
-
-  return answer.toLowerCase() === 'y'
 }

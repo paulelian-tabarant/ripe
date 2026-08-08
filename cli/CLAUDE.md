@@ -20,14 +20,28 @@ pnpm --filter ./cli test tests/commands/init.test.ts
 
 This is the `ripe` CLI — one command today: `ripe init` (prompts for the server URL).
 
-**Entry point**: `src/index.ts` — parses `process.argv`, routes to command handlers via
-`src/cli.ts`, calls `process.exit`.
+**Entry point**: `src/index.ts` — the single composition root of the package. It's the only file
+that touches raw `console`/`process.stdin`/`process.stdout`/`readline`: it builds the generic,
+command-agnostic I/O primitives (`logFn`/`errorFn`/`warnFn` for output, `askFn` — a
+`readline`-based prompt — for input), passes them into `runCli`, and calls `process.exit`.
+
+**`src/cli.ts`** — the command-specific wording layer. It never touches the environment directly;
+it only knows which question text maps to which prompt and which message maps to which presenter
+call, then delegates to the injected `askFn`/`logFn`/`errorFn`/`warnFn`. For `init`, it builds the
+one real `InitPrompts` implementation (`buildInitPrompts`) and the one real `InitPresenter`
+implementation (`buildInitPresenter`) over those primitives, then wires them into a real `initFn`
+(`buildInitFn`) passed to `runCli`.
 
 **Layer split**:
 
 - `src/commands/` — orchestration logic, returns `{ status: 'success' | 'error' }`, never calls
-  `process.exit` directly. Accepts injected `cwd` and prompt functions for testability. Exit codes
-  are not this layer's concern — mapping `status` to a process exit code happens in `src/cli.ts`.
+  `process.exit`, `console.*`, or `readline` directly. `init` depends on three required
+  fields: `getCurrentDirectoryName: () => string` (its own question about the environment, on
+  par with "what's the git remote"), `prompts: InitPrompts` (methods that ask the user something
+  and return a value), and `presenter: InitPresenter` (one-way notification methods for
+  everything that was previously a `console.*` call). See `InitPrompts`/`InitPresenter` in
+  `src/commands/init.ts` for the exact method list. Exit codes are not this layer's concern —
+  mapping `status` to a process exit code happens in `src/cli.ts`.
 - `src/lib/getRemoteUrl.ts` — reads the `origin` remote via `git remote get-url origin`.
 - `src/lib/registerProject.ts` — raw HTTP call to `POST /api/projects` (no dependency, uses
   `node:http`/`node:https` directly). Returns typed result objects.

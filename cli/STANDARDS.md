@@ -13,16 +13,36 @@ Package-specific standards for `cli/`. These supplement the general rules in
 
 ### Command Boundaries
 
-- **Dependency injection for testability**: side-effecting inputs (current working directory,
-  interactive prompts) are passed in as optional parameters with real defaults — `init`'s
-  instance of the general injection rule in [`../STANDARDS.md`](../STANDARDS.md).
+- **Dependency injection for testability, via required prompts/presenter objects**: side-effecting
+  inputs (current working directory, interactive prompts) and outputs (user-facing messages) are
+  passed in as **required** fields — no `options.x ?? defaultX` fallback inside a command. A
+  command's questions to the user are grouped into a `*Prompts` interface (methods that return a
+  value and drive control flow); everything the command used to tell the user directly is grouped
+  into a `*Presenter` interface (one-way `void` notification methods, called at the point each
+  fact is known). Reading the environment (e.g. the current directory) is exposed as a callable,
+  not a pre-resolved value, since it's one of the command's own questions about its environment —
+  same category as "what's the git remote."
 
   ```ts
+  interface InitPrompts {
+    promptForServerUrl(): Promise<string>
+  }
+
+  interface InitPresenter {
+    onProjectRegistered(result: ProjectRegistrationResult): void
+  }
+
   interface InitOptions {
-    currentDirectoryName?: () => string // defaults to process.cwd()
-    promptFn?: (question: string) => Promise<string> // defaults to a real stdin prompt
+    getCurrentDirectoryName: () => string // real implementation: () => process.cwd()
+    prompts: InitPrompts
+    presenter: InitPresenter
   }
   ```
+
+  The one real implementation of each `*Prompts`/`*Presenter` interface is built in `src/cli.ts`,
+  as command-specific wording over the generic `askFn`/`logFn`/`errorFn`/`warnFn` primitives
+  `src/index.ts` passes in — `src/cli.ts` itself never touches `readline`/`console`/`process.std*`
+  directly. See `buildInitPrompts`/`buildInitPresenter`/`buildInitFn` in `src/cli.ts`.
 
 - **Exit codes are not a command concern**: commands return a semantic success/error status, not
   an `exitCode`. Mapping that status to an `exitCode` and calling `process.exit` happens in
@@ -39,28 +59,26 @@ Package-specific standards for `cli/`. These supplement the general rules in
 
 - **Typed results over ad hoc shapes**: functions that call out to the network return a typed
   result object (e.g. `ProjectRegistrationResult`) rather than a bare `Response` or `unknown`.
-- **No `node:process` details in commands**: commands don't read `process.argv`/`process.env` or
-  touch stdin/stdout directly — those are read in `src/index.ts` and passed in as parameters.
-- **No direct `console.*` calls in command logic**: unlike `api/` (which forbids console output
-  outright — see [`../api/STANDARDS.md`](../api/STANDARDS.md)), a command's user-facing output is
-  legitimate, but it goes through an injected output dependency, not a bare `console.log`/
-  `console.error` call inside the command — the same injection rule as above, applied to output
-  sinks (see the general rule in [`../STANDARDS.md`](../STANDARDS.md)).
+- **No raw `console`/`process.std*`/`readline` access outside `src/index.ts`**: `src/index.ts` is
+  the single composition root of the package and the only file allowed to touch `console.*`,
+  `process.stdin`/`process.stdout`, or `node:readline` directly. Everywhere else — `src/cli.ts`
+  and every command — relies exclusively on injected functions (`askFn`/`logFn`/`errorFn`/`warnFn`
+  in `src/cli.ts`; `prompts`/`presenter` in commands) for both asking and telling. This is a
+  literal, greppable invariant:
+
+  ```bash
+  grep -rn 'console\.\|readline\|process\.std' cli/src/   # should only match src/index.ts
+  ```
 
   ```ts
-  // ❌ command logs directly
+  // ❌ command (or cli.ts) touches the environment directly
   async function init(options: InitOptions) {
     console.log('Project registered')
   }
 
-  // ✅ command calls an injected output dependency
-  interface InitOptions {
-    logFn?: (message: string) => void // defaults to console.log
-  }
-
+  // ✅ command calls an injected presenter method instead
   async function init(options: InitOptions) {
-    const logFn = options.logFn ?? console.log
-    logFn('Project registered')
+    options.presenter.onProjectRegistered(result)
   }
   ```
 

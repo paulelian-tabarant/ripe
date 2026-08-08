@@ -1,4 +1,11 @@
-import { type InitResult, init } from './commands/init.js'
+import {
+  type InitOptions,
+  type InitPresenter,
+  type InitPrompts,
+  type InitResult,
+  init,
+} from './commands/init.js'
+import type { ProjectRegistrationResult } from './lib/registerProject.js'
 
 const HELP_FLAGS = new Set(['-h', '--help'])
 
@@ -16,15 +23,78 @@ export interface CliResult {
 }
 
 export interface RunCliOptions {
-  logFn?: (message: string) => void
-  errorFn?: (message: string) => void
-  initFn?: () => Promise<InitResult>
+  logFn: (message: string) => void
+  errorFn: (message: string) => void
+  warnFn: (message: string) => void
+  askFn: (question: string) => Promise<string>
+  initFn: () => Promise<InitResult>
 }
 
-export async function runCli(args: string[], options: RunCliOptions = {}): Promise<CliResult> {
-  const logFn = options.logFn ?? console.log
-  const errorFn = options.errorFn ?? console.error
-  const initFn = options.initFn ?? init
+export function buildInitPrompts(askFn: (question: string) => Promise<string>): InitPrompts {
+  return {
+    promptForServerUrl: (): Promise<string> => askFn('Server URL: '),
+    promptAnotherServerUrl: (): Promise<string> => askFn('Please enter another server URL: '),
+    promptToConfirmServerUrl: (existingUrl: string): Promise<boolean> =>
+      askFn(`Found existing server URL: "${existingUrl}". Keep it? (y/n) `).then(
+        (answer) => answer.toLowerCase() === 'y',
+      ),
+    promptForHttpsRemote: (remoteUrl: string): Promise<string> =>
+      askFn(`Your git remote ("${remoteUrl}") isn't HTTPS. Enter the HTTPS URL for this repo: `),
+  }
+}
+
+export function buildInitPresenter(
+  logFn: (message: string) => void,
+  errorFn: (message: string) => void,
+): InitPresenter {
+  return {
+    onInvalidServerUrl: (url: string): void =>
+      errorFn(`Invalid server URL: "${url}". Must be a valid http or https URL.`),
+    onProjectRegistered: (result: ProjectRegistrationResult): void =>
+      logFn(
+        result.created
+          ? `Project registered: ${result.projectId}`
+          : `Using existing project ID: ${result.projectId}`,
+      ),
+    onRemoteUrlError: (detail?: string): void => {
+      errorFn('Error: could not determine the git remote URL for this directory')
+      if (detail) errorFn(detail)
+    },
+    onServerRejectedRemoteUrl: (remoteUrl: string, detail?: string): void => {
+      errorFn(`Error: the server rejected this remote URL: "${remoteUrl}"`)
+      if (detail) errorFn(detail)
+    },
+    onServerUnreachable: (serverUrl: string, detail?: string): void => {
+      errorFn(`Error: could not reach server at ${serverUrl}`)
+      if (detail) errorFn(detail)
+    },
+    onLocalStateWriteFailed: (detail?: string): void => {
+      errorFn(
+        'Error: registered successfully, but failed to save local state — run ripe init again to retry.',
+      )
+      if (detail) errorFn(detail)
+    },
+  }
+}
+
+export function buildInitFn(
+  askFn: (question: string) => Promise<string>,
+  logFn: (message: string) => void,
+  errorFn: (message: string) => void,
+): () => Promise<InitResult> {
+  const prompts = buildInitPrompts(askFn)
+  const presenter = buildInitPresenter(logFn, errorFn)
+  const options: InitOptions = {
+    getCurrentDirectoryName: () => process.cwd(),
+    prompts,
+    presenter,
+  }
+
+  return () => init(options)
+}
+
+export async function runCli(args: string[], options: RunCliOptions): Promise<CliResult> {
+  const { logFn, errorFn, initFn } = options
   const [command] = args
 
   if (args.some((arg) => HELP_FLAGS.has(arg))) {

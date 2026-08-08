@@ -1,12 +1,21 @@
 #!/usr/bin/env node
-import { runCli } from './cli.js'
+import { createInterface } from 'node:readline/promises'
+import { buildInitFn, type CliResult, runCli } from './cli.js'
 
-const args = process.argv.slice(2)
-
-try {
-  const { exitCode } = await runCli(args)
-  process.exit(exitCode)
-} catch (err: unknown) {
-  console.error(err instanceof Error ? err.message : String(err))
-  process.exit(1)
+async function askFn(question: string): Promise<string> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  try {
+    return await rl.question(question)
+  } finally {
+    rl.close()
+  }
 }
+
+const { exitCode }: CliResult = await runCli(process.argv.slice(2), {
+  logFn: console.log,
+  errorFn: console.error,
+  warnFn: console.warn,
+  askFn,
+  initFn: buildInitFn(askFn, console.log, console.error),
+})
+process.exit(exitCode)
