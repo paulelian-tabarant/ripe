@@ -15,7 +15,8 @@
     "lint": "biome ci ./src ./tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test"
+    "smoke": "node scripts/smoke.mjs",
+    "ci:checks": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run smoke"
   },
   "dependencies": {
     "@blackglory/better-sqlite3-migrations": "^0.2.2",

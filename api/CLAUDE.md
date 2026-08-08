@@ -8,10 +8,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm --filter api lint          # Biome ci: lint + format check + import-sort check (src/ and tests/)
 pnpm --filter api test          # run all tests (Vitest)
 pnpm --filter api typecheck     # tsc --noEmit
-pnpm --filter api ci:checks     # lint + typecheck + test in one shot
+pnpm --filter api ci:checks     # lint + typecheck + test + build + smoke, in one shot
 pnpm --filter api build         # compile to dist/
 pnpm --filter api start         # node dist/index.js
+pnpm --filter api smoke         # boots dist/index.js against a scratch DB, hits GET /api/health
 ```
+
+`smoke` (`scripts/smoke.mjs`) exists to catch build-output-only bugs that lint/typecheck/test
+can't see — e.g. a `tsconfig.json` `paths` alias that type-checks fine but isn't rewritten by
+`tsc` in the emitted `dist/`, so it only fails once the built server actually boots (see
+`cli/STANDARDS.md`'s "Imports" section for the same failure mode, hit for real in `cli/`).
 
 To run a single test file:
 
