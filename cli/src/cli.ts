@@ -22,12 +22,84 @@ export interface CliResult {
   exitCode: 0 | 1
 }
 
+export interface Logger {
+  log: (message: string) => void
+  error: (message: string) => void
+  warn: (message: string) => void
+}
+
 export interface RunCliOptions {
-  logFn: (message: string) => void
-  errorFn: (message: string) => void
-  warnFn: (message: string) => void
+  logger: Logger
   askFn: (question: string) => Promise<string>
   initFn: () => Promise<InitResult>
+}
+
+export async function runCli(args: string[], options: RunCliOptions): Promise<CliResult> {
+  const { logger, initFn } = options
+  const [command] = args
+
+  if (args.some((arg) => HELP_FLAGS.has(arg))) {
+    logger.log(HELP_TEXT)
+
+    return { exitCode: 0 }
+  }
+
+  if (command === 'init') {
+    const result = await initFn()
+
+    return { exitCode: result.status === 'success' ? 0 : 1 }
+  }
+
+  logger.error(`Unknown command: ${command ?? '(none)'}`)
+  logger.error("Run 'ripe --help' for usage.")
+
+  return { exitCode: 1 }
+}
+
+export function buildInitFn(
+  askFn: (question: string) => Promise<string>,
+  logger: Logger,
+): () => Promise<InitResult> {
+  const prompts = buildInitPrompts(askFn)
+  const presenter = buildInitPresenter(logger)
+  const options: InitOptions = {
+    getCurrentDirectoryName: () => process.cwd(),
+    prompts,
+    presenter,
+  }
+
+  return () => init(options)
+}
+
+export function buildInitPresenter(logger: Logger): InitPresenter {
+  return {
+    onInvalidServerUrl: (url: string): void =>
+      logger.error(`Invalid server URL: "${url}". Must be a valid http or https URL.`),
+    onProjectRegistered: (result: ProjectRegistrationResult): void =>
+      logger.log(
+        result.created
+          ? `Project registered: ${result.projectId}`
+          : `Using existing project ID: ${result.projectId}`,
+      ),
+    onRemoteUrlError: (detail?: string): void => {
+      logger.error('Error: could not determine the git remote URL for this directory')
+      if (detail) logger.error(detail)
+    },
+    onServerRejectedRemoteUrl: (remoteUrl: string, detail?: string): void => {
+      logger.error(`Error: the server rejected this remote URL: "${remoteUrl}"`)
+      if (detail) logger.error(detail)
+    },
+    onServerUnreachable: (serverUrl: string, detail?: string): void => {
+      logger.error(`Error: could not reach server at ${serverUrl}`)
+      if (detail) logger.error(detail)
+    },
+    onLocalStateWriteFailed: (detail?: string): void => {
+      logger.error(
+        'Error: registered successfully, but failed to save local state — run ripe init again to retry.',
+      )
+      if (detail) logger.error(detail)
+    },
+  }
 }
 
 export function buildInitPrompts(askFn: (question: string) => Promise<string>): InitPrompts {
@@ -41,76 +113,4 @@ export function buildInitPrompts(askFn: (question: string) => Promise<string>): 
     promptForHttpsRemote: (remoteUrl: string): Promise<string> =>
       askFn(`Your git remote ("${remoteUrl}") isn't HTTPS. Enter the HTTPS URL for this repo: `),
   }
-}
-
-export function buildInitPresenter(
-  logFn: (message: string) => void,
-  errorFn: (message: string) => void,
-): InitPresenter {
-  return {
-    onInvalidServerUrl: (url: string): void =>
-      errorFn(`Invalid server URL: "${url}". Must be a valid http or https URL.`),
-    onProjectRegistered: (result: ProjectRegistrationResult): void =>
-      logFn(
-        result.created
-          ? `Project registered: ${result.projectId}`
-          : `Using existing project ID: ${result.projectId}`,
-      ),
-    onRemoteUrlError: (detail?: string): void => {
-      errorFn('Error: could not determine the git remote URL for this directory')
-      if (detail) errorFn(detail)
-    },
-    onServerRejectedRemoteUrl: (remoteUrl: string, detail?: string): void => {
-      errorFn(`Error: the server rejected this remote URL: "${remoteUrl}"`)
-      if (detail) errorFn(detail)
-    },
-    onServerUnreachable: (serverUrl: string, detail?: string): void => {
-      errorFn(`Error: could not reach server at ${serverUrl}`)
-      if (detail) errorFn(detail)
-    },
-    onLocalStateWriteFailed: (detail?: string): void => {
-      errorFn(
-        'Error: registered successfully, but failed to save local state — run ripe init again to retry.',
-      )
-      if (detail) errorFn(detail)
-    },
-  }
-}
-
-export function buildInitFn(
-  askFn: (question: string) => Promise<string>,
-  logFn: (message: string) => void,
-  errorFn: (message: string) => void,
-): () => Promise<InitResult> {
-  const prompts = buildInitPrompts(askFn)
-  const presenter = buildInitPresenter(logFn, errorFn)
-  const options: InitOptions = {
-    getCurrentDirectoryName: () => process.cwd(),
-    prompts,
-    presenter,
-  }
-
-  return () => init(options)
-}
-
-export async function runCli(args: string[], options: RunCliOptions): Promise<CliResult> {
-  const { logFn, errorFn, initFn } = options
-  const [command] = args
-
-  if (args.some((arg) => HELP_FLAGS.has(arg))) {
-    logFn(HELP_TEXT)
-
-    return { exitCode: 0 }
-  }
-
-  if (command === 'init') {
-    const result = await initFn()
-
-    return { exitCode: result.status === 'success' ? 0 : 1 }
-  }
-
-  errorFn(`Unknown command: ${command ?? '(none)'}`)
-  errorFn("Run 'ripe --help' for usage.")
-
-  return { exitCode: 1 }
 }

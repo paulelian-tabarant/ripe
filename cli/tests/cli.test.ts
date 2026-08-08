@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { RunCliOptions } from '@/cli.js'
+import type { Logger, RunCliOptions } from '@/cli.js'
 import { runCli } from '@/cli.js'
 
 describe('runCli', () => {
   it.each([[['-h']], [['--help']], [['init', '-h']], [['init', '--help']]])(
     'prints help and exits 0 for %j without dispatching to a command',
     async (argv) => {
-      const logFn = vi.fn()
+      const log = vi.fn()
       const initFn = vi.fn()
 
-      const result = await runCli(argv, fakeRunCliOptions({ logFn, initFn }))
+      const result = await runCli(argv, fakeRunCliOptions({ logger: fakeLogger({ log }), initFn }))
 
       expect(result.exitCode).toBe(0)
-      expect(logFn).toHaveBeenCalledWith(expect.stringContaining('Usage'))
-      expect(logFn).toHaveBeenCalledWith(expect.stringContaining('init'))
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('Usage'))
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('init'))
       expect(initFn).not.toHaveBeenCalled()
     },
   )
@@ -31,14 +31,14 @@ describe('runCli', () => {
     [[], '(none)'],
     [['foo'], 'foo'],
   ])('errors and exits 1 with a help hint for %j', async (argv, expectedSubstring) => {
-    const errorFn = vi.fn()
+    const error = vi.fn()
     const initFn = vi.fn()
 
-    const result = await runCli(argv, fakeRunCliOptions({ errorFn, initFn }))
+    const result = await runCli(argv, fakeRunCliOptions({ logger: fakeLogger({ error }), initFn }))
 
     expect(result.exitCode).toBe(1)
-    expect(errorFn).toHaveBeenCalledWith(expect.stringContaining(expectedSubstring))
-    expect(errorFn).toHaveBeenCalledWith(expect.stringContaining('ripe --help'))
+    expect(error).toHaveBeenCalledWith(expect.stringContaining(expectedSubstring))
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('ripe --help'))
     expect(initFn).not.toHaveBeenCalled()
   })
 })
@@ -49,11 +49,18 @@ function unexpectedCall(name: string): (...args: unknown[]) => never {
   }
 }
 
+function fakeLogger(overrides: Partial<Logger> = {}): Logger {
+  return {
+    log: unexpectedCall('logger.log'),
+    error: unexpectedCall('logger.error'),
+    warn: unexpectedCall('logger.warn'),
+    ...overrides,
+  }
+}
+
 function fakeRunCliOptions(overrides: Partial<RunCliOptions> = {}): RunCliOptions {
   return {
-    logFn: unexpectedCall('logFn'),
-    errorFn: unexpectedCall('errorFn'),
-    warnFn: unexpectedCall('warnFn'),
+    logger: fakeLogger(),
     askFn: unexpectedCall('askFn'),
     initFn: unexpectedCall('initFn'),
     ...overrides,

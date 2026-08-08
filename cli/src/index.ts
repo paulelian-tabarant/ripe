@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { createInterface } from 'node:readline/promises'
-import { buildInitFn, type CliResult, runCli } from './cli.js'
+import { buildInitFn, type CliResult, type Logger, runCli } from './cli.js'
+
+const logger: Logger = { log: console.log, error: console.error, warn: console.warn }
 
 async function askFn(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout })
@@ -12,10 +14,8 @@ async function askFn(question: string): Promise<string> {
 }
 
 const { exitCode }: CliResult = await runCli(process.argv.slice(2), {
-  logFn: console.log,
-  errorFn: console.error,
-  warnFn: console.warn,
+  logger,
   askFn,
-  initFn: buildInitFn(askFn, console.log, console.error),
+  initFn: buildInitFn(askFn, logger),
 })
 process.exit(exitCode)
