@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createInterface } from 'node:readline/promises'
 import { buildInitFn } from '@/commands/init.factory.js'
-import { type CliResult, type Logger, runCli } from './cli.js'
+import { type ExitCode, type Logger, runCli } from './cli.js'
 
 const logger: Logger = { log: console.log, error: console.error, warn: console.warn }
 
@@ -14,7 +14,7 @@ async function askFn(question: string): Promise<string> {
   }
 }
 
-const { exitCode }: CliResult = await runCli(process.argv.slice(2), {
+const exitCode: ExitCode = await runCli(process.argv.slice(2), {
   logger,
   ask: askFn,
   init: buildInitFn(askFn, logger),

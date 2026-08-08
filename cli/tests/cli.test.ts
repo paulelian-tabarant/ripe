@@ -9,12 +9,12 @@ describe('runCli', () => {
       const log = vi.fn()
       const initFn = vi.fn()
 
-      const result = await runCli(
+      const exitCode = await runCli(
         argv,
         fakeRunCliOptions({ logger: fakeLogger({ log }), init: initFn }),
       )
 
-      expect(result.exitCode).toBe(0)
+      expect(exitCode).toBe(0)
       expect(log).toHaveBeenCalledWith(expect.stringContaining('Usage'))
       expect(log).toHaveBeenCalledWith(expect.stringContaining('init'))
       expect(initFn).not.toHaveBeenCalled()
@@ -24,10 +24,10 @@ describe('runCli', () => {
   it('dispatches to init for the "init" command', async () => {
     const initFn = vi.fn().mockResolvedValue('success')
 
-    const result = await runCli(['init'], fakeRunCliOptions({ init: initFn }))
+    const exitCode = await runCli(['init'], fakeRunCliOptions({ init: initFn }))
 
     expect(initFn).toHaveBeenCalledOnce()
-    expect(result.exitCode).toBe(0)
+    expect(exitCode).toBe(0)
   })
 
   it.each([
@@ -37,12 +37,12 @@ describe('runCli', () => {
     const error = vi.fn()
     const initFn = vi.fn()
 
-    const result = await runCli(
+    const exitCode = await runCli(
       argv,
       fakeRunCliOptions({ logger: fakeLogger({ error }), init: initFn }),
     )
 
-    expect(result.exitCode).toBe(1)
+    expect(exitCode).toBe(1)
     expect(error).toHaveBeenCalledWith(expect.stringContaining(expectedSubstring))
     expect(error).toHaveBeenCalledWith(expect.stringContaining('ripe --help'))
     expect(initFn).not.toHaveBeenCalled()

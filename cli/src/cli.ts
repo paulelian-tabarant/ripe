@@ -11,9 +11,7 @@ Options:
   -h, --help    Show this help message and exit
 `
 
-export interface CliResult {
-  exitCode: 0 | 1
-}
+export type ExitCode = 0 | 1
 
 export interface Logger {
   log: (message: string) => void
@@ -27,24 +25,24 @@ export interface RunCliOptions {
   init: () => Promise<CommandResult>
 }
 
-export async function runCli(args: string[], options: RunCliOptions): Promise<CliResult> {
+export async function runCli(args: string[], options: RunCliOptions): Promise<ExitCode> {
   const { logger, init } = options
   const [command] = args
 
   if (args.some((arg) => HELP_FLAGS.has(arg))) {
     logger.log(HELP_TEXT)
 
-    return { exitCode: 0 }
+    return 0
   }
 
   if (command === 'init') {
     const result = await init()
 
-    return { exitCode: result === 'success' ? 0 : 1 }
+    return result === 'success' ? 0 : 1
   }
 
   logger.error(`Unknown command: ${command ?? '(none)'}`)
   logger.error("Run 'ripe --help' for usage.")
 
-  return { exitCode: 1 }
+  return 1
 }
