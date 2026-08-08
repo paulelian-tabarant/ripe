@@ -45,12 +45,11 @@ different fields:
 Both Node fields are kept in sync so every stage resolves the same version.
 
 **Using [mise](https://mise.jdx.dev) locally**: mise doesn't pick up `devEngines` or
-`packageManager` automatically — each needs explicit configuration:
-
-- Node: enable idiomatic version files — see mise's
-  [Node docs](https://mise.jdx.dev/lang/node.html).
-- pnpm: enable mise's experimental hooks and trigger Corepack on install — see mise's
-  [Node.js cookbook](https://mise.jdx.dev/mise-cookbook/nodejs.html).
+`packageManager` automatically by default. This repo's `.mise.toml` enables idiomatic version
+files for `node` and `pnpm` (see mise's [Node docs](https://mise.jdx.dev/lang/node.html)), so
+`mise current node`/`mise current pnpm` resolve to the versions pinned in
+`devEngines`/`engines`/`packageManager` once you run `mise trust` the first time you `cd` into
+the repo.
 
 ### API (`api/`)
 
