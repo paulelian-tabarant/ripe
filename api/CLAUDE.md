@@ -52,12 +52,14 @@ singletons, no globals.
 - **Domain** (`src/core/domain/`) — entity classes with a private constructor and a validating static
   factory. External input that needs deriving/validating before it can be used gets its own value
   object with a private constructor and a `resolve`-style factory (e.g.
-  `ProjectRepoReference.resolve(remoteUrl): ProjectRepoReference | InvalidRemoteUrlError`), kept
-  in its own file; the entity's own factory then takes that already-validated value object instead
-  of a raw external value, so it can't fail (e.g. `Project.create(name, repoReference)` is
-  infallible — an invalid `Project` simply can't be constructed in the first place). Reserved for
-  invariants intrinsic to the entity or its inputs; an application-level workflow step belongs in
-  a use-case instead.
+  `GitRepository.resolve(remoteUrl): GitRepository | InvalidRemoteUrlError`), kept in its own file;
+  the entity's own factory then takes that already-validated value object instead of a raw external
+  value, so it can't fail (`Project.create(name, gitRepository)` is infallible — an invalid
+  `Project` simply can't be constructed in the first place). Reserved for invariants intrinsic to
+  the entity or its inputs; an application-level workflow step belongs in a use-case instead.
+  `Project` also owns a `Skill[]` collection — `Project.registerSkills(names)` dedupes by name and
+  returns a `DuplicateSkillNameError` result object instead of throwing if the caller passes
+  duplicates.
 
 `buildApp(db, opts)` in `src/app.ts` wires all endpoints together. `src/index.ts` is the process
 entry point: loads config, creates the DB, runs migrations, calls `buildApp`, and starts
@@ -70,11 +72,11 @@ src/
   app.ts                    # buildApp(db, opts) — wires endpoints, no DB setup/migration
   index.ts                  # process entry point — DB creation, migration, buildApp, listen
   core/
-    domain/                 # entity classes and value objects (Project, ProjectRepoReference)
-    use-cases/              # one class per use case (RegisterProject, ListProjects)
+    domain/                 # entity classes and value objects (Project, GitRepository, Skill)
+    use-cases/              # one class per use case (RegisterProject, ListProjects, RegisterSkillsIntoProject)
   endpoints/
-    contracts/              # wire-shape types only, exported to cli/web (health.ts, projects.ts)
-    *.endpoints.ts           # Fastify plugin functions (health.endpoints.ts, project.endpoints.ts)
+    contracts/              # wire-shape types only, exported to cli/web (health.ts, projects.ts, skills.ts)
+    *.endpoints.ts           # Fastify plugin functions (health.endpoints.ts, project.endpoints.ts, skill.endpoints.ts)
   infrastructure/
     config.ts                # loadConfig()
     *.repository.ts          # raw-SQL repositories (project.repository.ts)
@@ -97,7 +99,7 @@ internal layers. Each test file creates its own `Database(':memory:')` and `buil
 
 ## Key Conventions
 
-- Project IDs are server-assigned with `nanoid`, prefixed `proj_`.
+- Project and skill IDs are server-assigned with `nanoid`, prefixed `proj_`/`skill_` respectively.
 - Schema is managed via `@blackglory/better-sqlite3-migrations`. Migrations live in
   `src/infrastructure/db/migrations.ts`; `src/index.ts` (and each test's `createTestDb()` helper)
   calls `migrate(db, migrations)` directly at startup — no wrapper function, since the call is a
