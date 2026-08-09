@@ -1,14 +1,14 @@
-# ADR-015: Server-Managed Skill IDs
+# ADR-012: Server-Managed Skill IDs
 
-**Status**: Accepted — supersedes [ADR-005](ADR-005-stable-skill-ids.md)  
+**Status**: Accepted — supersedes an earlier proposal for client-generated skill UUIDs
 **Date**: 2026-06-21  
 **Deciders**: Single developer MVP
 
 ## Context
 
-ADR-005 proposed client-generated UUIDs stored in skill frontmatter for stable identification across
-renames. A subsequent design decision moved skill registration to the SessionEnd hook, making
-client-side UUID management unnecessary.
+An earlier proposal called for client-generated UUIDs stored in skill frontmatter for stable
+identification across renames. A subsequent design decision moved skill registration to the
+SessionEnd hook, making client-side UUID management unnecessary.
 
 The core need is rename-stability within a project: if a skill is renamed, historical events should
 still count toward the same skill in the dashboard.
@@ -39,8 +39,8 @@ use during event submission. This cache is gitignored — not versioned with the
 
 ## Alternatives Considered
 
-- **Client UUIDs in frontmatter (ADR-005)** → Requires manual ID assignment; IDs scattered across
-  skill files; source of truth is ambiguous (file vs. server)
+- **Client UUIDs in frontmatter (earlier proposal)** → Requires manual ID assignment; IDs scattered
+  across skill files; source of truth is ambiguous (file vs. server)
 - **Registration at `init` time** → Requires re-running `init` for every new skill; not self-healing
 - **Registration at SessionEnd (chosen)** → Automatic, self-healing, server always authoritative
 
