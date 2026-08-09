@@ -38,16 +38,16 @@ pass — not to guess at answers to comments that are actually asking the author
 
 3. **Classify each comment.** Conventional Comments labels, in the author's own words:
 
-   | Label | Meaning |
-   | --- | --- |
-   | `praise` | Highlights something good. Doesn't ask for a change. |
-   | `nitpick` | Minor, non-blocking style/polish point. |
-   | `suggestion` | Proposes a specific change. |
-   | `issue` | Points out a problem with the current code. |
-   | `todo` | Small, necessary change — often paired with `(blocking)`. |
-   | `question` | Asks something the author needs to answer — not a request for a change. |
-   | `thought` | Non-blocking idea worth reflecting on, not necessarily now. |
-   | `chore` | Process/task not directly about code quality (e.g. "update the changelog"). |
+   | Label        | Meaning                                                                     |
+   | ------------ | --------------------------------------------------------------------------- |
+   | `praise`     | Highlights something good. Doesn't ask for a change.                        |
+   | `nitpick`    | Minor, non-blocking style/polish point.                                     |
+   | `suggestion` | Proposes a specific change.                                                 |
+   | `issue`      | Points out a problem with the current code.                                 |
+   | `todo`       | Small, necessary change — often paired with `(blocking)`.                   |
+   | `question`   | Asks something the author needs to answer — not a request for a change.     |
+   | `thought`    | Non-blocking idea worth reflecting on, not necessarily now.                 |
+   | `chore`      | Process/task not directly about code quality (e.g. "update the changelog"). |
 
    Some comments will use the label explicitly (`suggestion: extract this into a helper`,
    `issue (blocking): this leaks the connection`). Most won't. For unlabeled comments, infer

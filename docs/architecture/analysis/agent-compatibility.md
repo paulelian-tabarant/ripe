@@ -88,7 +88,7 @@ content — and own making that synthesis deterministic and collision-resistant.
 ## Agent Compatibility Matrix
 
 | Agent                  | Format               | Location                                | Adapter Complexity                                                                        |
-|------------------------|----------------------|-----------------------------------------|-------------------------------------------------------------------------------------------|
+| ---------------------- | -------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------- |
 | **Claude Code**        | JSONL                | `~/.claude/projects/`                   | ✅ Easy (MVP target)                                                                      |
 | **GitHub Copilot CLI** | JSONL                | `~/.copilot/session-state/`             | ✅ Easy                                                                                   |
 | **Gemini CLI**         | JSON                 | `~/.gemini/tmp/`                        | ✅ Easy                                                                                   |

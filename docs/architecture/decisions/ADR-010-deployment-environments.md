@@ -17,10 +17,10 @@ The MVP needs hosting with an SQLite-backed Node.js server and a CI/CD pipeline.
 Two environments — staging and production — as separate Railway services under one project, with
 GitHub Actions for CI/CD.
 
-| Environment | Service name         | Purpose                                          |
-|-------------|----------------------|--------------------------------------------------|
-| Staging     | `<app-name>-staging` | Integration testing, artificial invocations      |
-| Production  | `<app-name>`         | Real daily use by the team                       |
+| Environment | Service name         | Purpose                                     |
+| ----------- | -------------------- | ------------------------------------------- |
+| Staging     | `<app-name>-staging` | Integration testing, artificial invocations |
+| Production  | `<app-name>`         | Real daily use by the team                  |
 
 **Railway Hobby plan** ($5/month): supports persistent volumes, always-on services, and custom
 domains. Both services run within this single subscription.

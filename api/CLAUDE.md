@@ -28,10 +28,10 @@ pnpm --filter api test tests/endpoints/project.endpoints.test.ts
 
 ## Required Environment Variables
 
-| Variable        | Description                        |
-| --------------- | ---------------------------------- |
-| `DATABASE_PATH` | Absolute path to the SQLite file   |
-| `PORT`          | HTTP port (integer, 1–65535)       |
+| Variable        | Description                      |
+| --------------- | -------------------------------- |
+| `DATABASE_PATH` | Absolute path to the SQLite file |
+| `PORT`          | HTTP port (integer, 1–65535)     |
 
 `loadConfig()` in `src/infrastructure/config.ts` throws on startup if either is missing or invalid.
 

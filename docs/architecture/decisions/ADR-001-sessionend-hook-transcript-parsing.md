@@ -62,15 +62,15 @@ were asserted at the time of this ADR, not measured. Before committing to this d
 Slice 3, ran a local POC: a `SessionEnd` hook running a blocking 8-second operation (standing in
 for `ripe sync`'s parse + HTTP work), tested against every real way a developer ends a session.
 
-| Termination path | Hook fired? | Completed? |
-| --- | --- | --- |
-| `/exit` (bare shell) | Yes | Yes |
-| `/exit` (IntelliJ integrated terminal) | Yes | Yes |
-| Terminal window closed, no `/exit` | Yes | Yes |
-| `/clear` | Yes | Yes |
-| IntelliJ window closed | Yes | Yes |
-| JetBrains plugin panel closed | Yes | Yes |
-| `kill -9` on the `claude` process | No | No |
+| Termination path                       | Hook fired? | Completed? |
+| -------------------------------------- | ----------- | ---------- |
+| `/exit` (bare shell)                   | Yes         | Yes        |
+| `/exit` (IntelliJ integrated terminal) | Yes         | Yes        |
+| Terminal window closed, no `/exit`     | Yes         | Yes        |
+| `/clear`                               | Yes         | Yes        |
+| IntelliJ window closed                 | Yes         | Yes        |
+| JetBrains plugin panel closed          | Yes         | Yes        |
+| `kill -9` on the `claude` process      | No          | No         |
 
 Every graceful termination path — including simply closing the whole IDE — reliably fires
 `SessionEnd` and lets it run to completion. Only an unblockable kill signal (crash, OOM-kill,

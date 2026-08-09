@@ -27,87 +27,85 @@ packages; check each package's `package.json` for its full script list.
 
 To try a change end-to-end against a real local stack:
 
-1. **API** — `cp api/.env.local.example api/.env.local` (edit `DATABASE_PATH`/`PORT` if needed),
-   then `pnpm --filter api start:local`. Runs at `http://localhost:<PORT>`.
-2. **CLI** — `pnpm --filter ./cli build`, then `node cli/dist/index.js init`. When prompted for
-   the server URL, pass `http://localhost:<PORT>` (the API's `PORT` from step 1).
-3. **Web** — `pnpm --filter web dev`. Proxies `/api` to `http://localhost:3000`.
+**1. API** — edit `DATABASE_PATH`/`PORT` if needed, then start it:
+
+```bash
+cp api/.env.local.example api/.env.local
+pnpm --filter api start:local
+```
+
+Runs at `http://localhost:<PORT>`.
+
+**2. CLI** — build and run it against the local API:
+
+```bash
+pnpm --filter ./cli build
+node cli/dist/index.js init
+```
+
+When prompted for the server URL, pass `http://localhost:<PORT>` (the API's `PORT` from step 1).
+
+**3. Web** — start the dev server:
+
+```bash
+pnpm --filter web dev
+```
+
+Proxies `/api` to `http://localhost:3000`.
 
 ## Runtime & Package Manager Versions
 
-Node and pnpm versions are pinned in `package.json`, but different parts of the SDLC read
-different fields:
+Node and pnpm versions are pinned in `package.json`, read by different tools:
 
-- **Node**: declared in both `devEngines` and `engines`. Locally and in CI, `actions/setup-node`
-  reads `devEngines` first, falling back to `engines` only if it's absent. At deploy time,
-  Railway's Railpack builder reads `engines.node` directly and doesn't know about `devEngines`.
-- **pnpm**: pinned via `packageManager`, read by `pnpm/action-setup` in CI's setup step.
+| Field                    | Set for | Read by                                                                                                      |
+| ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------ |
+| `devEngines` + `engines` | Node    | `actions/setup-node` (devEngines, falls back to `engines`); Railway's Railpack builder (`engines.node` only) |
+| `packageManager`         | pnpm    | `pnpm/action-setup` in CI; pnpm itself locally                                                               |
 
 Both Node fields are kept in sync so every stage resolves the same version.
 
-**Bumping either version**: pnpm itself declares which Node versions it supports via its own
-`engines.node` field. Before pinning a new pnpm version, check that field against the Node version
-you intend to pin:
+**Bumping a version**: check the target pnpm version's own Node support range first, then update
+all three fields together:
 
 ```bash
 npm view pnpm@<version> engines
 ```
 
-Pick a Node version that satisfies the range it reports, then update `devEngines`, `engines`, and
-`packageManager` together so every stage (CI, Railpack, mise) resolves the same compatible pair.
-
 Renovate bumps `packageManager` and `engines`/`devEngines` independently and doesn't cross-check
-them against each other. If it ever proposes an incompatible pair, `pnpm install` fails closed in
-CI (`engineStrict`/`pmOnFail` below) instead of merging — if that happens, follow the same manual
-process above to work out a compatible pair before re-pinning.
+them — an incompatible pair fails `pnpm install` closed (`engineStrict`/`pmOnFail`, both enforced
+locally by pnpm) instead of merging silently. If that happens, work out a compatible pair manually
+as above.
 
-**Using [mise](https://mise.jdx.dev) locally**: mise doesn't pick up `devEngines` or
-`packageManager` automatically by default. This repo's `.mise.toml` enables idiomatic version
-files for `node` and `pnpm` (see mise's [Node docs](https://mise.jdx.dev/lang/node.html)), so
-`mise current node`/`mise current pnpm` resolve to the versions pinned in
-`devEngines`/`engines`/`packageManager` once you run `mise trust` the first time you `cd` into
-the repo.
-
-pnpm itself also guards the `packageManager` pin natively (`pmOnFail`, default `download`): any
-locally installed `pnpm` binary — via Corepack, Homebrew, or a global install — detects a mismatch
-against `packageManager` and transparently re-execs the pinned version, so this doesn't rely on
-Corepack being enabled. `pnpm-workspace.yaml`'s `engineStrict: true` gives the Node version the
-same hard local enforcement: pnpm checks the actual running Node version against `engines.node`
-and refuses to install/build on a mismatch (no separate `nodeVersion` pin needed — it defaults to
-whatever Node is actually running).
+**Locally**: pnpm auto re-execs to the pinned `packageManager` version on mismatch (via Corepack,
+Homebrew, or a global install — `pmOnFail`), and refuses to install/build on a Node mismatch
+(`engineStrict`). [mise](https://mise.jdx.dev) users get the same pins for free — this repo's
+`.mise.toml` reads `devEngines`/`engines`/`packageManager` once you run `mise trust` in the repo.
 
 ## Dependency Updates
 
-[Renovate](https://docs.renovatebot.com) runs via a self-hosted GitHub Actions workflow
-(`.github/workflows/renovate.yml` + `renovate.json`) rather than the hosted GitHub App.
+[Renovate](https://docs.renovatebot.com) runs self-hosted via `.github/workflows/renovate.yml` +
+`renovate.json` (not the hosted GitHub App). Cadence comes entirely from that workflow's own
+`cron` triggers — not Renovate's `schedule`/`timezone` config — so there's only one clock to
+reason about:
 
-Cadence is controlled entirely by two `cron` triggers in `renovate.yml`, not by Renovate's own
-`schedule`/`timezone` config — those two answer different questions ("did we wake up" vs. "is now
-an allowed time") that are easy to get out of sync (e.g. DST shifting a schedule window relative to
-a fixed-UTC cron, or a weekly cron rarely landing on "the 1st of the month"). Each cron run instead
-passes a small `force` override (`.github/renovate/weekly.json` or `monthly.json`) that toggles
-which update types are allowed, so there's only one clock to reason about:
+| Cadence           | Config                          | Scope                                       | Merge                               |
+| ----------------- | ------------------------------- | ------------------------------------------- | ----------------------------------- |
+| Weekly (Mon)      | `.github/renovate/weekly.json`  | minor/patch/pin/digest, grouped into one PR | auto-merged once `ci-pr.yml` passes |
+| Monthly (the 1st) | `.github/renovate/monthly.json` | major only, one PR per dependency           | manual — needs a changelog read     |
 
-- **Weekly** (`.github/renovate/weekly.json`): minor/patch/pin/digest only, grouped into a single
-  PR, auto-merged once `ci-pr.yml` passes.
-- **Monthly**, on the actual 1st (`.github/renovate/monthly.json`): major only, one PR per
-  dependency, never auto-merged — needs a changelog read and manual verification.
-- **Supply-chain safety**: a 7-day `minimumReleaseAge` is enforced twice. Renovate itself won't
-  propose a dependency update until it's at least 7 days old, and pnpm independently re-checks the
-  same policy at install time (`pnpm-workspace.yaml`, `minimumReleaseAgeStrict: true`) across the
-  whole dependency graph, including transitive dependencies — failing the install rather than
-  silently letting a too-fresh package through.
-- **Build scripts**: native/postinstall scripts only run for packages explicitly allow-listed in
-  `pnpm-workspace.yaml`'s `allowBuilds`.
-- **`devEngines`/`engines` sync**: Renovate's built-in npm manager doesn't track `devEngines`, so a
-  custom regex manager in `renovate.json` keeps `devEngines.runtime.version` bumped alongside
-  `engines.node` whenever Renovate proposes a Node update.
+Safety nets:
+
+- **7-day `minimumReleaseAge`**, enforced both by Renovate and by pnpm at install time
+  (`pnpm-workspace.yaml`'s `minimumReleaseAgeStrict`) across the whole dependency graph.
+- **Build scripts** only run for packages allow-listed in `pnpm-workspace.yaml`'s `allowBuilds`.
+- **`devEngines`/`engines` sync**: a custom regex manager in `renovate.json` keeps
+  `devEngines.runtime.version` bumped alongside `engines.node`, since Renovate's npm manager
+  doesn't track `devEngines` natively.
 
 Validate `renovate.json` after editing it: `pnpm renovate:validate`. To dry-run either config from
-an open PR (e.g. after changing `renovate.json`) without waiting for its cron, add the
-`test-renovate-weekly` or `test-renovate-monthly` label — same pattern as the `deploy-staging`/
-`deploy-docs` labels below. Both always run in Renovate's `dryRun: full` mode, so neither can open
-real PRs or push branches.
+an open PR without waiting for its cron, add the `test-renovate-weekly` or `test-renovate-monthly`
+label — same pattern as the `deploy-staging`/`deploy-docs` labels below (always `dryRun: full`, so
+neither can open real PRs or push branches).
 
 ## Deployment
 

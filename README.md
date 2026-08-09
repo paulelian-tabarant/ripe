@@ -24,6 +24,18 @@ This project tracks skill invocation events across teams, providing:
 Focus is on custom `.claude/skills/` defined within projects — the skills teams maintain themselves
 — not third-party plugins.
 
+## Installation
+
+Install the `ripe` CLI to start tracking skill invocations in your own project:
+
+```bash
+npm install -g @paulelian-tabarant/ripe --registry=https://npm.pkg.github.com
+ripe init
+```
+
+GitHub Packages requires authentication even for public packages — see
+[`cli/README.md`](cli/README.md#install) for the personal access token setup.
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for repo setup, coding standards, and how to run/test

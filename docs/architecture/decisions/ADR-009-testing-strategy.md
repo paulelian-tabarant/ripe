@@ -14,7 +14,7 @@ frontend — while remaining practical for a single developer.
 Four layers of testing:
 
 | Layer               | Tool                                           | Scope                                                                                       |
-|---------------------|------------------------------------------------|---------------------------------------------------------------------------------------------|
+| ------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Client integration  | Vitest + `nock`                                | fixture `.jsonl` → parse → skill lookup → assert POST payload                               |
 | Server integration  | Vitest + `fastify.inject()` + in-memory SQLite | POST events → GET activity → assert output (one test per behavior)                          |
 | Frontend components | Vitest + Testing Library (jsdom)               | isolated component behavior, edge cases                                                     |

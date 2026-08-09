@@ -17,7 +17,8 @@
     "docs:c4:validate": "likec4 validate docs/architecture/",
     "docs:c4:build": "likec4 build docs/architecture/ -o dist-docs --base /ripe/ -t 'ripe — Architecture'",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
-    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\"",
+    "lint:md:fix": "pnpm run lint:md:align-tables && markdownlint-cli2 --fix \"**/*.md\"",
+    "lint:md:align-tables": "node scripts/align-md-tables.mjs",
     "renovate:validate": "renovate-config-validator renovate.json"
   },
   "packageManager": "pnpm@11.13.1",
