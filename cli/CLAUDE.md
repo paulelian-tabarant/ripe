@@ -40,19 +40,27 @@ behind this):
   `InitPrompter`/`InitPresenter` (via `init.prompter.ts`/`init.presenter.ts`) and the real
   `ProjectDirectory`/`GitRepository`/`SettingsStore`/`CacheStore` instances.
 - `src/infrastructure/project-directory.ts` — wraps the process's cwd (`getPath()`/`getName()`).
-- `src/infrastructure/git-repository.ts` — reads the `origin` remote via `git remote get-url origin` and
-  checks whether it's HTTPS.
-- `src/infrastructure/api-client.ts` — `ApiClient` interface (`registerProject`), backed by a raw `fetch` call to
-  `POST /api/projects`. Returns typed result objects.
+- `src/infrastructure/git-repository.ts` — reads the `origin` remote via `git remote get-url origin`,
+  checks whether it's HTTPS, and reads the local `main` branch's tree (`hasLocalBranch`,
+  `listFilesAtRef`, `readFileAtRef`) for skill scanning.
+- `src/infrastructure/api-client.ts` — `ApiClient` interface (`registerProject`, `registerSkills`),
+  backed by raw `fetch` calls to `POST /api/projects` and `POST /api/projects/:id/skills`. Returns
+  typed result objects.
 - `src/infrastructure/settings-store.ts` — reads/writes `.ripe/settings.json` (`{serverUrl}`, interactively
   set).
-- `src/infrastructure/cache-store.ts` — writes `.ripe/cache.json` (`{projectId}`, server-resolved).
+- `src/infrastructure/cache-store.ts` — writes `.ripe/cache.json` (`{projectId, skillIdByName?}`,
+  server-resolved).
+- `src/infrastructure/skill-scanner.ts` — walks `.claude/skills/` at the local `main` ref (not the
+  working tree), classifying skips as `namespaced` (name contains `:`), `malformed-frontmatter`,
+  or `not-on-main`.
 
 **`ripe init` flow**: reads the `origin` remote (prompting for an HTTPS equivalent if it isn't
 `https://` already) → resolves `serverUrl` (reuses `.ripe/settings.json`'s value if the user
 confirms keeping it, otherwise prompts) → POSTs `{ name, remoteUrl }` to
 `<server-url>/api/projects` (idempotent find-or-create, no `409`) → writes `.ripe/settings.json`
-and `.ripe/cache.json`.
+and `.ripe/cache.json` → scans `.claude/skills/**/SKILL.md` **as committed on the local `main`
+branch** (skipping namespaced/malformed/not-yet-on-main skills with a warning) → POSTs found
+skill names to `/api/projects/:id/skills`, caching the returned `skillIdByName`.
 
 ### Directory Structure
 
@@ -71,6 +79,7 @@ src/
     api-client.ts
     settings-store.ts
     cache-store.ts
+    skill-scanner.ts
 ```
 
 See [`cli/STANDARDS.md`](STANDARDS.md) for the naming-convention rule behind `.factory.ts`/
