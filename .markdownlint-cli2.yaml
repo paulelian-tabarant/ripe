@@ -3,6 +3,7 @@ ignores:
   - ".superpowers/**"
   - "**/node_modules/**"
   - "docs/superpowers/**"
+  - "docs/_plans/**"
 
 config:
   MD013:
@@ -10,3 +11,5 @@ config:
     tables: false      # table rows are exempt (can't control column widths)
     code_blocks: false # code examples are exempt
     # strict: false (default) already exempts lines with no possible wrap point (bare URLs)
+  MD060:
+    style: aligned # enforce vertically aligned table pipes

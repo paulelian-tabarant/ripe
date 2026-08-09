@@ -23,7 +23,7 @@ mechanism.
 ### Variable Sources by Environment
 
 | Environment             | Source                      | SQLite Location     | Notes                             |
-|-------------------------|-----------------------------|---------------------|-----------------------------------|
+| ----------------------- | --------------------------- | ------------------- | --------------------------------- |
 | **Local dev**           | `.env` file (gitignored)    | `./dev.db`          | Read by package scripts           |
 | **CI (GitHub Actions)** | Hardcoded in workflow YAML  | `/tmp/test.db`      | Non-sensitive, CI-specific values |
 | **Railway staging**     | Railway dashboard variables | Volume-mounted path | Auto-injected per environment     |
