@@ -53,11 +53,11 @@ model {
   }
 
   ripeCli = script 'ripe CLI' {
-    description '`ripe init` registers the project (shipped). `ripe sync`, invoked by the SessionEnd hook, syncing skills and submitting invocation events, is specced but not yet implemented.'
+    description '`ripe init` registers the project and scans/registers local skills (shipped). A separate `ripe sync` command, invoked by a SessionEnd hook to re-sync skills and submit invocation events, is specced but not yet implemented - skill registration currently only runs during `init`.'
   }
 
   localCache = database 'Local Cache' {
-    description 'Local gitignored .ripe/config.json: { projectId, serverUrl }. Spec (US-1.3) calls for splitting this into settings.json (serverUrl) and cache.json (project_id, skill name -> ID cache, last_synced_sha) - not yet implemented.'
+    description 'Local gitignored .ripe/settings.json ({ serverUrl }) and .ripe/cache.json ({ projectId, skillIdByName }) (shipped, split per US-1.3). `last_synced_sha` is not yet part of the cache - planned alongside `ripe sync`.'
   }
 
   telemetryServer = system 'Telemetry Server' {
@@ -88,11 +88,10 @@ model {
     #planned
   }
   ripeCli -> localCache 'reads/writes cached state'
-  ripeCli -> telemetryServer.fastifyServer 'POST /api/projects { name, remoteUrl } (find-or-create; repo_key derived server-side from remoteUrl)' {
+  ripeCli -> telemetryServer.fastifyServer 'POST /api/projects { name, remoteUrl } (find-or-create; repo_key derived server-side, stored alongside remoteUrl - see ADR-018/019)' {
     technology 'HTTP/JSON'
   }
-  ripeCli -> telemetryServer.fastifyServer 'POST /api/skills' {
-    #planned
+  ripeCli -> telemetryServer.fastifyServer 'POST /api/projects/{id}/skills (server-assigns skill IDs per ADR-012)' {
     technology 'HTTP/JSON'
   }
   ripeCli -> telemetryServer.fastifyServer 'POST /api/events' {
@@ -144,28 +143,31 @@ views {
   }
 
   dynamic view initFlow {
-    title 'Current / `ripe init` — Project Registration'
+    title 'Current / `ripe init` — Project Registration + Skill Scan'
 
     developer -> ripeCli 'runs `ripe init` (prints consent notice, derives remote URL from `git remote get-url origin`)'
     ripeCli -> telemetryServer.fastifyServer 'POST /api/projects { name, remoteUrl }'
     ripeCli <- telemetryServer.fastifyServer 'returns project_id (idempotent find-or-create; repo_key derived server-side)'
-    ripeCli -> localCache 'writes .ripe/config.json { projectId, serverUrl }'
+    ripeCli -> localCache 'writes .ripe/settings.json { serverUrl } and .ripe/cache.json { projectId }'
+    ripeCli -> ripeCli 'scans `.claude/skills/` on the main branch (namespaced skills skipped)'
+    ripeCli -> telemetryServer.fastifyServer 'POST /api/projects/{id}/skills (unregistered skill names)'
+    ripeCli <- telemetryServer.fastifyServer 'returns server-assigned skill IDs'
+    ripeCli -> localCache 'persists skillIdByName into .ripe/cache.json'
   }
 
   dynamic view sessionEndFlow {
-    title 'Target / `ripe sync` (SessionEnd Hook) — Two-Phase Flow (planned, not yet implemented)'
+    title 'Target / `ripe sync` (SessionEnd Hook) — planned, not yet implemented'
 
     claudeCode -> ripeCli 'SessionEnd: invokes `ripe sync`'
-    ripeCli -> localCache 'reads cached project_id (or re-resolves via repo_key if missing)'
+    ripeCli -> localCache 'reads cached project_id and skillIdByName (or re-resolves via repo_key if missing)'
 
-    // Phase 1: Skill sync
-    ripeCli -> localCache 'reads cached skill IDs'
-    ripeCli -> telemetryServer.fastifyServer 'POST /api/skills (unregistered skills only)'
+    // Re-sync any skills registered since `init` ran
+    ripeCli -> telemetryServer.fastifyServer 'POST /api/projects/{id}/skills (unregistered skills only)'
     ripeCli <- telemetryServer.fastifyServer 'returns server-assigned IDs'
     ripeCli -> localCache 'persists new skill IDs'
 
-    // Phase 2: Event submission
-    ripeCli -> telemetryServer.fastifyServer 'POST /api/events (session invocations; user.email/user.name read live, not cached; client_type: "claude-code")'
+    // Event submission
+    ripeCli -> telemetryServer.fastifyServer 'POST /api/events (session invocations; user.email/user.name read live, not cached; client_type: "claude-code"; dedup key (session_id, tool_use_id))'
   }
 
   dynamic view dashboardViewFlow {
