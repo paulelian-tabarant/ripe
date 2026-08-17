@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "description": "An eye on how your coding agent uses your context (or not)",
   "engines": {
-    "node": "24.18.0"
+    "node": "24.19.0"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "24.18.0"
+      "version": "24.19.0"
     }
   },
   "scripts": {
@@ -21,7 +21,7 @@
     "lint:md:align-tables": "node scripts/align-md-tables.mjs",
     "renovate:validate": "renovate-config-validator renovate.json"
   },
-  "packageManager": "pnpm@11.13.1",
+  "packageManager": "pnpm@11.21.0",
   "license": "PolyFormNoncommercial-1.0.0",
   "devDependencies": {
     "likec4": "latest",

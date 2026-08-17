@@ -35,7 +35,7 @@ jobs:
           fi
 
       - name: Self-hosted Renovate
-        uses: renovatebot/github-action@v46.2.1
+        uses: renovatebot/github-action@v46.2.2
         with:
           configurationFile: ${{ steps.mode.outputs.configurationFile }}
           token: '${{ secrets.RENOVATE_TOKEN }}'
