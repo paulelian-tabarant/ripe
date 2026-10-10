@@ -8,6 +8,7 @@ allowBuilds:
   dtrace-provider: false
   esbuild: true
   msw: true
+  protobufjs: false
   re2: true
 minimumReleaseAge: 10080
 minimumReleaseAgeStrict: true
