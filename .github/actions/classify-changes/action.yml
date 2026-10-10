@@ -41,16 +41,10 @@ runs:
         # match-but-not-excluded semantics for filters using negated patterns.
         predicate-quantifier: 'every'
         filters: |
+          # Single brace pattern: 'every' (above) would require one file to match
+          # *all* patterns of a filter, so a multi-pattern list here never matches.
           shared:
-            - 'package.json'
-            - 'pnpm-lock.yaml'
-            - 'pnpm-workspace.yaml'
-            - 'tsconfig.base.json'
-            - 'biome.json'
-            - '.github/actions/**'
-            - '.github/workflows/ci-pr.yml'
-            - '.github/workflows/ci-main.yml'
-            - '.github/workflows/deploy-staging.yml'
+            - '{package.json,pnpm-lock.yaml,pnpm-workspace.yaml,tsconfig.base.json,biome.json,.github/actions/**,.github/workflows/ci-pr.yml,.github/workflows/ci-main.yml,.github/workflows/deploy-staging.yml}'
           api:
             - 'api/**'
             - '!api/**/*.md'
