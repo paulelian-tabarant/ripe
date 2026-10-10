@@ -21,12 +21,12 @@
     "lint:md:align-tables": "node scripts/align-md-tables.mjs",
     "renovate:validate": "renovate-config-validator renovate.json"
   },
-  "packageManager": "pnpm@11.28.2",
+  "packageManager": "pnpm@11.28.3",
   "license": "PolyFormNoncommercial-1.0.0",
   "devDependencies": {
     "likec4": "latest",
-    "markdownlint-cli2": "^0.23.2",
-    "renovate": "^44.5.3",
+    "markdownlint-cli2": "^0.23.3",
+    "renovate": "^44.132.2",
     "typescript": "^7.0.2"
   }
 }
