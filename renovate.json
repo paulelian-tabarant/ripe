@@ -5,7 +5,10 @@
   "minimumReleaseAge": "7 days",
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["at any time"]
+    "schedule": ["at any time"],
+    "automerge": true,
+    "automergeType": "pr",
+    "platformAutomerge": true
   },
   "customManagers": [
     {
