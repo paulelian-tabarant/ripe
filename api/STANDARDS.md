@@ -141,7 +141,9 @@ Package-specific standards for `api/`. These supplement the general rules in
     the persistence DTO with `Omit`), `XCreationDto` (input of `X.create(dto)` — the plain-data shape
     that maps onto the entity's attributes, e.g. `Skill.create`, `GitRemote.create`; the exception
     is `Project.create(name, gitRemote)`, which stays positional because it takes an
-    already-validated value object, not plain data). Use `type` aliases, not `interface`.
+    already-validated value object, not plain data). Use `type` aliases, not `interface`. See
+    [`.claude/rules/api/domain-object-dtos.md`](../.claude/rules/api/domain-object-dtos.md) for a
+    worked example.
 
   - The repository's write parameter is the entity itself (see `addNewProject(project:
     Project)`), not a separately-declared write DTO.
