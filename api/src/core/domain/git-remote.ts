@@ -35,7 +35,4 @@ export type GitRemotePersistenceDto = {
   remoteUrl: string
 }
 
-export type GitRemoteCreationDto = {
-  repoKey: string
-  remoteUrl: string
-}
+export type GitRemoteCreationDto = GitRemotePersistenceDto

@@ -32,7 +32,4 @@ export type SkillPersistenceDto = {
 
 export type SkillExpositionDto = Omit<SkillPersistenceDto, 'projectId'>
 
-export type SkillCreationDto = {
-  projectId: string
-  name: string
-}
+export type SkillCreationDto = Omit<SkillPersistenceDto, 'id'>
