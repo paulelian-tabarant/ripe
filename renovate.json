@@ -5,7 +5,7 @@
   "minimumReleaseAge": "7 days",
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["at any time"],
+    "schedule": ["before 4am on monday"],
     "automerge": true,
     "automergeType": "pr",
     "platformAutomerge": true
@@ -14,7 +14,7 @@
     {
       "customType": "regex",
       "description": "Keep package.json's devEngines.runtime.version (read by Railway's mise-based build) in sync with engines.node",
-      "fileMatch": ["^package\\.json$"],
+      "managerFilePatterns": ["/^package\\.json$/"],
       "matchStrings": [
         "\"name\":\\s*\"node\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
       ],
@@ -27,12 +27,14 @@
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "groupName": "weekly minor/patch updates",
+      "schedule": ["before 4am on monday"],
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true
     },
     {
       "matchUpdateTypes": ["major"],
+      "schedule": ["before 4am on the first day of the month"],
       "automerge": false
     }
   ]

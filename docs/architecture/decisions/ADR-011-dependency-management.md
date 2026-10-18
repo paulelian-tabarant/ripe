@@ -18,6 +18,8 @@ frequently to update dependencies.
   - **Weekly batch PR** for all patch and minor updates (low-risk, low review burden)
   - **Individual PRs** for major version bumps (one per package, requires changelog review)
   - **Immediate PRs** for security vulnerability alerts, bypassing the weekly schedule
+- How the cadence is driven (workflow cron vs. Renovate `schedule`) is covered by
+  [ADR-022](ADR-022-renovate-daily-run-with-schedules.md).
 - Move a specific package to **independent single PRs** if it consistently breaks on minor updates
   (bad semver hygiene signal). Document the reason in the Renovate config when doing so.
 
