@@ -69,6 +69,12 @@ All of the above must pass with zero errors — there is no "skip tests" excepti
   suggest adding a script for it (`package.json`) instead.
 - **Subagents are read-only by default**: when dispatching a subagent for exploration or review,
   it must only report findings — never edit code — unless explicitly instructed to make changes.
+- **Scope a "do this everywhere" brief to real callers**: when delegating "apply pattern X to every
+  Y", add "only where something uses it" so the implementer doesn't add speculative code for
+  completeness.
+- **Where a convention is written down**: coding conventions go in the package's `STANDARDS.md`
+  (plus a `.claude/rules/` file when a worked example helps). Package `CLAUDE.md` files stay
+  architecture, commands, and pointers to the standards.
 
 ## Cross-Cutting Architecture Decisions
 

@@ -12,7 +12,8 @@
         "useExplicitType": "error"
       },
       "suspicious": {
-        "noExplicitAny": "error"
+        "noExplicitAny": "error",
+        "noImportCycles": "error"
       },
       "style": {
         "useImportType": "error"

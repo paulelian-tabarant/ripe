@@ -23,7 +23,10 @@ before any implementation plan or code exists.
    handling, what's explicitly out of scope. Prefer multiple-choice questions
    (`AskUserQuestion`) when the option space is small. Stay in chat — don't write a spec
    doc for this step. Stop asking once another question wouldn't change the test strategy
-   or cases below.
+   or cases below. Before asserting that a factory or signature change leaves the surrounding
+   flow untouched, read each caller and list what it needs from the value before and after —
+   a use case that looks up by a derived key before creating can't have that derivation moved
+   inside the factory.
 
 3. **Define the test strategy.** State, don't just imply:
    - **Granularity**: per root `STANDARDS.md`'s "Coarse-grained tests over fine-grained

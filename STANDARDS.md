@@ -99,6 +99,10 @@ These rules apply across the whole workspace (`api/`, `cli/`, and `web/`), which
     collapse them into a single `it.each`/`test.each` instead of a separate `it()` per case. See
     [`.claude/rules/parameterize-similar-tests.md`](.claude/rules/parameterize-similar-tests.md)
     for the pattern and its threshold for stepping back to a shared preparation helper instead.
+- **No circular imports**: modules never import each other in a cycle, even when each side only
+  uses the other inside a function body (a later top-level use turns it into a load-order bug).
+  Biome's `noImportCycles` enforces this. When two modules need the same class or type, move it
+  into a file both can import.
 - **KISS**: pick the simplest implementation that makes the code work; don't add abstraction or
   generality the task doesn't need.
 
