@@ -120,32 +120,21 @@ jobs:
       - name: Build architecture docs
         run: pnpm docs:c4:build
 
-  test-renovate-weekly:
-    if: contains(github.event.pull_request.labels.*.name, 'test-renovate-weekly')
+  test-renovate:
+    if: contains(github.event.pull_request.labels.*.name, 'test-renovate')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Self-hosted Renovate (dry run, weekly config)
+      # Renovate reads repo config from the default branch, so feed this PR's renovate.json in as
+      # global config and ignore the one on main — otherwise the dry run tests main's config.
+      - name: Self-hosted Renovate (dry run)
         uses: renovatebot/github-action@v46.3.6
         with:
-          configurationFile: .github/renovate/weekly.json
+          configurationFile: renovate.json
           token: '${{ secrets.RENOVATE_TOKEN }}'
         env:
           RENOVATE_REPOSITORIES: '${{ github.repository }}'
-          RENOVATE_DRY_RUN: full
-
-  test-renovate-monthly:
-    if: contains(github.event.pull_request.labels.*.name, 'test-renovate-monthly')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Self-hosted Renovate (dry run, monthly config)
-        uses: renovatebot/github-action@v46.3.6
-        with:
-          configurationFile: .github/renovate/monthly.json
-          token: '${{ secrets.RENOVATE_TOKEN }}'
-        env:
-          RENOVATE_REPOSITORIES: '${{ github.repository }}'
+          RENOVATE_REQUIRE_CONFIG: ignored
           RENOVATE_DRY_RUN: full
 
   deploy-staging:

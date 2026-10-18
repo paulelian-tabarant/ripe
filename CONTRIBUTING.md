@@ -84,14 +84,14 @@ Homebrew, or a global install — `pmOnFail`), and refuses to install/build on a
 ## Dependency Updates
 
 [Renovate](https://docs.renovatebot.com) runs self-hosted via `.github/workflows/renovate.yml` +
-`renovate.json` (not the hosted GitHub App). Cadence comes entirely from that workflow's own
-`cron` triggers — not Renovate's `schedule`/`timezone` config — so there's only one clock to
-reason about:
+`renovate.json` (not the hosted GitHub App). The workflow runs daily; what it _creates_ is gated by
+the `schedule` fields in `renovate.json`, while rebasing and automerging existing PRs happens on
+every run (see [ADR-022](docs/architecture/decisions/ADR-022-renovate-daily-run-with-schedules.md)):
 
-| Cadence           | Config                          | Scope                                       | Merge                               |
-| ----------------- | ------------------------------- | ------------------------------------------- | ----------------------------------- |
-| Weekly (Mon)      | `.github/renovate/weekly.json`  | minor/patch/pin/digest, grouped into one PR | auto-merged once `ci-pr.yml` passes |
-| Monthly (the 1st) | `.github/renovate/monthly.json` | major only, one PR per dependency           | manual — needs a changelog read     |
+| Cadence           | Scope                                                        | Merge                               |
+| ----------------- | ------------------------------------------------------------ | ----------------------------------- |
+| Weekly (Mon)      | minor/patch/pin/digest in one PR, plus lock file maintenance | auto-merged once `ci-pr.yml` passes |
+| Monthly (the 1st) | major only, one PR per dependency                            | manual — needs a changelog read     |
 
 Safety nets:
 
@@ -102,10 +102,11 @@ Safety nets:
   `devEngines.runtime.version` bumped alongside `engines.node`, since Renovate's npm manager
   doesn't track `devEngines` natively.
 
-Validate `renovate.json` after editing it: `pnpm renovate:validate`. To dry-run either config from
-an open PR without waiting for its cron, add the `test-renovate-weekly` or `test-renovate-monthly`
-label — same pattern as the `deploy-staging`/`deploy-docs` labels below (always `dryRun: full`, so
-neither can open real PRs or push branches).
+Validate `renovate.json` after editing it: `pnpm renovate:validate`. To dry-run the config from
+an open PR without waiting for its cron, add the `test-renovate` label — same pattern as the
+`deploy-staging`/`deploy-docs` labels below (always `dryRun: full`, so it can't open real PRs or
+push branches). Outside a schedule window it won't propose new updates, only show what it would do
+to existing PRs.
 
 ## Deployment
 
