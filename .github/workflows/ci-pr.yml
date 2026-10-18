@@ -125,12 +125,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # Renovate reads repo config from the default branch, so feed this PR's renovate.json in as
+      # global config and ignore the one on main — otherwise the dry run tests main's config.
       - name: Self-hosted Renovate (dry run)
         uses: renovatebot/github-action@v46.3.6
         with:
+          configurationFile: renovate.json
           token: '${{ secrets.RENOVATE_TOKEN }}'
         env:
           RENOVATE_REPOSITORIES: '${{ github.repository }}'
+          RENOVATE_REQUIRE_CONFIG: ignored
           RENOVATE_DRY_RUN: full
 
   deploy-staging:
