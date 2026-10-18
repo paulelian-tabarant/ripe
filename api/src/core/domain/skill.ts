@@ -7,8 +7,8 @@ export class Skill {
     readonly name: string,
   ) {}
 
-  static create(projectId: string, name: string): Skill {
-    return new Skill(`skill_${nanoid()}`, projectId, name)
+  static create(dto: SkillCreationDto): Skill {
+    return new Skill(`skill_${nanoid()}`, dto.projectId, dto.name)
   }
 
   static fromPersistence(dto: SkillPersistenceDto): Skill {
@@ -31,3 +31,8 @@ export type SkillPersistenceDto = {
 }
 
 export type SkillExpositionDto = Omit<SkillPersistenceDto, 'projectId'>
+
+export type SkillCreationDto = {
+  projectId: string
+  name: string
+}

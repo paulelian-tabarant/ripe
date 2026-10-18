@@ -34,7 +34,7 @@ export class Project {
       const existing = this.skills.find((skill) => skill.name === name)
 
       if (!existing) {
-        this.skills.push(Skill.create(this.id, name))
+        this.skills.push(Skill.create({ projectId: this.id, name }))
       }
     }
   }

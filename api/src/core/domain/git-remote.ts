@@ -33,10 +33,14 @@ export class GitRemote {
       return new InvalidRemoteUrlError(remoteUrl)
     }
 
-    return new GitRemote(
-      `${parsed.source}/${parsed.owner}/${parsed.name}`,
-      `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
-    )
+    return GitRemote.create({
+      repoKey: `${parsed.source}/${parsed.owner}/${parsed.name}`,
+      remoteUrl: `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
+    })
+  }
+
+  static create(dto: GitRemoteCreationDto): GitRemote {
+    return new GitRemote(dto.repoKey, dto.remoteUrl)
   }
 
   static fromPersistence(dto: GitRemotePersistenceDto): GitRemote {
@@ -58,3 +62,8 @@ export type GitRemotePersistenceDto = {
 }
 
 export type GitRemoteExpositionDto = GitRemotePersistenceDto
+
+export type GitRemoteCreationDto = {
+  repoKey: string
+  remoteUrl: string
+}
