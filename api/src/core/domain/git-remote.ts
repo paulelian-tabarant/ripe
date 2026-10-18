@@ -1,4 +1,4 @@
-import GitUrlParse from 'git-url-parse'
+import { resolveGitRemote } from './resolve-git-remote.js'
 
 export class InvalidRemoteUrlError extends Error {
   constructor(remoteUrl: string) {
@@ -7,8 +7,6 @@ export class InvalidRemoteUrlError extends Error {
   }
 }
 
-const MANAGED_PROTOCOLS = new Set(['https'])
-
 export class GitRemote {
   private constructor(
     readonly repoKey: string,
@@ -16,27 +14,13 @@ export class GitRemote {
   ) {}
 
   static resolve(remoteUrl: string): GitRemote | InvalidRemoteUrlError {
-    let parsed: ReturnType<typeof GitUrlParse>
+    const resolved = resolveGitRemote(remoteUrl)
 
-    try {
-      parsed = GitUrlParse(remoteUrl)
-    } catch {
-      return new InvalidRemoteUrlError(remoteUrl)
+    if (resolved instanceof InvalidRemoteUrlError) {
+      return resolved
     }
 
-    if (
-      !parsed.source ||
-      !parsed.owner ||
-      !parsed.name ||
-      !MANAGED_PROTOCOLS.has(parsed.protocol)
-    ) {
-      return new InvalidRemoteUrlError(remoteUrl)
-    }
-
-    return GitRemote.create({
-      repoKey: `${parsed.source}/${parsed.owner}/${parsed.name}`,
-      remoteUrl: `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
-    })
+    return GitRemote.create(resolved)
   }
 
   static create(dto: GitRemoteCreationDto): GitRemote {
