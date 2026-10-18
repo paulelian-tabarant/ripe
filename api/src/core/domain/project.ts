@@ -1,24 +1,24 @@
 import { nanoid } from 'nanoid'
-import { GitRepository } from './git-repository.js'
+import { GitRemote } from './git-remote.js'
 import { Skill, type SkillExpositionDto, type SkillPersistenceDto } from './skill.js'
 
 export class Project {
   private constructor(
     readonly id: string,
     private readonly name: string,
-    private readonly gitRepository: GitRepository,
+    private readonly gitRemote: GitRemote,
     private readonly skills: Skill[] = [],
   ) {}
 
-  static create(name: string, gitRepository: GitRepository): Project {
-    return new Project(`proj_${nanoid()}`, name, gitRepository)
+  static create(name: string, gitRemote: GitRemote): Project {
+    return new Project(`proj_${nanoid()}`, name, gitRemote)
   }
 
   static fromPersistence(dto: ProjectPersistenceDto): Project {
     return new Project(
       dto.id,
       dto.name,
-      GitRepository.fromPersistence({ repoKey: dto.repoKey, remoteUrl: dto.remoteUrl }),
+      GitRemote.fromPersistence({ repoKey: dto.repoKey, remoteUrl: dto.remoteUrl }),
       dto.skills.map((skill) => Skill.fromPersistence(skill)),
     )
   }
@@ -43,8 +43,8 @@ export class Project {
     return {
       id: this.id,
       name: this.name,
-      repoKey: this.gitRepository.repoKey,
-      remoteUrl: this.gitRepository.remoteUrl,
+      repoKey: this.gitRemote.repoKey,
+      remoteUrl: this.gitRemote.remoteUrl,
       skills: this.skills.map((skill) => skill.toPersistence()),
     }
   }
@@ -53,8 +53,8 @@ export class Project {
     return {
       id: this.id,
       name: this.name,
-      repoKey: this.gitRepository.repoKey,
-      remoteUrl: this.gitRepository.remoteUrl,
+      repoKey: this.gitRemote.repoKey,
+      remoteUrl: this.gitRemote.remoteUrl,
       skills: this.skills.map((skill) => skill.toExposition()),
     }
   }
