@@ -28,18 +28,12 @@ export class GitRemote {
   toPersistence(): GitRemotePersistenceDto {
     return { repoKey: this.repoKey, remoteUrl: this.remoteUrl }
   }
-
-  toExposition(): GitRemoteExpositionDto {
-    return this.toPersistence()
-  }
 }
 
 export type GitRemotePersistenceDto = {
   repoKey: string
   remoteUrl: string
 }
-
-export type GitRemoteExpositionDto = GitRemotePersistenceDto
 
 export type GitRemoteCreationDto = {
   repoKey: string
