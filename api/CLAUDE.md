@@ -60,11 +60,8 @@ singletons, no globals.
   an application-level workflow step belongs in a use-case instead.
   `Project` also owns a `Skill[]` collection — `Project.registerSkills(names)` dedupes by name and
   returns a `DuplicateSkillNameError` result object instead of throwing if the caller passes
-  duplicates.
-  DTOs are named after their intent, per domain object `X`: `XPersistenceDto` (full persisted
-  shape; input of `X.fromPersistence(dto)`, output of `toPersistence()`), `XExpositionDto` (outward
-  shape for use-cases, returned by `toExposition()`), and `XCreationDto` (input of `X.create(dto)`
-  where applicable, e.g. `Skill.create`, `GitRemote.create`).
+  duplicates. See [`api/STANDARDS.md`](STANDARDS.md)'s "Domain Modeling" section for the DTO
+  naming and lifecycle conventions (`fromPersistence`/`toPersistence`/`toExposition`/`create`).
 
 `buildApp(db, opts)` in `src/app.ts` wires all endpoints together. `src/index.ts` is the process
 entry point: loads config, creates the DB, runs migrations, calls `buildApp`, and starts

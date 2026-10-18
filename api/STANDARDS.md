@@ -138,9 +138,10 @@ Package-specific standards for `api/`. These supplement the general rules in
 
   - **DTO naming follows intent**, per domain object `X`: `XPersistenceDto` (full persisted shape,
     flat, child collections included), `XExpositionDto` (outward shape for use-cases, derived from
-    the persistence DTO with `Omit`), `XCreationDto` (input of `X.create(dto)` where `create` takes
-    more than a couple of positional values, e.g. `Skill.create`; `Project.create(name, gitRemote)`
-    stays positional). Use `type` aliases, not `interface`.
+    the persistence DTO with `Omit`), `XCreationDto` (input of `X.create(dto)` — the plain-data shape
+    that maps onto the entity's attributes, e.g. `Skill.create`, `GitRemote.create`; the exception
+    is `Project.create(name, gitRemote)`, which stays positional because it takes an
+    already-validated value object, not plain data). Use `type` aliases, not `interface`.
 
   - The repository's write parameter is the entity itself (see `addNewProject(project:
     Project)`), not a separately-declared write DTO.
