@@ -1,14 +1,15 @@
 ---
 name: triage-pr-comments
-description: Triage inline review comments on an open PR using the Conventional Comments format (conventionalcomments.org — praise, nitpick, suggestion, issue, todo, question, thought, chore). Classifies each comment, fixes the actionable ones (issue, suggestion, todo, chore) directly in code, and surfaces judgment-call ones (question, thought, praise, nitpick) as a decision list instead of guessing at a reply. Once aligned with the user on what's addressed, resolves the corresponding GitHub review threads for real — never before that, and never a reply comment. Use whenever the user wants to address, work through, or triage PR review feedback — "address the comments on #42", "go through the PR feedback", "what should I do about this reviewer's comments". Distinct from iteration-recap (summarizes a PR's changes) and iteration-code-review (reviews your own diff before posting) — this is about feedback already left on an open PR.
+description: Triage inline review comments on an open PR using the Conventional Comments format (conventionalcomments.org — praise, nitpick, suggestion, issue, todo, question, thought, chore). Classifies each comment, then discusses every one with the user one at a time (actionable and judgment-call alike) before touching any code, and only afterwards applies the agreed changes (issue, suggestion, todo, chore) instead of guessing at a reply or acting on a comment unilaterally. Once aligned with the user on what's addressed, resolves the corresponding GitHub review threads for real — never before that, and never a reply comment. Use whenever the user wants to address, work through, or triage PR review feedback — "address the comments on #42", "go through the PR feedback", "what should I do about this reviewer's comments". Distinct from iteration-recap (summarizes a PR's changes) and iteration-code-review (reviews your own diff before posting) — this is about feedback already left on an open PR.
 ---
 
 # PR Comments Triage
 
-Go through a PR's inline review comments, classify each by Conventional Comments intent, and
-split the work: fix what's fixable yourself, and hand back only what genuinely needs a human
-decision. The point is to save the tedious "read every comment, figure out what it's asking for"
-pass — not to guess at answers to comments that are actually asking the author to think, not act.
+Go through a PR's inline review comments, classify each by Conventional Comments intent, then
+discuss every comment with the user, one at a time, before changing any code. The point is to save
+the tedious "read every comment, figure out what it's asking for" pass — not to act on a comment
+before the author has agreed to what it means. Even an actionable comment can have more than one
+reasonable reading or fix, and the author's answer to one comment can change how another is handled.
 
 ## Prerequisites
 
@@ -65,21 +66,18 @@ pass — not to guess at answers to comments that are actually asking the author
    A `(blocking)` decoration always makes a comment actionable regardless of label — the
    reviewer is saying it must be resolved before merge.
 
-4. **Split into two buckets — classify only, don't act yet:**
+4. **Classify only — don't act yet.** Every comment, whatever its label, gets discussed with the
+   user before any code changes. The label only tells you what kind of response to propose:
 
    - **Actionable** (`issue`, `suggestion`, `todo`, `chore`, or anything marked `(blocking)`):
-     ordinary PR feedback, fixable without needing the user's input on what to do.
+     you'll propose a concrete change for the user to confirm, adjust, or reject.
    - **Needs human judgment** (`question`, `thought`, `praise`, `nitpick`): these aren't requests
      for a code change, they're requests for the PR author's actual opinion, or don't need a
      response at all. Don't invent an answer to a question or decide whether a `thought` is worth
      acting on — that's exactly the judgment call this skill exists to route to the user instead
      of guessing at.
 
-   Hold off on touching any code for either bucket until the next step is done — a judgment-call
-   answer can change the actionable bucket's scope (defer/expand/drop a `todo`, change *how* a
-   `suggestion` should be applied), and implementing first means redoing that work.
-
-   **Post the full classification before doing anything else** — one compact list, both buckets,
+   **Post the full classification before doing anything else** — one compact list, both groups,
    every comment, e.g.:
 
    ```markdown
@@ -87,29 +85,32 @@ pass — not to guess at answers to comments that are actually asking the author
    Needs judgment: `path:line` [thought] gist · `path:line` [question] gist
    ```
 
-   This gives the user the whole scope up front — how many comments, how big each bucket is —
-   before you start the one-by-one walk or touch a single line of code. Do not jump from step 3
-   straight into the walk (step 5) or into fixing anything: this overview is a required stop in
-   between, even if the mapping from step 3 already feels obvious to you.
+   This gives the user the whole scope up front — how many comments, how they split — before you
+   start the one-by-one walk. Do not jump from step 3 straight into the walk (step 5) or into
+   editing anything: this overview is a required stop in between, even if the mapping from step 3
+   already feels obvious to you.
 
-5. **Walk the judgment bucket first, one at a time, before fixing anything.** Don't dump the
-   whole bucket as a single list and wait for one omnibus reply — these need a real back-and-forth,
-   and bundling them invites the user to skim instead of deciding. In file order, for each item:
+5. **Walk every comment, one at a time, before changing any code.** Don't dump the list and wait
+   for one omnibus reply, and don't skip the actionable ones because their fix looks obvious —
+   a real back-and-forth is the point, and bundling invites the user to skim instead of deciding.
+   In file order, for each comment:
    - Quote the comment with its `path:line` and label.
-   - Give a one-line note on what a reasonable response might be, if it helps them decide faster
-     — but don't decide for them.
-   - Wait for the user's answer before moving to the next one. If the answer implies a code
-     change, make it before moving on, so context stays fresh and each item is fully closed out
-     before the next. If the answer changes how an actionable-bucket item should be handled (or
-     whether it should be handled at all), update that item's plan now, before step 6.
+   - Say what you'd do about it: for an actionable comment, the concrete change (and any
+     alternative reading or fix you considered); for a judgment-call comment, a one-line note on
+     what a reasonable response might be, if it helps them decide faster — but don't decide for
+     them.
+   - Wait for the user's answer before moving to the next one. **Do not edit code, docs, or
+     config during the walk** — just record the decision (apply as proposed / apply differently /
+     skip / leave open). If an answer changes how a later comment should be handled, update that
+     comment's plan now.
 
    If there are many items, it's fine to ask once whether the user wants them one-by-one or
    batched — but default to one-by-one unless they say otherwise.
 
-6. **Now fix the actionable bucket**, informed by whatever the judgment-bucket walk surfaced.
-   Make the code change for each. If you judge a suggestion shouldn't be applied as written,
-   don't silently skip it — say why in the output, the same way you'd explain it in a review
-   reply.
+6. **Once every comment has been discussed, apply the agreed changes together.** Make the code
+   change for each comment settled as "apply", exactly as agreed. If you later find an agreed
+   change shouldn't be applied as written, don't silently skip or alter it — say why and check with
+   the user, the same way you'd explain it in a review reply.
 
 7. **Verify before reporting.** After making the actionable code changes, run lint, typecheck, and
    the scoped tests for every package you touched (per the root `CLAUDE.md`) before writing the
@@ -127,16 +128,16 @@ pass — not to guess at answers to comments that are actually asking the author
 
    Omit this section if nothing was actionable. If a comment's label is inferred rather than
    explicit, no need to flag that in the report — the classification should just be right, not
-   narrated. Any judgment-bucket item already settled in step 5 doesn't need to be repeated here
-   in full — a one-line reference to the decision made is enough.
+   narrated. A comment settled in step 5 without a code change (a `question`, `thought`, or
+   anything skipped or left open) doesn't need to be repeated here in full — a one-line reference
+   to the decision made is enough.
 
 9. **Confirm, then resolve — do not end the task without this step.** Keep a running list of
-   every comment ID that becomes settled as you go (each judgment-call decision from step 5, each
-   actionable fix from step 6) so nothing falls through the cracks by the time you get here — a
-   long triage pass with many comments is exactly when this gets forgotten. Wait until you and the
-   user are actually aligned on what got addressed and what was decided on each judgment-call item
-   before touching GitHub. Once aligned (either after the full one-by-one walk, or as you go if the
-   user prefers resolving threads immediately after each decision), resolve the corresponding
+   every comment ID that becomes settled as you go (each decision from step 5, each change applied
+   in step 6) so nothing falls through the cracks by the time you get here — a long triage pass
+   with many comments is exactly when this gets forgotten. Wait until you and the user are
+   actually aligned on what got addressed and what was decided on each comment before touching
+   GitHub. Once aligned, resolve the corresponding
    review threads for the comments that were acted on or explicitly settled — not a reply saying
    "resolved", an actual resolved conversation, since that's what the label means to a reviewer
    scanning the PR:
