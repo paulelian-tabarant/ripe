@@ -49,20 +49,11 @@ singletons, no globals.
   result objects (e.g. `RegisterProjectResult`).
 - **Repositories** (`src/infrastructure/*.repository.ts`) — raw SQL only; rebuild domain entities
   from rows via `fromPersistence(dto)` and write them out via `toPersistence()`.
-- **Domain** (`src/core/domain/`) — entity classes with a private constructor and static factories.
-  External input that needs deriving/validating before it can be used becomes a small value object
-  (e.g. `GitRemote`), obtained through `GitRemote.resolve(remoteUrl): GitRemote |
-  InvalidRemoteUrlError`, a thin wrapper over the stateless `resolveGitRemote` function
-  (`resolve-git-remote.ts`) that does the parsing; the entity's own factory then takes that
-  already-validated value object instead of a raw external value, so it can't fail
-  (`Project.create(name, gitRemote)` is infallible as long as raw input goes through
-  `GitRemote.resolve`; `GitRemote.create(dto)` trusts an already-canonical dto and must only be fed
-  by `resolve`/the resolver). Reserved for invariants intrinsic to the entity or its inputs;
-  an application-level workflow step belongs in a use-case instead.
-  `Project` also owns a `Skill[]` collection — `Project.registerSkills(names)` dedupes by name and
-  returns a `DuplicateSkillNameError` result object instead of throwing if the caller passes
-  duplicates. See [`api/STANDARDS.md`](STANDARDS.md)'s "Domain Modeling" section for the DTO
-  naming and lifecycle conventions (`fromPersistence`/`toPersistence`/`toExposition`/`create`).
+- **Domain** (`src/core/domain/`) — entity classes (`Project`, `Skill`) and the value objects
+  their inputs are validated into (`GitRemote`), for invariants intrinsic to an entity; an
+  application-level workflow step belongs in a use-case instead. `Project` owns a `Skill[]`
+  collection. See [`api/STANDARDS.md`](STANDARDS.md)'s "Domain Modeling" section for how domain
+  objects are built, validated and exposed.
 
 `buildApp(db, opts)` in `src/app.ts` wires all endpoints together. `src/index.ts` is the process
 entry point: loads config, creates the DB, runs migrations, calls `buildApp`, and starts

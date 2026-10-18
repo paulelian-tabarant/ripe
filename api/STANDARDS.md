@@ -85,9 +85,8 @@ Package-specific standards for `api/`. These supplement the general rules in
   entity's own factory** — don't have the entity's `create` re-parse a raw external value itself.
 
   ```ts
-  // GitRemote: private constructor; `resolve` is the entry point for raw input and the only
-  // path that guarantees a canonical value. `create(dto)` trusts an already-canonical dto and
-  // must only be fed by `resolve`/the resolver.
+  // GitRemote: private constructor; `resolve` is the only way the app obtains one from raw input
+  // (`fromPersistence` rebuilds one already validated at `resolve` time)
   GitRemote.resolve(remoteUrl: string): GitRemote | InvalidRemoteUrlError
 
   // Project.create takes the already-validated value object, not the raw string —
@@ -108,8 +107,7 @@ Package-specific standards for `api/`. These supplement the general rules in
     deliberately (both derived from the same parse, both required before an entity can be
     constructed), but is not itself "the project's identity" (that's `Project.id`) and is not a
     `*Repository` in the persistence-layer sense — hence the more specific name over a generic
-    `RepoIdentity`. The raw parsing/normalization lives in a stateless function
-    (`resolveGitRemote` in `resolve-git-remote.ts`) that `GitRemote.resolve` wraps.
+    `RepoIdentity`.
   - A repository's `getByRepoKey`-style method never calls `create` — it rebuilds an
     already-valid entity read back from storage via a separate factory,
     `fromPersistence(dto)`, which can't fail (the data was already validated once, at the
@@ -141,9 +139,10 @@ Package-specific standards for `api/`. These supplement the general rules in
   - **DTO naming follows intent**, per domain object `X`: `XPersistenceDto` (full persisted shape,
     flat, child collections included), `XExpositionDto` (outward shape for use-cases, derived from
     the persistence DTO with `Omit`), `XCreationDto` (input of `X.create(dto)` — the plain-data shape
-    that maps onto the entity's attributes, e.g. `Skill.create`, `GitRemote.create`; the exception
-    is `Project.create(name, gitRemote)`, which stays positional because it takes an
-    already-validated value object, not plain data). Use `type` aliases, not `interface`. See
+    that maps onto the entity's attributes, e.g. `Skill.create`; the exceptions are
+    `Project.create(name, gitRemote)`, which stays positional because it takes an
+    already-validated value object, not plain data, and `GitRemote`, which has no `create` at all
+    since `resolve` is its only entry point). Use `type` aliases, not `interface`. See
     [`.claude/rules/api/domain-object-dtos.md`](../.claude/rules/api/domain-object-dtos.md) for a
     worked example.
 

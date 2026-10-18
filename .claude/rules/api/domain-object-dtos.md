@@ -58,9 +58,8 @@ its project), and one name per intent keeps them from drifting into each other.
 **How to apply**:
 
 - Use `type` aliases for DTOs, not `interface`. Declare the fields once, on the persistence DTO,
-  and derive the others from it (`Omit`, or a plain alias when the shapes are identical, e.g.
-  `GitRemoteCreationDto = GitRemotePersistenceDto`) — keep each intent's name, don't duplicate
-  fields.
+  and derive the others from it (`Omit`, or a plain alias when the shapes are identical) — keep
+  each intent's name, don't duplicate fields.
 - `fromPersistence` can't fail — the data was validated once, at the `create` that first
   persisted it. Anything that can fail on raw input (parsing, normalizing) happens before the
   object exists, in a value object's `resolve`-style factory returning a result object (see
