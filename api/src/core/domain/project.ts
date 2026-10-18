@@ -23,7 +23,7 @@ export class Project {
     )
   }
 
-  registerSkills(names: string[]): void | DuplicateSkillNameError {
+  registerSkills(names: string[]): undefined | DuplicateSkillNameError {
     const uniqueNames = new Set(names)
 
     if (uniqueNames.size !== names.length) {
