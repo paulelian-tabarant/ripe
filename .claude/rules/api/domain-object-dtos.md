@@ -57,6 +57,8 @@ its project), and one name per intent keeps them from drifting into each other.
 
 **How to apply**:
 
+- Add a DTO type and its method only when something calls it — an unused `toExposition()` on a
+  value object is dead code, not completeness.
 - Use `type` aliases for DTOs, not `interface`. Declare the fields once, on the persistence DTO,
   and derive the others from it (`Omit`, or a plain alias when the shapes are identical) — keep
   each intent's name, don't duplicate fields.

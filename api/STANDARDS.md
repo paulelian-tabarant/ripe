@@ -145,6 +145,10 @@ Package-specific standards for `api/`. These supplement the general rules in
     since `resolve` is its only entry point). Use `type` aliases, not `interface`. See
     [`.claude/rules/api/domain-object-dtos.md`](../.claude/rules/api/domain-object-dtos.md) for a
     worked example.
+  - **Give an object only the DTO methods something calls.** The intent-named pattern is a
+    naming convention, not a checklist: `toExposition()` exists where a use-case reads it,
+    `create(dto)` where the app builds one from plain data. A value object nobody reads out (e.g.
+    `GitRemote`) has no exposition DTO.
 
   - The repository's write parameter is the entity itself (see `addNewProject(project:
     Project)`), not a separately-declared write DTO.
