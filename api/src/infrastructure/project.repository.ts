@@ -92,28 +92,18 @@ export class ProjectRepository {
   }
 
   addNewProject(project: Project): void {
-    const persistence = project.toPersistence()
+    const dto = project.toPersistence()
 
-    this.insertStatement.run(
-      persistence.id,
-      persistence.name,
-      persistence.repoKey,
-      persistence.remoteUrl,
-    )
+    this.insertStatement.run(dto.id, dto.name, dto.repoKey, dto.remoteUrl)
   }
 
   save(project: Project): void {
-    const persistence = project.toPersistence()
+    const dto = project.toPersistence()
 
     this.db.transaction(() => {
-      this.upsertProjectStatement.run(
-        persistence.id,
-        persistence.name,
-        persistence.repoKey,
-        persistence.remoteUrl,
-      )
+      this.upsertProjectStatement.run(dto.id, dto.name, dto.repoKey, dto.remoteUrl)
 
-      for (const skill of persistence.skills) {
+      for (const skill of dto.skills) {
         this.upsertSkillStatement.run(skill.id, skill.projectId, skill.name)
       }
     })()
