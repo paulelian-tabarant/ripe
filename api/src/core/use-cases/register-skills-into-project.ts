@@ -27,7 +27,7 @@ export class RegisterSkillsIntoProject {
     this.repository.save(project)
 
     return project
-      .snapshot()
+      .toExposition()
       .skills.filter((skill) => names.includes(skill.name))
       .map((skill) => ({ name: skill.name, skillId: skill.id }))
   }

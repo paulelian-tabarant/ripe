@@ -9,13 +9,13 @@ export class InvalidRemoteUrlError extends Error {
 
 const MANAGED_PROTOCOLS = new Set(['https'])
 
-export class GitRepository {
+export class GitRemote {
   private constructor(
     readonly repoKey: string,
     readonly remoteUrl: string,
   ) {}
 
-  static resolve(remoteUrl: string): GitRepository | InvalidRemoteUrlError {
+  static resolve(remoteUrl: string): GitRemote | InvalidRemoteUrlError {
     let parsed: ReturnType<typeof GitUrlParse>
 
     try {
@@ -33,13 +33,22 @@ export class GitRepository {
       return new InvalidRemoteUrlError(remoteUrl)
     }
 
-    return new GitRepository(
+    return new GitRemote(
       `${parsed.source}/${parsed.owner}/${parsed.name}`,
       `https://${parsed.resource}/${parsed.owner}/${parsed.name}`,
     )
   }
 
-  static reconstitute(data: { repoKey: string; remoteUrl: string }): GitRepository {
-    return new GitRepository(data.repoKey, data.remoteUrl)
+  static fromPersistence(dto: GitRemotePersistenceDto): GitRemote {
+    return new GitRemote(dto.repoKey, dto.remoteUrl)
   }
+
+  toPersistence(): GitRemotePersistenceDto {
+    return { repoKey: this.repoKey, remoteUrl: this.remoteUrl }
+  }
+}
+
+export type GitRemotePersistenceDto = {
+  repoKey: string
+  remoteUrl: string
 }

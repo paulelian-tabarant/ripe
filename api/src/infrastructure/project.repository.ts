@@ -1,6 +1,5 @@
 import type Database from 'better-sqlite3'
 import { Project } from '../core/domain/project.js'
-import { Skill } from '../core/domain/skill.js'
 
 export type ProjectReadModel = {
   id: string
@@ -56,11 +55,12 @@ export class ProjectRepository {
 
     return (
       row &&
-      Project.reconstitute({
+      Project.fromPersistence({
         id: row.id,
         name: row.name,
         repoKey: row.repo_key,
         remoteUrl: row.remote_url,
+        skills: [],
       })
     )
   }
@@ -74,14 +74,16 @@ export class ProjectRepository {
 
     const skillRows = this.findSkillsByProjectIdStatement.all(id)
 
-    return Project.reconstitute({
+    return Project.fromPersistence({
       id: row.id,
       name: row.name,
       repoKey: row.repo_key,
       remoteUrl: row.remote_url,
-      skills: skillRows.map((skillRow) =>
-        Skill.reconstitute({ ...skillRow, projectId: skillRow.project_id }),
-      ),
+      skills: skillRows.map((skillRow) => ({
+        id: skillRow.id,
+        projectId: skillRow.project_id,
+        name: skillRow.name,
+      })),
     })
   }
 
@@ -90,24 +92,19 @@ export class ProjectRepository {
   }
 
   addNewProject(project: Project): void {
-    const snapshot = project.snapshot()
+    const dto = project.toPersistence()
 
-    this.insertStatement.run(snapshot.id, snapshot.name, snapshot.repoKey, snapshot.remoteUrl)
+    this.insertStatement.run(dto.id, dto.name, dto.repoKey, dto.remoteUrl)
   }
 
   save(project: Project): void {
-    const snapshot = project.snapshot()
+    const dto = project.toPersistence()
 
     this.db.transaction(() => {
-      this.upsertProjectStatement.run(
-        snapshot.id,
-        snapshot.name,
-        snapshot.repoKey,
-        snapshot.remoteUrl,
-      )
+      this.upsertProjectStatement.run(dto.id, dto.name, dto.repoKey, dto.remoteUrl)
 
-      for (const skill of snapshot.skills) {
-        this.upsertSkillStatement.run(skill.id, snapshot.id, skill.name)
+      for (const skill of dto.skills) {
+        this.upsertSkillStatement.run(skill.id, skill.projectId, skill.name)
       }
     })()
   }

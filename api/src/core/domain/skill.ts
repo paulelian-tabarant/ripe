@@ -7,11 +7,29 @@ export class Skill {
     readonly name: string,
   ) {}
 
-  static create(projectId: string, name: string): Skill {
-    return new Skill(`skill_${nanoid()}`, projectId, name)
+  static create(dto: SkillCreationDto): Skill {
+    return new Skill(`skill_${nanoid()}`, dto.projectId, dto.name)
   }
 
-  static reconstitute(data: { id: string; projectId: string; name: string }): Skill {
-    return new Skill(data.id, data.projectId, data.name)
+  static fromPersistence(dto: SkillPersistenceDto): Skill {
+    return new Skill(dto.id, dto.projectId, dto.name)
+  }
+
+  toPersistence(): SkillPersistenceDto {
+    return { id: this.id, projectId: this.projectId, name: this.name }
+  }
+
+  toExposition(): SkillExpositionDto {
+    return { id: this.id, name: this.name }
   }
 }
+
+export type SkillPersistenceDto = {
+  id: string
+  projectId: string
+  name: string
+}
+
+export type SkillExpositionDto = Omit<SkillPersistenceDto, 'projectId'>
+
+export type SkillCreationDto = Omit<SkillPersistenceDto, 'id'>

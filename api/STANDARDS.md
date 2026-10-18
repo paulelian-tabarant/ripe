@@ -45,7 +45,7 @@ Package-specific standards for `api/`. These supplement the general rules in
   (`*.endpoints.test.ts`).
 - **A bare kebab-case name (no role suffix)** is for anything that doesn't carry one of those
   established role tags — domain entities and value objects (`project.ts`,
-  `git-repository.ts`), use-cases (`list-projects.ts`, `register-project.ts`),
+  `git-remote.ts`), use-cases (`list-projects.ts`, `register-project.ts`),
   `config.ts`. Don't invent a new dot-suffix for a one-off shape; only promote something to a
   dot-suffix once it's actually documented as a recurring architectural pattern, not merely
   renamed to look consistent.
@@ -67,11 +67,11 @@ Package-specific standards for `api/`. These supplement the general rules in
 
 - **Repositories return the domain entity itself when one exists**: a repository method whose
   result corresponds to a real domain entity (e.g. `getByRepoKey`) returns that entity class
-  (`Project`) directly, constructed via the entity's own reconstitution factory — not a separately
+  (`Project`) directly, constructed via the entity's own `fromPersistence` factory — not a separately
   declared plain-object type mirroring the same fields.
 
   ```ts
-  // ✅ full entity, reconstituted
+  // ✅ full entity, rebuilt via fromPersistence
   getByRepoKey(repoKey: string): Project | undefined
 
   // ✅ projection for one specific reading need — not a stand-in for Project
@@ -85,32 +85,33 @@ Package-specific standards for `api/`. These supplement the general rules in
   entity's own factory** — don't have the entity's `create` re-parse a raw external value itself.
 
   ```ts
-  // ProjectRepoReference: private constructor, sole entry point is `resolve`
-  ProjectRepoReference.resolve(remoteUrl: string): ProjectRepoReference | InvalidRemoteUrlError
+  // GitRemote: private constructor; `resolve` is the only way the app obtains one from raw input
+  // (`fromPersistence` rebuilds one already validated at `resolve` time)
+  GitRemote.resolve(remoteUrl: string): GitRemote | InvalidRemoteUrlError
 
   // Project.create takes the already-validated value object, not the raw string —
-  // an invalid ProjectRepoReference can't reach it, so create is infallible
-  Project.create(name: string, repoReference: ProjectRepoReference): Project
+  // an invalid GitRemote can't reach it, so create is infallible
+  Project.create(name: string, gitRemote: GitRemote): Project
   ```
 
-  - There's no error branch left to duplicate or forget inside `create` — an invalid
-    `GitRepository` is simply unrepresentable by the time it runs.
+  - There's no error branch left to duplicate or forget inside `create` — as long as raw input
+    goes through `GitRemote.resolve`, an invalid `GitRemote` never reaches it.
   - A use-case resolves the value object first, uses its derived fields (e.g.
-    `repoReference.repoKey`) for the existence check, and only calls `create` in the "doesn't
+    `gitRemote.repoKey`) for the existence check, and only calls `create` in the "doesn't
     exist yet" branch — `create` is no longer called speculatively before that check, since
     there's no fallible work left inside it to justify calling it early.
   - Give a value object like this its own file once it carries real behavior/invariants of its
-    own (here `src/core/domain/git-repository.ts`, separate from `project.ts`) rather than
+    own (here `src/core/domain/git-remote.ts`, separate from `project.ts`) rather than
     nesting it inside the entity that consumes it — and name it for what it actually represents,
-    not a neighboring concept: `GitRepository` bundles `repoKey` and `remoteUrl` together
+    not a neighboring concept: `GitRemote` bundles `repoKey` and `remoteUrl` together
     deliberately (both derived from the same parse, both required before an entity can be
     constructed), but is not itself "the project's identity" (that's `Project.id`) and is not a
     `*Repository` in the persistence-layer sense — hence the more specific name over a generic
     `RepoIdentity`.
-  - A repository's `getByRepoKey`-style method never calls `create` — it reconstitutes an
-    already-valid entity read back from storage via a separate factory, `reconstitute(data)`,
-    which can't fail (the data was already validated once, at the `create` call that originally
-    persisted it).
+  - A repository's `getByRepoKey`-style method never calls `create` — it rebuilds an
+    already-valid entity read back from storage via a separate factory,
+    `fromPersistence(dto)`, which can't fail (the data was already validated once, at the
+    `create` call that originally persisted it). The reverse direction is `toPersistence()`.
 
   **Design history**: an earlier version of this rule argued for calling `create` unconditionally,
   up front, specifically to avoid the value-object split above — that traded away a real
@@ -119,7 +120,7 @@ Package-specific standards for `api/`. These supplement the general rules in
   removes that implicit precondition entirely: `create` cannot be called with anything invalid,
   full stop, not merely "in practice, given how callers currently behave."
 - **Domain entity classes have a private constructor**, exposing only their static factories
-  (`create`/`reconstitute` above). Name the class after the bare entity (`Project`) — this is
+  (`create`/`fromPersistence` above). Name the class after the bare entity (`Project`) — this is
   distinct from the plain `*ReadModel` DTOs living in `src/repositories/`: the domain class
   carries behavior and invariants, a `*ReadModel` is a plain data shape for one specific reading
   need.
@@ -128,10 +129,22 @@ Package-specific standards for `api/`. These supplement the general rules in
   class Project {
     private constructor(/* ... */) {}
 
-    static create(name: string, repoReference: ProjectRepoReference): Project { /* ... */ }
-    static reconstitute(data: ProjectRow): Project { /* ... */ }
+    static create(name: string, gitRemote: GitRemote): Project { /* ... */ }
+    static fromPersistence(dto: ProjectPersistenceDto): Project { /* ... */ }
+    toPersistence(): ProjectPersistenceDto { /* ... */ }
+    toExposition(): ProjectExpositionDto { /* ... */ }
   }
   ```
+
+  - **DTO naming follows intent**, per domain object `X`: `XPersistenceDto` (full persisted shape,
+    flat, child collections included), `XExpositionDto` (outward shape for use-cases, derived from
+    the persistence DTO with `Omit`), `XCreationDto` (input of `X.create(dto)` — the plain-data shape
+    that maps onto the entity's attributes, e.g. `Skill.create`; the exceptions are
+    `Project.create(name, gitRemote)`, which stays positional because it takes an
+    already-validated value object, not plain data, and `GitRemote`, which has no `create` at all
+    since `resolve` is its only entry point). Use `type` aliases, not `interface`. See
+    [`.claude/rules/api/domain-object-dtos.md`](../.claude/rules/api/domain-object-dtos.md) for a
+    worked example.
 
   - The repository's write parameter is the entity itself (see `addNewProject(project:
     Project)`), not a separately-declared write DTO.

@@ -47,19 +47,13 @@ singletons, no globals.
   `RegisterProject`, `ListProjects`), with `run()` as the single public method. Each use-case
   class takes a constructor-injected repository, calls repository functions, and returns typed
   result objects (e.g. `RegisterProjectResult`).
-- **Repositories** (`src/infrastructure/*.repository.ts`) — raw SQL only; accept and return plain
-  objects (`ProjectRow`).
-- **Domain** (`src/core/domain/`) — entity classes with a private constructor and a validating static
-  factory. External input that needs deriving/validating before it can be used gets its own value
-  object with a private constructor and a `resolve`-style factory (e.g.
-  `GitRepository.resolve(remoteUrl): GitRepository | InvalidRemoteUrlError`), kept in its own file;
-  the entity's own factory then takes that already-validated value object instead of a raw external
-  value, so it can't fail (`Project.create(name, gitRepository)` is infallible — an invalid
-  `Project` simply can't be constructed in the first place). Reserved for invariants intrinsic to
-  the entity or its inputs; an application-level workflow step belongs in a use-case instead.
-  `Project` also owns a `Skill[]` collection — `Project.registerSkills(names)` dedupes by name and
-  returns a `DuplicateSkillNameError` result object instead of throwing if the caller passes
-  duplicates.
+- **Repositories** (`src/infrastructure/*.repository.ts`) — raw SQL only; rebuild domain entities
+  from rows via `fromPersistence(dto)` and write them out via `toPersistence()`.
+- **Domain** (`src/core/domain/`) — entity classes (`Project`, `Skill`) and the value objects
+  their inputs are validated into (`GitRemote`), for invariants intrinsic to an entity; an
+  application-level workflow step belongs in a use-case instead. `Project` owns a `Skill[]`
+  collection. See [`api/STANDARDS.md`](STANDARDS.md)'s "Domain Modeling" section for how domain
+  objects are built, validated and exposed.
 
 `buildApp(db, opts)` in `src/app.ts` wires all endpoints together. `src/index.ts` is the process
 entry point: loads config, creates the DB, runs migrations, calls `buildApp`, and starts
@@ -72,7 +66,7 @@ src/
   app.ts                    # buildApp(db, opts) — wires endpoints, no DB setup/migration
   index.ts                  # process entry point — DB creation, migration, buildApp, listen
   core/
-    domain/                 # entity classes and value objects (Project, GitRepository, Skill)
+    domain/                 # entity classes and value objects (Project, GitRemote, Skill)
     use-cases/              # one class per use case (RegisterProject, ListProjects, RegisterSkillsIntoProject)
   endpoints/
     contracts/              # wire-shape types only, exported to cli/web (health.ts, projects.ts, skills.ts)
