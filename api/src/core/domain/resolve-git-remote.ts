@@ -1,5 +1,6 @@
 import GitUrlParse from 'git-url-parse'
-import { type GitRemoteCreationDto, InvalidRemoteUrlError } from './git-remote.js'
+import type { GitRemoteCreationDto } from './git-remote.js'
+import { InvalidRemoteUrlError } from './invalid-remote-url-error.js'
 
 const MANAGED_PROTOCOLS = new Set(['https'])
 

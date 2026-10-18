@@ -1,11 +1,5 @@
+import { InvalidRemoteUrlError } from './invalid-remote-url-error.js'
 import { resolveGitRemote } from './resolve-git-remote.js'
-
-export class InvalidRemoteUrlError extends Error {
-  constructor(remoteUrl: string) {
-    super(`Could not derive a repoKey from remoteUrl: ${remoteUrl}`)
-    this.name = 'InvalidRemoteUrlError'
-  }
-}
 
 export class GitRemote {
   private constructor(

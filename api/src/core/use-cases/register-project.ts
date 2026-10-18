@@ -1,5 +1,6 @@
 import type { ProjectRepository } from '../../infrastructure/project.repository.js'
-import { GitRemote, InvalidRemoteUrlError } from '../domain/git-remote.js'
+import { GitRemote } from '../domain/git-remote.js'
+import { InvalidRemoteUrlError } from '../domain/invalid-remote-url-error.js'
 import { Project } from '../domain/project.js'
 
 export type RegisterProjectResult = { created: boolean; projectId: string } | InvalidRemoteUrlError
