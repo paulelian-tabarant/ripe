@@ -85,7 +85,9 @@ Package-specific standards for `api/`. These supplement the general rules in
   entity's own factory** — don't have the entity's `create` re-parse a raw external value itself.
 
   ```ts
-  // GitRemote: private constructor; `resolve` is the only way the app obtains one from raw input
+  // GitRemote: private constructor; `resolve` is the entry point for raw input and the only
+  // path that guarantees a canonical value. `create(dto)` trusts an already-canonical dto and
+  // must only be fed by `resolve`/the resolver.
   GitRemote.resolve(remoteUrl: string): GitRemote | InvalidRemoteUrlError
 
   // Project.create takes the already-validated value object, not the raw string —
@@ -93,8 +95,8 @@ Package-specific standards for `api/`. These supplement the general rules in
   Project.create(name: string, gitRemote: GitRemote): Project
   ```
 
-  - There's no error branch left to duplicate or forget inside `create` — an invalid
-    `GitRemote` is simply unrepresentable by the time it runs.
+  - There's no error branch left to duplicate or forget inside `create` — as long as raw input
+    goes through `GitRemote.resolve`, an invalid `GitRemote` never reaches it.
   - A use-case resolves the value object first, uses its derived fields (e.g.
     `gitRemote.repoKey`) for the existence check, and only calls `create` in the "doesn't
     exist yet" branch — `create` is no longer called speculatively before that check, since

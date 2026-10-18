@@ -55,8 +55,9 @@ singletons, no globals.
   InvalidRemoteUrlError`, a thin wrapper over the stateless `resolveGitRemote` function
   (`resolve-git-remote.ts`) that does the parsing; the entity's own factory then takes that
   already-validated value object instead of a raw external value, so it can't fail
-  (`Project.create(name, gitRemote)` is infallible — an invalid `Project` simply can't be
-  constructed in the first place). Reserved for invariants intrinsic to the entity or its inputs;
+  (`Project.create(name, gitRemote)` is infallible as long as raw input goes through
+  `GitRemote.resolve`; `GitRemote.create(dto)` trusts an already-canonical dto and must only be fed
+  by `resolve`/the resolver). Reserved for invariants intrinsic to the entity or its inputs;
   an application-level workflow step belongs in a use-case instead.
   `Project` also owns a `Skill[]` collection — `Project.registerSkills(names)` dedupes by name and
   returns a `DuplicateSkillNameError` result object instead of throwing if the caller passes
