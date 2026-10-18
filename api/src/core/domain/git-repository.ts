@@ -39,7 +39,22 @@ export class GitRepository {
     )
   }
 
-  static reconstitute(data: { repoKey: string; remoteUrl: string }): GitRepository {
-    return new GitRepository(data.repoKey, data.remoteUrl)
+  static fromPersistence(dto: GitRepositoryPersistenceDto): GitRepository {
+    return new GitRepository(dto.repoKey, dto.remoteUrl)
+  }
+
+  toPersistence(): GitRepositoryPersistenceDto {
+    return { repoKey: this.repoKey, remoteUrl: this.remoteUrl }
+  }
+
+  toExposition(): GitRepositoryExpositionDto {
+    return this.toPersistence()
   }
 }
+
+export type GitRepositoryPersistenceDto = {
+  repoKey: string
+  remoteUrl: string
+}
+
+export type GitRepositoryExpositionDto = GitRepositoryPersistenceDto

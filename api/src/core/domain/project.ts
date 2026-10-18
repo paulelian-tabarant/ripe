@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
 import { GitRepository } from './git-repository.js'
-import { Skill } from './skill.js'
+import { Skill, type SkillExpositionDto, type SkillPersistenceDto } from './skill.js'
 
 export class Project {
   private constructor(
@@ -14,18 +14,12 @@ export class Project {
     return new Project(`proj_${nanoid()}`, name, gitRepository)
   }
 
-  static reconstitute(data: {
-    id: string
-    name: string
-    repoKey: string
-    remoteUrl: string
-    skills?: Skill[]
-  }): Project {
+  static fromPersistence(dto: ProjectPersistenceDto): Project {
     return new Project(
-      data.id,
-      data.name,
-      GitRepository.reconstitute({ repoKey: data.repoKey, remoteUrl: data.remoteUrl }),
-      data.skills,
+      dto.id,
+      dto.name,
+      GitRepository.fromPersistence({ repoKey: dto.repoKey, remoteUrl: dto.remoteUrl }),
+      dto.skills.map((skill) => Skill.fromPersistence(skill)),
     )
   }
 
@@ -45,23 +39,37 @@ export class Project {
     }
   }
 
-  snapshot(): ProjectSnapshot {
+  toPersistence(): ProjectPersistenceDto {
     return {
       id: this.id,
       name: this.name,
       repoKey: this.gitRepository.repoKey,
       remoteUrl: this.gitRepository.remoteUrl,
-      skills: this.skills.map((skill) => ({ id: skill.id, name: skill.name })),
+      skills: this.skills.map((skill) => skill.toPersistence()),
+    }
+  }
+
+  toExposition(): ProjectExpositionDto {
+    return {
+      id: this.id,
+      name: this.name,
+      repoKey: this.gitRepository.repoKey,
+      remoteUrl: this.gitRepository.remoteUrl,
+      skills: this.skills.map((skill) => skill.toExposition()),
     }
   }
 }
 
 export class DuplicateSkillNameError extends Error {}
 
-export type ProjectSnapshot = {
+export type ProjectPersistenceDto = {
   id: string
   name: string
   repoKey: string
   remoteUrl: string
-  skills: { id: string; name: string }[]
+  skills: SkillPersistenceDto[]
+}
+
+export type ProjectExpositionDto = Omit<ProjectPersistenceDto, 'skills'> & {
+  skills: SkillExpositionDto[]
 }
